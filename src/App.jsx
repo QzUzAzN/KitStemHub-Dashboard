@@ -6,7 +6,7 @@ import ManagerContentKits from "./components/manager/ManagerContentKits";
 function App() {
   const router = createBrowserRouter([
     {
-      path: "/admin",
+      path: "/",
 
       element: <AdminPage />,
     },
