@@ -1,5 +1,11 @@
+import AdminPage from "./pages/AdminPage";
+
 function App() {
-  return <div className="text-red-500">Welcome</div>;
+  return (
+    <>
+      <AdminPage />
+    </>
+  );
 }
 
 export default App;
