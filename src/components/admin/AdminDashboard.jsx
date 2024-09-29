@@ -1,170 +1,328 @@
-import { useState } from "react";
-import { Button, Layout, Menu, Table } from "antd";
+import { useState, useEffect } from "react";
+import {
+  Button,
+  Layout,
+  Menu,
+  Table,
+  Modal,
+  Form,
+  Input,
+  message,
+  Spin,
+  Space,
+} from "antd";
 import {
   DashboardOutlined,
-  FormOutlined,
-  TableOutlined,
-  FileOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
+  AppstoreOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
+import api from "../../config/axios";
 
 const { Sider, Content } = Layout;
+const { Search } = Input;
 
 const AdminDashboard = () => {
+  const [collapsed, setCollapsed] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [searchResult, setSearchResult] = useState(null);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/Categories");
+      console.log("Fetched categories:", response.data);
+      if (response.data.status === "success") {
+        const categoriesWithId = response.data.details.data.categories
+          .map((category) => ({
+            ...category,
+            id: category.id || category._id,
+          }))
+          .filter((category) => category.status === true); // Chỉ hiển thị danh mục có status true
+        setCategories(categoriesWithId);
+        console.log(categoriesWithId);
+      } else {
+        console.error("Received data structure is unexpected:", response.data);
+        setCategories([]);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      message.error("Failed to fetch categories");
+      setCategories([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const columns = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+    },
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
     },
     {
-      title: "Age",
-      dataIndex: "age",
-      key: "age",
-    },
-    {
-      title: "Address",
-      dataIndex: "address",
-      key: "address",
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
     },
     {
       title: "Action",
-      dataIndex: "",
-      key: "x",
-      render: (text, record) => (
+      key: "action",
+      render: (_, record) => (
         <>
-          <Button onClick={() => handleEdit(record)}>Edit</Button>
-          <span> | </span>
-          <Button onClick={() => handleDelete(record)}>Delete</Button>
+          <Button onClick={() => handleEdit(record)} type="link">
+            Edit
+          </Button>
+          <Button onClick={() => handleDelete(record.id)} type="link" danger>
+            {console.log(record.id)}
+            Delete
+          </Button>
         </>
       ),
     },
   ];
-  const [data, setData] = useState([
-    {
-      key: 1,
-      name: "John Brown",
-      age: 32,
-      address: "New York No. 1 Lake Park",
-      description:
-        "My name is John Brown, I am 32 years old, living in New York No. 1 Lake Park.",
-    },
-    {
-      key: 2,
-      name: "Jim Green",
-      age: 42,
-      address: "London No. 1 Lake Park",
-      description:
-        "My name is Jim Green, I am 42 years old, living in London No. 1 Lake Park.",
-    },
-    {
-      key: 3,
-      name: "Not Expandable",
-      age: 29,
-      address: "Jiangsu No. 1 Lake Park",
-      description: "This not expandable",
-    },
-    {
-      key: 4,
-      name: "Joe Black",
-      age: 32,
-      address: "Sydney No. 1 Lake Park",
-      description:
-        "My name is Joe Black, I am 32 years old, living in Sydney No. 1 Lake Park.",
-    },
-  ]);
-  const [collapsed, setCollapsed] = useState(false);
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
   };
-  const handleAdd = () => {
-    const newKey = data.length + 1;
-    const newData = {
-      key: newKey.toString(),
-      name: `New Name ${newKey}`,
-      age: 0,
-      address: "Unknown",
-    };
-    setData([...data, newData]);
-  };
-  const handleEdit = (record) => {
-    console.log("Edit", record);
+
+  const showModal = () => {
+    setIsModalVisible(true);
+    setEditingCategory(null);
+    form.resetFields();
   };
 
-  const handleDelete = (record) => {
-    setData(data.filter((item) => item.key !== record.key)); // Xóa hàng
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    form.resetFields();
   };
+
+  const handleEdit = (category) => {
+    setEditingCategory(category);
+    form.setFieldsValue(category);
+    setIsModalVisible(true);
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      Modal.confirm({
+        title: "Are you sure you want to delete this category?",
+        content: "This action cannot be undone.",
+        okText: "Yes, Delete",
+        okType: "danger",
+        cancelText: "No",
+        onOk: async () => {
+          try {
+            const response = await api.delete(`Categories/${id}`, {
+              status: false,
+            });
+            console.log("Delete response:", response.data);
+            if (response.data && response.data.status === "success") {
+              message.success("Category deleted successfully");
+              fetchCategories();
+            } else {
+              throw new Error("Unexpected response structure");
+            }
+          } catch (error) {
+            console.error("Error in delete operation:", error);
+            if (error.response) {
+              console.log("Error response:", error.response.data);
+              message.error(
+                `Failed to delete category: ${
+                  error.response.data.message || "Unknown error"
+                }`
+              );
+            } else if (error.request) {
+              console.log("Error request:", error.request);
+              message.error("No response received from server");
+            } else {
+              console.log("Error message:", error.message);
+              message.error(`Error: ${error.message}`);
+            }
+          }
+        },
+      });
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+      message.error("An error occurred while trying to delete the category");
+    }
+  };
+
+  const handleSubmit = async (values) => {
+    try {
+      if (editingCategory) {
+        const response = await api.put(`Categories`, values);
+        console.log(values);
+        console.log("Update response:", response.data);
+        message.success("Category updated successfully");
+      } else {
+        const response = await api.post("Categories", values);
+        console.log("Add response:", response.data);
+        if (response.data && response.data.status === "success") {
+          message.success("Category added successfully");
+        } else {
+          throw new Error("Unexpected response structure");
+        }
+      }
+      setIsModalVisible(false);
+      form.resetFields();
+      fetchCategories();
+    } catch (error) {
+      console.error("Error submitting category:", error);
+      message.error("Failed to submit category");
+    }
+  };
+
+  const handleSearch = async (id) => {
+    if (!id) {
+      message.error("Please enter a category ID");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await api.get(`/Categories/${id}`);
+      console.log("Search response:", response.data);
+      if (
+        response.data.status === "success" &&
+        response.data.details.data.category
+      ) {
+        const category = response.data.details.data.category;
+        setSearchResult({
+          ...category,
+          id: category.id,
+        });
+        message.success("Category found");
+      } else {
+        throw new Error("Category not found");
+      }
+    } catch (error) {
+      console.error("Error searching category:", error);
+      message.error(error.message || "Category not found");
+      setSearchResult(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Layout className="h-screen">
-      {/* Sidebar with collapsible functionality */}
+    <Layout className="min-h-screen">
       <Sider
         collapsible
         collapsed={collapsed}
         onCollapse={toggleCollapsed}
-        className="bg-gray-900"
+        className="bg-gray-800"
       >
-        <div className="text-white text-2xl p-4 text-left transition ease-in-out duration-1000">
-          <button
-            className="text-xl p-2 hover:text-blue-500 transition duration-500"
-            onClick={toggleCollapsed}
-          >
-            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          </button>
+        <div className="text-white text-2xl p-4 text-center">
+          {collapsed ? "Admin" : "Admin Panel"}
         </div>
-
         <Menu
           theme="dark"
           mode="inline"
-          className="bg-gray-900"
           defaultSelectedKeys={["1"]}
+          className="bg-gray-800"
         >
           <Menu.Item key="1" icon={<DashboardOutlined />}>
             Dashboard
           </Menu.Item>
-          <Menu.Item key="2" icon={<FormOutlined />}>
-            Forms
+          <Menu.Item key="2" icon={<AppstoreOutlined />}>
+            Categories
           </Menu.Item>
-          <Menu.Item key="3" icon={<TableOutlined />}>
-            Tables
-          </Menu.Item>
-          <Menu.SubMenu key="sub1" title="Pages" icon={<FileOutlined />}>
-            <Menu.Item key="4">Sign In</Menu.Item>
-            <Menu.Item key="5">Sign Up</Menu.Item>
-          </Menu.SubMenu>
         </Menu>
       </Sider>
-
-      {/* Main content area */}
-      <Layout className="bg-gray-100">
-        <div className="flex justify-between p-4 bg-white shadow-md items-center">
-          <div className="text-2xl font-semibold text-gray-700">
-            Admin Panel
+      <Layout>
+        <Content className="m-6 p-6 bg-white rounded-lg shadow-lg">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-semibold">Categories Management</h1>
+            <Space>
+              <Search
+                placeholder="Enter category ID"
+                onSearch={handleSearch}
+                style={{ width: 200 }}
+                enterButton={<SearchOutlined />}
+              />
+              <Button
+                type="primary"
+                onClick={showModal}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                Add New Category
+              </Button>
+            </Space>
           </div>
-        </div>
-        <Content className="p-6">
-          <div className="bg-white p-6 rounded-lg shadow-lg transition-all duration-300">
+          {loading ? (
+            <div className="text-center">
+              <Spin size="large" />
+            </div>
+          ) : searchResult ? (
+            <div className="mb-4 p-4 border rounded">
+              <h2 className="text-lg font-semibold mb-2">Search Result:</h2>
+              <Table
+                columns={columns.filter((col) => col.key !== "action")}
+                dataSource={[searchResult]}
+                rowKey="id"
+                pagination={false}
+                className="shadow-sm"
+              />
+              <Button onClick={() => setSearchResult(null)} className="mt-4">
+                Clear Search
+              </Button>
+            </div>
+          ) : (
             <Table
               columns={columns}
-              expandable={{
-                expandedRowRender: (record) => (
-                  <p
-                    style={{
-                      margin: 0,
-                    }}
-                  >
-                    {record.description}
-                  </p>
-                ),
-                rowExpandable: (record) => record.name !== "Not Expandable",
-              }}
-              dataSource={data}
+              dataSource={categories}
+              rowKey="id"
+              className="shadow-sm"
             />
-            <Button type="primary" onClick={handleAdd} className="mb-4">
-              Add New Row
-            </Button>
-          </div>
+          )}
+          <Modal
+            title={editingCategory ? "Edit Category" : "Add New Category"}
+            visible={isModalVisible}
+            onCancel={handleCancel}
+            footer={null}
+          >
+            <Form form={form} onFinish={handleSubmit} layout="vertical">
+              <Form.Item name="id" label="Id">
+                <Input disabled={true} />
+              </Form.Item>
+              <Form.Item
+                name="name"
+                label="Name"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input the category name!",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item name="description" label="Description">
+                <Input.TextArea />
+              </Form.Item>
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  {editingCategory ? "Update" : "Add"}
+                </Button>
+              </Form.Item>
+            </Form>
+          </Modal>
         </Content>
       </Layout>
     </Layout>
