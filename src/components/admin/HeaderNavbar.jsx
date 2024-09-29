@@ -25,12 +25,12 @@ const HeaderNavbar = () => {
   );
 
   return (
-    <Header className="bg-gray-900 p-4 flex justify-between items-center shadow-md transition duration-500 ease-in-out">
+    <Header className="bg-blue-600 p-4 flex justify-between items-center shadow-md transition duration-500 ease-in-out">
       {/* Left: Search Bar and User Icon */}
       <div className="flex items-center space-x-6">
         <UserOutlined className="text-3xl text-white cursor-pointer hover:text-blue-400 transition duration-300" />
         <Input
-          className="bg-gray-700 border-none text-white rounded-full placeholder-gray-300 focus:ring-2 focus:ring-blue-400 transition duration-300"
+          className="bg-slate-200 border-none text-white rounded-full placeholder-gray-300 focus:ring-2 focus:ring-blue-400 transition duration-300"
           placeholder="Search here..."
           prefix={<SearchOutlined className="text-white" />}
           style={{ width: 250 }}
