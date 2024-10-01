@@ -1,6 +1,6 @@
 import axios from "axios";
-// const baseUrl = "http://54.66.193.22:5001/api/";
-const baseUrl = "https://54.66.193.22:5000/api/";
+const baseUrl = "http://54.66.193.22:5001/api/";
+// const baseUrl = "http://54.66.193.22:5001/api/Users/";
 
 const config = {
   baseUrl: baseUrl,
@@ -29,28 +29,27 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    // console.log(originalRequest);
-    // console.log("hello" + error.config);
-    // console.log("Error Config:", error.config);
-    // console.log("Error Response Status:", error.response.status);
-    // console.log("Error Message:", error.message);
+    console.log(originalRequest);
+    console.log("hello" + error.config);
+    console.log("Error Config:", error.config);
+    console.log("Error Response Status:", error.response.status);
+    console.log("Error Message:", error.message);
     // If the error status is 401 and there is no originalRequest._retry flag,
     // it means the token has expired and we need to refresh it
-    //Cờ _retry để đảm bảo rằng không thực hiện lại việc gọi API quá nhiều lần nếu lỗi 401
     if (error.response.status === 401 && !originalRequest._retry) {
-      // console.log("Token expired or unauthorized - 401 error");
+      console.log("Token expired or unauthorized - 401 error");
       originalRequest._retry = true;
 
       try {
         const currentRefreshToken = localStorage.getItem("refreshToken");
-        // console.log(currentRefreshToken);
+        console.log(currentRefreshToken);
         const response = await axios.post(
-          // `http://54.66.193.22:5001/api/Users/RefreshToken/${currentRefreshToken}`
-          `https://54.66.193.22:5000/api/Users/RefreshToken/${currentRefreshToken}`
+          `http://54.66.193.22:5001/api/Users/RefreshToken/${currentRefreshToken}`
+          // `https://54.66.193.22:5000/api/Users/RefreshToken/${currentRefreshToken}`
         );
-        // console.log("ggggg" + response.data);
+        console.log("ggggg" + response.data);
         const { accessToken, refreshToken } = response.data.details;
-        // console.log(accessToken);
+        console.log(accessToken);
         localStorage.setItem("token", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
 
@@ -60,8 +59,8 @@ api.interceptors.response.use(
         return axios(originalRequest);
       } catch (error) {
         // Xử lý lỗi refresh token (ví dụ: chuyển hướng về trang đăng nhập)
-        window.location.href = "/";
-        // console.log(error);
+        // window.location.href = "/";
+        console.log(error);
         return Promise.reject(error);
       }
     }

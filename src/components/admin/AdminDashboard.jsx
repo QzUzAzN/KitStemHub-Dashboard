@@ -28,31 +28,28 @@ const AdminDashboard = () => {
   const [form] = Form.useForm();
   const [editingCategory, setEditingCategory] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [searchResult, setSearchResult] = useState(null); //by id
+  const [searchResult, setSearchResult] = useState(null);
 
   useEffect(() => {
     fetchCategories();
-    console.log(searchResult);
   }, []);
 
   const fetchCategories = async () => {
     setLoading(true);
     try {
       const response = await api.get("/Categories");
-      // console.log("Fetched categories:", response.data);
+      console.log("Fetched categories:", response.data);
       if (response.data.status === "success") {
         const categoriesWithId = response.data.details.data.categories
           .map((category) => ({
             ...category,
-
-            // ...category,
-            // id: category.id || category._id,
+            id: category.id || category._id,
           }))
           .filter((category) => category.status === true); // Chỉ hiển thị danh mục có status true
         setCategories(categoriesWithId);
-        // console.log(categoriesWithId);
+        console.log(categoriesWithId);
       } else {
-        // console.error("Received data structure is unexpected:", response.data);
+        console.error("Received data structure is unexpected:", response.data);
         setCategories([]);
       }
     } catch (error) {
@@ -67,7 +64,6 @@ const AdminDashboard = () => {
   const columns = [
     {
       title: "ID",
-      //Trỏ đến thuộc tính id trong đối tượng dữ liệu danh mục, giúp bảng lấy và hiển thị giá trị của thuộc tính này
       dataIndex: "id",
       key: "id",
     },
@@ -85,14 +81,12 @@ const AdminDashboard = () => {
       title: "Action",
       key: "action",
       render: (_, record) => (
-        // _: Được sử dụng khi không cần thiết sử dụng giá trị của cột hiện tại.
-        //record: Là đối tượng chứa dữ liệu của dòng hiện tại (mỗi record đại diện cho một danh mục).
         <>
           <Button onClick={() => handleEdit(record)} type="link">
             Edit
           </Button>
           <Button onClick={() => handleDelete(record.id)} type="link" danger>
-            {/* {console.log(record.id)} */}
+            {console.log(record.id)}
             Delete
           </Button>
         </>
@@ -121,7 +115,6 @@ const AdminDashboard = () => {
     setIsModalVisible(true);
   };
 
-  //dùng trong column
   const handleDelete = async (id) => {
     try {
       Modal.confirm({
@@ -135,7 +128,7 @@ const AdminDashboard = () => {
             const response = await api.delete(`Categories/${id}`, {
               status: false,
             });
-            // console.log("Delete response:", response.data);
+            console.log("Delete response:", response.data);
             if (response.data && response.data.status === "success") {
               message.success("Category deleted successfully");
               fetchCategories();
@@ -143,7 +136,7 @@ const AdminDashboard = () => {
               throw new Error("Unexpected response structure");
             }
           } catch (error) {
-            // console.error("Error in delete operation:", error);
+            console.error("Error in delete operation:", error);
             if (error.response) {
               console.log("Error response:", error.response.data);
               message.error(
@@ -155,7 +148,7 @@ const AdminDashboard = () => {
               console.log("Error request:", error.request);
               message.error("No response received from server");
             } else {
-              // console.log("Error message:", error.message);
+              console.log("Error message:", error.message);
               message.error(`Error: ${error.message}`);
             }
           }
@@ -167,17 +160,16 @@ const AdminDashboard = () => {
     }
   };
 
-  //Khi người dùng nhấn nút Submit, tất cả dữ liệu từ các trường trong form (các Form.Item) sẽ được thu thập và truyền vào hàm handleSubmit dưới dạng một đối tượng values.
   const handleSubmit = async (values) => {
     try {
       if (editingCategory) {
         const response = await api.put(`Categories`, values);
-        // console.log(values);
+        console.log(values);
         console.log("Update response:", response.data);
         message.success("Category updated successfully");
       } else {
         const response = await api.post("Categories", values);
-        // console.log("Add response:", response.data);
+        console.log("Add response:", response.data);
         if (response.data && response.data.status === "success") {
           message.success("Category added successfully");
         } else {
@@ -201,7 +193,7 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const response = await api.get(`/Categories/${id}`);
-      // console.log("Search response:", response.data);
+      console.log("Search response:", response.data);
       if (
         response.data.status === "success" &&
         response.data.details.data.category
@@ -209,15 +201,14 @@ const AdminDashboard = () => {
         const category = response.data.details.data.category;
         setSearchResult({
           ...category,
-          // id: category.id,
+          id: category.id,
         });
-
         message.success("Category found");
       } else {
         throw new Error("Category not found");
       }
     } catch (error) {
-      // console.error("Error searching category:", error);
+      console.error("Error searching category:", error);
       message.error(error.message || "Category not found");
       setSearchResult(null);
     } finally {
