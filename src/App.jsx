@@ -3,6 +3,8 @@ import AdminPage from "./pages/AdminPage";
 import ManagerPage from "./pages/ManagerPage";
 import ManagerContentKits from "./components/manager/ManagerContentKits";
 import LoginRegister from "./pages/LoginRegister";
+import ManagerContentLabs from "./components/manager/ManagerContentLabs";
+import ManagerContentPackage from "./components/manager/ManagerContentPackage";
 
 function App() {
   const router = createBrowserRouter([
@@ -23,6 +25,14 @@ function App() {
         {
           path: "kits",
           element: <ManagerContentKits />,
+        },
+        {
+          path: "labs",
+          element: <ManagerContentLabs />,
+        },
+        {
+          path: "package",
+          element: <ManagerContentPackage />,
         },
       ],
     },
