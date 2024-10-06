@@ -69,7 +69,7 @@ function ManagerLabs() {
       setLoading(true); // Bắt đầu loading khi gọi API
 
       // Gọi API với tham số page
-      const response = await api.get("Labs", {
+      const response = await api.get("labs", {
         params: {
           Page: page,
         },
@@ -82,8 +82,8 @@ function ManagerLabs() {
 
       // Tính tổng số items dựa trên totalPages và pageSize
       setPagination({
-        current: data.currentPage, // Trang hiện tại từ API
-        total: data.totalPages * 20, // Tổng số items (totalPages * pageSize)
+        current: data["current-page"], // Trang hiện tại từ API
+        total: data["total-pages"] * 20, // Tổng số items (totalPages * pageSize)
         pageSize: 20, // Số mục trên mỗi trang
       });
 
@@ -97,10 +97,10 @@ function ManagerLabs() {
   // Hàm lấy Levels và Kits từ API
   const fetchLevelsAndKits = async () => {
     try {
-      const levelsResponse = await api.get("Levels");
+      const levelsResponse = await api.get("levels");
       setLevels(levelsResponse.data.details.data.levels);
 
-      const kitsResponse = await api.get("Kits");
+      const kitsResponse = await api.get("kits");
       setKits(kitsResponse.data.details.data.kits);
     } catch (error) {
       console.error("Error fetching levels or kits:", error);
@@ -198,7 +198,7 @@ function ManagerLabs() {
     },
     {
       title: "Max Support Times",
-      dataIndex: "maxSupportTimes",
+      dataIndex: "max-support-times",
       key: "maxSupportTimes",
     },
     {
@@ -256,6 +256,7 @@ function ManagerLabs() {
       ...record,
       kit: record.kit.id,
       level: record.level.id,
+      "max-support-times": record["max-support-times"],
     });
     setOpen(true);
   };
@@ -277,7 +278,7 @@ function ManagerLabs() {
         levelId: values.level,
         name: values.name,
         price: values.price || 0,
-        maxSupportTimes: values.maxSupportTimes,
+        "max-support-times": values["max-support-times"],
         author: values.author,
         status: values.status ? true : false,
         file: file,
@@ -395,7 +396,7 @@ function ManagerLabs() {
           {/* Max Support Times */}
           <Form.Item
             label="Max Support Times"
-            name="maxSupportTimes"
+            name="max-support-times"
             rules={[
               {
                 required: true,
