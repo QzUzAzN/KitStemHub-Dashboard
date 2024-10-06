@@ -1,7 +1,7 @@
 import {
-  HeartOutlined,
-  ShoppingOutlined,
-  UserOutlined,
+  DropboxOutlined,
+  FilePdfOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
 import { Layout, Menu } from "antd";
 import Sider from "antd/es/layout/Sider";
@@ -17,19 +17,19 @@ function ManagerSidebar() {
   const items = [
     {
       key: "sub1",
-      icon: <UserOutlined />,
+      icon: <RobotOutlined />,
       label: <p className="font-medium">Quản lí Kits</p>,
       onClick: handleNavigate("/manager/kits"),
     },
     {
       key: "sub2",
-      icon: <ShoppingOutlined />,
+      icon: <FilePdfOutlined />,
       label: <p className="font-medium">Quản lí Labs</p>,
       onClick: handleNavigate("/manager/labs"),
     },
     {
       key: "sub3",
-      icon: <HeartOutlined />,
+      icon: <DropboxOutlined />,
       label: <p className="font-medium">Quản lí Package</p>,
       onClick: handleNavigate("/manager/package"),
     },
@@ -46,7 +46,7 @@ function ManagerSidebar() {
         className="h-full fixed left-0 top-0 z-10"
         width={200}
       >
-        <div className="h-16 flex items-center justify-center bg-gray-900 text-white">
+        <div className="h-16 flex text-xl items-center justify-center bg-gray-900 text-white">
           {collapsed ? "M" : "Manager"}
         </div>
         <Menu theme="dark" mode="inline" items={items} className="mt-5" />
