@@ -27,12 +27,33 @@ function ManagerContentKits() {
   const [editingRecord, setEditingRecord] = useState(null);
   const [imageFile, setImageFile] = useState(null); // State để lưu file ảnh
   const [imagePreview, setImagePreview] = useState(null); // State lưu bản xem trước của hình ảnh
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 20,
+    total: 0,
+  });
 
-  const fetchKits = async () => {
+  const fetchKits = async (page = 1, pageSize = 20) => {
     try {
-      const response = await api.get("kits");
-      setDataSource(response.data.details.data.kits);
+      const response = await api.get("kits", {
+        params: {
+          page: page - 1,
+          pageSize: pageSize,
+        },
+      });
+
+      const kitsData = response.data.details.data.kits;
+      const totalPages = response.data.details.data["total-pages"];
+      const currentPage = response.data.details.data["current-page"];
+      setDataSource(kitsData);
       setLoading(false);
+
+      // Cập nhật phân trang
+      setPagination({
+        total: totalPages * pageSize, // Tổng số mục dữ liệu dựa trên tổng số trang và số mục mỗi trang
+        current: currentPage, // Trang hiện tại
+        pageSize: pageSize, // Số mục trên mỗi trang
+      });
     } catch (error) {
       console.error("Error fetching kits:", error);
       setLoading(false);
@@ -69,9 +90,27 @@ function ManagerContentKits() {
           "Content-Type": "multipart/form-data",
         },
       });
+
       console.log("Created Kit:", response.data);
-      fetchKits();
-      fetchCategories();
+
+      // Tính toán tổng số sản phẩm sau khi tạo mới
+      const totalItems = pagination.total + 1;
+      const totalPages = Math.ceil(totalItems / pagination.pageSize);
+
+      // Kiểm tra xem sản phẩm mới có nằm trên trang hiện tại hay không
+      let newPage = pagination.current;
+      if (newPage < totalPages) {
+        newPage = totalPages; // Điều hướng tới trang cuối nếu sản phẩm mới được tạo vượt quá số trang hiện tại
+      }
+
+      // Fetch lại dữ liệu với trang mới
+      fetchKits(newPage, pagination.pageSize);
+      setPagination((prev) => ({
+        ...prev,
+        total: totalItems, // Cập nhật tổng số mục dữ liệu sau khi thêm mới
+      }));
+
+      fetchCategories(); // Làm mới danh sách categories nếu cần
     } catch (error) {
       console.error(
         "Error creating kit:",
@@ -269,7 +308,7 @@ function ManagerContentKits() {
                 deleteKit(record.id);
               }}
             >
-              <DeleteOutlined style={{ cursor: "pointer", color: "red" }} />
+              <DeleteOutlined className="cursor-pointer text-red-500" />
             </Popconfirm>
           ) : (
             <Popconfirm
@@ -279,7 +318,7 @@ function ManagerContentKits() {
                 restoreKit(record.id);
               }}
             >
-              <UndoOutlined style={{ cursor: "pointer", color: "green" }} />
+              <UndoOutlined className="cursor-pointer text-green-500" />
             </Popconfirm>
           )}
         </div>
@@ -348,7 +387,12 @@ function ManagerContentKits() {
           record.status ? "" : "bg-gray-200 opacity-50 cursor-not-allowed"
         }
         rowKey="id"
-        pagination={{ pageSize: 20 }}
+        pagination={{
+          total: pagination.total, // Tổng số sản phẩm
+          current: pagination.current, // Trang hiện tại
+          pageSize: pagination.pageSize, // Số sản phẩm mỗi trang
+          onChange: (page) => fetchKits(page),
+        }}
       />
 
       <div className="flex justify-end mt-5">
