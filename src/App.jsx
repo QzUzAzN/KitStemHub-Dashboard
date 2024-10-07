@@ -3,6 +3,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginRegisterPage from "./pages/LoginRegister";
 import AdminPage from "./pages/AdminPage";
+import AdminCategories from "./pages/adminpage/AdminCategories";
+import AdminTypes from "./pages/adminpage/AdminTypes";
 import ManagerPage from "./pages/ManagerPage";
 import ManagerContentKits from "./components/manager/ManagerContentKits";
 import ManagerContentLabs from "./components/manager/ManagerContentLabs";
@@ -54,7 +56,12 @@ function App() {
                 <AdminPage />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<AdminCategories />} />
+            <Route path="categories" element={<AdminCategories />} />
+            <Route path="types" element={<AdminTypes />} />
+          </Route>
+
           <Route
             path="/manager"
             element={

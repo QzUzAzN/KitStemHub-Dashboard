@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   Button,
   Layout,
-  Menu,
   Table,
   Modal,
   Form,
@@ -10,19 +9,23 @@ import {
   message,
   Spin,
   Space,
+  Typography,
 } from "antd";
 import {
-  DashboardOutlined,
-  AppstoreOutlined,
   SearchOutlined,
+  PlusOutlined,
+  EditOutlined,
+  UndoOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
+import { motion, AnimatePresence } from "framer-motion";
 import api from "../../config/axios";
 
-const { Sider, Content } = Layout;
+const { Content } = Layout;
 const { Search } = Input;
+const { Title } = Typography;
 
 const AdminDashboard = () => {
-  const [collapsed, setCollapsed] = useState(false);
   const [categories, setCategories] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
@@ -32,23 +35,20 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchCategories();
-    console.log(searchResult);
+    // console.log(searchResult);
   }, []);
 
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/Categories");
+      const response = await api.get("categories");
       // console.log("Fetched categories:", response.data);
       if (response.data.status === "success") {
-        const categoriesWithId = response.data.details.data.categories
-          .map((category) => ({
+        const categoriesWithId = response.data.details.data.categories.map(
+          (category) => ({
             ...category,
-
-            // ...category,
-            // id: category.id || category._id,
-          }))
-          .filter((category) => category.status === true); // Chỉ hiển thị danh mục có status true
+          })
+        );
         setCategories(categoriesWithId);
         // console.log(categoriesWithId);
       } else {
@@ -70,16 +70,35 @@ const AdminDashboard = () => {
       //Trỏ đến thuộc tính id trong đối tượng dữ liệu danh mục, giúp bảng lấy và hiển thị giá trị của thuộc tính này
       dataIndex: "id",
       key: "id",
+      render: (text, record) => (
+        <span className={!record.status ? "opacity-50" : ""}>{text}</span>
+      ),
     },
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
+      render: (text, record) => (
+        <span className={!record.status ? "opacity-50" : ""}>{text}</span>
+      ),
     },
     {
       title: "Description",
       dataIndex: "description",
       key: "description",
+      render: (text, record) => (
+        <span className={!record.status ? "opacity-50" : ""}>{text}</span>
+      ),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => (
+        <span className={status ? "text-green-600" : "text-red-600"}>
+          {status ? "Available" : "Unavailable"}
+        </span>
+      ),
     },
     {
       title: "Action",
@@ -88,21 +107,30 @@ const AdminDashboard = () => {
         // _: Được sử dụng khi không cần thiết sử dụng giá trị của cột hiện tại.
         //record: Là đối tượng chứa dữ liệu của dòng hiện tại (mỗi record đại diện cho một danh mục).
         <>
-          <Button onClick={() => handleEdit(record)} type="link">
-            Edit
+          <Button
+            onClick={() => handleEdit(record)}
+            type="link"
+            disabled={!record.status}
+          >
+            <EditOutlined />
           </Button>
-          <Button onClick={() => handleDelete(record.id)} type="link" danger>
-            {/* {console.log(record.id)} */}
-            Delete
-          </Button>
+          {record.status ? (
+            <Button onClick={() => handleHide(record.id)} type="link" danger>
+              <DeleteOutlined />
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleActivate(record.id)}
+              type="link"
+              className="text-green-600"
+            >
+              <UndoOutlined />
+            </Button>
+          )}
         </>
       ),
     },
   ];
-
-  const toggleCollapsed = () => {
-    setCollapsed(!collapsed);
-  };
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -121,63 +149,68 @@ const AdminDashboard = () => {
     setIsModalVisible(true);
   };
 
-  //dùng trong column
-  const handleDelete = async (id) => {
+  const handleHide = async (id) => {
     try {
       Modal.confirm({
-        title: "Are you sure you want to delete this category?",
-        content: "This action cannot be undone.",
-        okText: "Yes, Delete",
+        title: "Are you sure you want to hide this category?",
+        content: "This action will make the category unavailable.",
+        okText: "Yes, Hide",
         okType: "danger",
         cancelText: "No",
         onOk: async () => {
           try {
-            const response = await api.delete(`Categories/${id}`, {
-              status: false,
-            });
-            // console.log("Delete response:", response.data);
-            if (response.data && response.data.status === "success") {
-              message.success("Category deleted successfully");
-              fetchCategories();
-            } else {
-              throw new Error("Unexpected response structure");
+            await api.delete(`categories/${id}`);
+            message.success("Category hidden successfully");
+            await fetchCategories();
+            if (searchResult && searchResult.id === id) {
+              const updatedCategory = await api.get(`categories/${id}`);
+              setSearchResult(updatedCategory.data.details.data.category);
             }
           } catch (error) {
-            // console.error("Error in delete operation:", error);
-            if (error.response) {
-              console.log("Error response:", error.response.data);
-              message.error(
-                `Failed to delete category: ${
-                  error.response.data.message || "Unknown error"
-                }`
-              );
-            } else if (error.request) {
-              console.log("Error request:", error.request);
-              message.error("No response received from server");
-            } else {
-              // console.log("Error message:", error.message);
-              message.error(`Error: ${error.message}`);
-            }
+            console.error("Error in hide operation:", error);
+            message.error(
+              `Failed to hide category: ${error.message || "Unknown error"}`
+            );
           }
         },
       });
     } catch (error) {
-      console.error("Error in delete confirmation:", error);
-      message.error("An error occurred while trying to delete the category");
+      console.error("Error in hide confirmation:", error);
+      message.error("An error occurred while trying to hide the category");
+    }
+  };
+
+  const handleActivate = async (id) => {
+    try {
+      const response = await api.put(`categories/restore/${id}`);
+      if (response.data && response.data.status === "success") {
+        message.success(response.data.details.message);
+        await fetchCategories();
+        if (searchResult && searchResult.id === id) {
+          const updatedCategory = await api.get(`categories/${id}`);
+          setSearchResult(updatedCategory.data.details.data.category);
+        }
+      } else {
+        throw new Error("Unexpected response structure");
+      }
+    } catch (error) {
+      console.error("Error in activate operation:", error);
+      message.error(
+        `Failed to activate category: ${error.message || "Unknown error"}`
+      );
     }
   };
 
   //Khi người dùng nhấn nút Submit, tất cả dữ liệu từ các trường trong form (các Form.Item) sẽ được thu thập và truyền vào hàm handleSubmit dưới dạng một đối tượng values.
   const handleSubmit = async (values) => {
     try {
+      let response;
       if (editingCategory) {
-        const response = await api.put(`Categories`, values);
-        // console.log(values);
+        response = await api.put(`categories`, values);
         console.log("Update response:", response.data);
         message.success("Category updated successfully");
       } else {
-        const response = await api.post("Categories", values);
-        // console.log("Add response:", response.data);
+        response = await api.post("categories", values);
         if (response.data && response.data.status === "success") {
           message.success("Category added successfully");
         } else {
@@ -186,7 +219,11 @@ const AdminDashboard = () => {
       }
       setIsModalVisible(false);
       form.resetFields();
-      fetchCategories();
+      await fetchCategories();
+      if (searchResult && searchResult.id === values.id) {
+        const updatedCategory = await api.get(`categories/${values.id}`);
+        setSearchResult(updatedCategory.data.details.data.category);
+      }
     } catch (error) {
       console.error("Error submitting category:", error);
       message.error("Failed to submit category");
@@ -200,7 +237,7 @@ const AdminDashboard = () => {
     }
     setLoading(true);
     try {
-      const response = await api.get(`/Categories/${id}`);
+      const response = await api.get(`categories/${id}`);
       // console.log("Search response:", response.data);
       if (
         response.data.status === "success" &&
@@ -226,115 +263,146 @@ const AdminDashboard = () => {
   };
 
   return (
-    <Layout className="min-h-screen">
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={toggleCollapsed}
-        className="bg-gray-800"
+    <Content className="m-6 p-6 bg-white rounded-lg shadow-xl">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex justify-between items-center mb-6"
       >
-        <div className="text-white text-2xl p-4 text-center">
-          {collapsed ? "Admin" : "Admin Panel"}
-        </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          defaultSelectedKeys={["1"]}
-          className="bg-gray-800"
-        >
-          <Menu.Item key="1" icon={<DashboardOutlined />}>
-            Dashboard
-          </Menu.Item>
-          <Menu.Item key="2" icon={<AppstoreOutlined />}>
-            Categories
-          </Menu.Item>
-        </Menu>
-      </Sider>
-      <Layout>
-        <Content className="m-6 p-6 bg-white rounded-lg shadow-lg">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-semibold">Categories Management</h1>
-            <Space>
-              <Search
-                placeholder="Enter category ID"
-                onSearch={handleSearch}
-                style={{ width: 200 }}
-                enterButton={<SearchOutlined />}
-              />
+        <Title level={2} className="m-0">
+          Categories Management
+        </Title>
+        <Space size="middle">
+          <Search
+            placeholder="Enter category ID"
+            onSearch={handleSearch}
+            style={{ width: 250 }}
+            className="shadow-sm"
+            enterButton={
               <Button
-                type="primary"
-                onClick={showModal}
-                className="bg-blue-500 hover:bg-blue-600"
+                icon={<SearchOutlined />}
+                className="bg-blue-500 border-blue-500 hover:bg-blue-600 hover:border-blue-600"
               >
-                Add New Category
+                Search
               </Button>
-            </Space>
-          </div>
-          {loading ? (
-            <div className="text-center">
-              <Spin size="large" />
-            </div>
-          ) : searchResult ? (
-            <div className="mb-4 p-4 border rounded">
-              <h2 className="text-lg font-semibold mb-2">Search Result:</h2>
-              <Table
-                columns={columns.filter((col) => col.key !== "action")}
-                dataSource={[searchResult]}
-                rowKey="id"
-                pagination={false}
-                className="shadow-sm"
-              />
-              <Button onClick={() => setSearchResult(null)} className="mt-4">
+            }
+          />
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={showModal}
+            className="bg-green-500 border-green-500 hover:bg-green-600 hover:border-green-600 shadow-sm"
+          >
+            Add New Category
+          </Button>
+        </Space>
+      </motion.div>
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-center py-10"
+          >
+            <Spin size="large" />
+          </motion.div>
+        ) : searchResult ? (
+          <motion.div
+            key="searchResult"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-4 p-6 border rounded-lg shadow-md bg-gray-50"
+          >
+            <Title level={4} className="mb-4">
+              Search Result:
+            </Title>
+            <Table
+              columns={columns}
+              dataSource={[searchResult]}
+              rowKey="id"
+              pagination={false}
+              className="shadow-sm"
+            />
+            <Space className="mt-4">
+              <Button
+                onClick={() => setSearchResult(null)}
+                className=" hover:bg-white "
+              >
                 Clear Search
               </Button>
-            </div>
-          ) : (
+            </Space>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="categoryTable"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
             <Table
               columns={columns}
               dataSource={categories}
               rowKey="id"
               className="shadow-sm"
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showQuickJumper: true,
+              }}
             />
-          )}
-          <Modal
-            title={editingCategory ? "Edit Category" : "Add New Category"}
-            visible={isModalVisible}
-            onCancel={handleCancel}
-            footer={null}
-          >
-            <Form form={form} onFinish={handleSubmit} layout="vertical">
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <Modal
+        title={
+          <Title level={3}>
+            {editingCategory ? "Edit Category" : "Add New Category"}
+          </Title>
+        }
+        visible={isModalVisible}
+        onCancel={handleCancel}
+        footer={null}
+        className="rounded-lg overflow-hidden"
+      >
+        <Form form={form} onFinish={handleSubmit} layout="vertical">
+          {editingCategory && (
+            <>
               <Form.Item name="id" label="Id">
                 <Input disabled={true} />
               </Form.Item>
-              <Form.Item
-                name="name"
-                label="Name"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input the category name!",
-                  },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-              <Form.Item name="description" label="Description">
-                <Input.TextArea />
-              </Form.Item>
-              <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  className="bg-blue-500 hover:bg-blue-600"
-                >
-                  {editingCategory ? "Update" : "Add"}
-                </Button>
-              </Form.Item>
-            </Form>
-          </Modal>
-        </Content>
-      </Layout>
-    </Layout>
+            </>
+          )}
+          <Form.Item
+            name="name"
+            label="Name"
+            rules={[
+              {
+                required: true,
+                message: "Please input the category name!",
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item name="description" label="Description">
+            <Input.TextArea />
+          </Form.Item>
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="bg-blue-500 hover:bg-blue-600 w-full"
+            >
+              {editingCategory ? "Update" : "Add"}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </Content>
   );
 };
 
