@@ -181,6 +181,13 @@ function ManagerLabs() {
 
   const columns = [
     {
+      title: "STT", // Cột Số Thứ Tự
+      key: "index", // Đặt tên cho cột
+      render: (text, record, index) => (
+        <span>{pagination.current * pagination.pageSize + index + 1}</span>
+      ),
+    },
+    {
       title: "ID",
       dataIndex: "id",
       key: "id",
