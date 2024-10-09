@@ -4,6 +4,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   PlusCircleOutlined,
+  UndoOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
 import {
@@ -14,9 +15,9 @@ import {
   Popconfirm,
   Select,
   Modal,
-  Switch,
   Upload,
   Button,
+  notification,
 } from "antd";
 import { useEffect, useState } from "react";
 import { Option } from "antd/es/mentions";
@@ -89,6 +90,11 @@ function ManagerLabs() {
 
       setLoading(false);
     } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi lấy danh sách labs!",
+        duration: 3,
+      });
       console.error("Error fetching labs:", error);
       setLoading(false); // Tắt loading nếu có lỗi
     }
@@ -125,7 +131,7 @@ function ManagerLabs() {
         return; // Ngừng nếu không có file
       }
       formData.append("File", file);
-      const response = await api.post("Labs", formData, {
+      const response = await api.post("labs", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -133,22 +139,44 @@ function ManagerLabs() {
 
       console.log("Created Lab:", response.data);
       fetchLabs(); // Refresh lại danh sách sau khi thêm mới
+      notification.success({
+        message: "Thành công",
+        description: "Lab đã được tạo thành công!",
+        duration: 3,
+      });
     } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi tạo lab!",
+        duration: 3,
+      });
       console.error(
         "Error creating lab:",
         error.response?.data?.details?.errors || error.message
       );
-      alert(
-        "Lỗi: " +
-          JSON.stringify(error.response?.data?.details?.errors || error.message)
-      );
     }
   };
 
-  // Hàm cập nhật Kit với multipart/form-data
+  // Hàm cập nhật Lab với multipart/form-data và cấu trúc request mới
   const updateLab = async (id, updatedLab) => {
     try {
-      const response = await api.put(`Labs/${id}`, updatedLab, {
+      const formData = new FormData();
+
+      formData.append("Id", id); // Gửi ID vào body
+      formData.append("LevelId", updatedLab.levelId);
+      formData.append("KitId", updatedLab.kitId);
+      formData.append("Name", updatedLab.name);
+      formData.append("Price", updatedLab.price || 0);
+      formData.append("MaxSupportTimes", updatedLab.maxSupportTimes);
+      formData.append("Author", updatedLab.author);
+
+      // Nếu có file thì thêm file vào formData
+      if (updatedLab.file) {
+        formData.append("File", updatedLab.file);
+      }
+
+      // Gọi API cập nhật lab
+      const response = await api.put("labs", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -156,28 +184,81 @@ function ManagerLabs() {
 
       console.log("Updated Lab:", response.data);
       fetchLabs(); // Refresh lại danh sách sau khi cập nhật
+      notification.success({
+        message: "Thành công",
+        description: "Lab đã được cập nhật thành công!",
+        duration: 3,
+      });
     } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi cập nhật lab!",
+        duration: 3,
+      });
       console.error(
         `Error updating lab with id ${id}:`,
         error.response?.data || error.message
       );
+      console.log("Chi tiết lỗi từ server:", error.response?.data?.details);
     }
   };
 
   // Hàm xóa Kit dựa trên ID
   const handleDelete = async (id) => {
     try {
-      await api.delete(`Labs/${id}`);
-      fetchLabs(); // Refresh lại danh sách sau khi xóa
+      if (!id) {
+        console.error("Invalid lab ID:", id);
+        return;
+      }
+
+      const response = await api.delete(`labs/${id}`, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        data: { id },
+      });
+      await fetchLabs(); // Refresh lại danh sách sau khi xóa
+      notification.success({
+        message: "Thành công",
+        description: "Lab đã được xóa thành công!",
+        duration: 3,
+      });
     } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi xóa lab!",
+        duration: 3,
+      });
       console.error(`Error deleting lab with id ${id}:`, error);
     }
   };
+  // Hàm khôi phục lab
+  const restoreLab = async (id) => {
+    try {
+      const formData = new FormData();
+      formData.append("id", id);
 
-  useEffect(() => {
-    fetchLabs();
-    fetchLevelsAndKits();
-  }, []);
+      const response = await api.put(`labs/restore/${id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      await fetchLabs();
+      notification.success({
+        message: "Thành công",
+        description: "Lab đã được khôi phục thành công!",
+        duration: 3,
+      });
+    } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi khôi phục lab!",
+        duration: 3,
+      });
+      console.error("Error restoring lab:", error);
+    }
+  };
 
   const columns = [
     {
@@ -238,22 +319,29 @@ function ManagerLabs() {
     {
       title: "Action",
       key: "action",
-      render: (_, record) => {
-        return (
-          <div className="flex gap-5 text-xl">
-            <EditOutlined
-              onClick={() => handleEdit(record)} // Nhấn để chỉnh sửa
-              style={{ cursor: "pointer" }}
-            />
+      render: (_, record) => (
+        <div className="flex gap-5 text-xl">
+          <EditOutlined
+            onClick={() => handleEdit(record)}
+            style={{ cursor: "pointer" }}
+          />
+          {record.status ? (
             <Popconfirm
               title="Bạn có chắc chắn muốn xóa?"
               onConfirm={() => handleDelete(record.id)}
             >
-              <DeleteOutlined style={{ cursor: "pointer", color: "red" }} />
+              <DeleteOutlined className="cursor-pointer text-red-500" />
             </Popconfirm>
-          </div>
-        );
-      },
+          ) : (
+            <Popconfirm
+              title="Bạn có muốn khôi phục lab này?"
+              onConfirm={() => restoreLab(record.id)}
+            >
+              <UndoOutlined className="cursor-pointer text-green-500 hover:text-green-700 !opacity-100" />
+            </Popconfirm>
+          )}
+        </div>
+      ),
     },
   ];
 
@@ -263,7 +351,7 @@ function ManagerLabs() {
       ...record,
       kit: record.kit.id,
       level: record.level.id,
-      "max-support-times": record["max-support-times"],
+      maxSupportTimes: record["max-support-times"],
     });
     setOpen(true);
   };
@@ -285,12 +373,10 @@ function ManagerLabs() {
         levelId: values.level,
         name: values.name,
         price: values.price || 0,
-        "max-support-times": values["max-support-times"],
+        maxSupportTimes: values.maxSupportTimes,
         author: values.author,
-        status: values.status ? true : false,
-        file: file,
+        file: file || editingRecord?.file, // Kiểm tra nếu đã có file trước đó
       };
-      console.log(labData);
 
       console.log("Sending data to API:", labData); // Log FormData before sending
       if (editingRecord) {
@@ -309,6 +395,20 @@ function ManagerLabs() {
     }
   };
 
+  useEffect(() => {
+    const fetchData = async () => {
+      await fetchLabs();
+      notification.success({
+        message: "Thành công",
+        description: "Lấy danh sách labs thành công!",
+        duration: 3,
+      });
+    };
+
+    fetchData();
+    fetchLevelsAndKits();
+  }, []);
+
   return (
     <Form form={form} component={false}>
       {/* Header */}
@@ -324,7 +424,9 @@ function ManagerLabs() {
         dataSource={dataSource}
         columns={columns}
         loading={loading}
-        rowClassName="editable-row"
+        rowClassName={(record) =>
+          record.status ? "" : "bg-gray-200 opacity-50 cursor-not-allowed"
+        }
         rowKey="id"
         pagination={{
           current: pagination.current + 1, // Hiển thị trang hiện tại, cộng 1 vì Ant Design bắt đầu từ 1
@@ -403,7 +505,7 @@ function ManagerLabs() {
           {/* Max Support Times */}
           <Form.Item
             label="Max Support Times"
-            name="max-support-times"
+            name="maxSupportTimes"
             rules={[
               {
                 required: true,
@@ -433,7 +535,7 @@ function ManagerLabs() {
             <Input />
           </Form.Item>
 
-          {/* Status */}
+          {/* Status
           <Form.Item
             label="Status"
             name="status"
@@ -449,7 +551,7 @@ function ManagerLabs() {
               checkedChildren="Available"
               unCheckedChildren="Unavailable"
             />
-          </Form.Item>
+          </Form.Item> */}
 
           <Form.Item
             label="Kit"

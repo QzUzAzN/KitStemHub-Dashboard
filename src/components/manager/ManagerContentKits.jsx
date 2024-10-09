@@ -1,6 +1,7 @@
 import {
   DeleteOutlined,
   EditOutlined,
+  EyeOutlined,
   PlusCircleOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
@@ -13,6 +14,8 @@ import {
   Select,
   Modal,
   Switch,
+  notification,
+  Button,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
@@ -25,15 +28,22 @@ function ManagerContentKits() {
   const [isOpen, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingRecord, setEditingRecord] = useState(null);
-  const [imageFile, setImageFile] = useState(null); // State để lưu file ảnh
-  const [imagePreview, setImagePreview] = useState(null); // State lưu bản xem trước của hình ảnh
+  const [imageFiles, setImageFiles] = useState([]); // Mảng để lưu nhiều file ảnh
+  const [imagePreviews, setImagePreviews] = useState([]); // Mảng để lưu preview của nhiều ảnh
+  const [viewImagesModalVisible, setViewImagesModalVisible] = useState(false); // Modal hiển thị tất cả ảnh
+  const [currentImages, setCurrentImages] = useState([]); // Mảng lưu trữ ảnh hiện tại để xem
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
     total: 0,
   });
+  const [isFirstLoad, setIsFirstLoad] = useState(true); // Biến trạng thái để theo dõi lần tải đầu tiên
 
-  const fetchKits = async (page = 1, pageSize = 20) => {
+  const fetchKits = async (
+    page = 1,
+    pageSize = 20,
+    showNotification = true
+  ) => {
     try {
       const response = await api.get("kits", {
         params: {
@@ -54,9 +64,23 @@ function ManagerContentKits() {
         current: currentPage, // Trang hiện tại
         pageSize: pageSize, // Số mục trên mỗi trang
       });
+      // Chỉ hiển thị thông báo nếu có yêu cầu
+      if (showNotification) {
+        notification.destroy(); // Xóa tất cả thông báo hiện tại
+        notification.success({
+          message: "Thành công",
+          description: "Lấy danh sách kits thành công!",
+          duration: 3,
+        });
+      }
     } catch (error) {
       console.error("Error fetching kits:", error);
       setLoading(false);
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi lấy danh sách kits!",
+        duration: 3,
+      });
     }
   };
 
@@ -80,9 +104,10 @@ function ManagerContentKits() {
       formData.append("Status", newKit.status ? "true" : "false");
 
       // Kiểm tra và thêm file ảnh vào FormData
-      if (imageFile) {
-        console.log("Adding image file to FormData:", imageFile);
-        formData.append("images", imageFile);
+      if (imageFiles && imageFiles.length > 0) {
+        imageFiles.forEach((file) => {
+          formData.append("images", file);
+        });
       }
 
       const response = await api.post("kits", formData, {
@@ -111,7 +136,16 @@ function ManagerContentKits() {
       }));
 
       fetchCategories(); // Làm mới danh sách categories nếu cần
+      form.resetFields();
+      notification.success({
+        message: "Thành công",
+        description: "Kit đã được tạo thành công!",
+      });
     } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi tạo kit!",
+      });
       console.error(
         "Error creating kit:",
         error.response?.data?.details?.errors || error.message
@@ -122,7 +156,7 @@ function ManagerContentKits() {
   const updateKit = async (id, updatedKit) => {
     try {
       const formData = new FormData();
-      formData.append("Id", id); // Đảm bảo gửi trường Id
+      formData.append("Id", id);
       formData.append("CategoryId", updatedKit.categoryId);
       formData.append("Name", updatedKit.name);
       formData.append("Brief", updatedKit.brief);
@@ -130,11 +164,15 @@ function ManagerContentKits() {
       formData.append("PurchaseCost", updatedKit.purchaseCost || 0);
       formData.append("Status", updatedKit.status ? "true" : "false");
 
-      // Kiểm tra và thêm file ảnh từ form
-      if (imageFile) {
-        const imagesArray = [imageFile]; // Đảm bảo rằng "images" là mảng
-        imagesArray.forEach((image) => {
-          formData.append("images", image);
+      // Nếu có ảnh mới thì thêm ảnh mới vào formData
+      if (updatedKit.imageFiles && updatedKit.imageFiles.length > 0) {
+        updatedKit.imageFiles.forEach((file) => {
+          formData.append("images", file);
+        });
+      } else if (updatedKit.existingImages) {
+        // Nếu không có ảnh mới, giữ lại ảnh cũ
+        updatedKit.existingImages.forEach((image) => {
+          formData.append("existingImages[]", image.url);
         });
       }
 
@@ -144,9 +182,17 @@ function ManagerContentKits() {
         },
       });
       console.log("Updated Kit:", response.data);
-      fetchKits();
+      await fetchKits();
       fetchCategories();
+      notification.success({
+        message: "Thành công",
+        description: "Kit đã được cập nhật thành công!",
+      });
     } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi cập nhật kit!",
+      });
       console.error(
         `Error updating kit with id ${id}:`,
         error.response?.data || error.message
@@ -175,9 +221,17 @@ function ManagerContentKits() {
       });
       console.log("Kit deleted:", response.data);
 
-      fetchKits(); // Làm mới danh sách kits sau khi xóa
+      await fetchKits(); // Làm mới danh sách kits sau khi xóa
       fetchCategories(); // Làm mới danh sách categories
+      notification.success({
+        message: "Thành công",
+        description: "Kit đã được xóa thành công!",
+      });
     } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi xóa kit!",
+      });
       console.error(
         `Error deleting kit with id ${id}:`,
         error.response?.data || error.message
@@ -212,9 +266,17 @@ function ManagerContentKits() {
       });
 
       console.log("Kit restored:", response.data);
-      fetchKits();
+      await fetchKits();
+      notification.success({
+        message: "Thành công",
+        description: "Kit đã được khôi phục thành công!",
+      });
     } catch (error) {
       if (error.response) {
+        notification.error({
+          message: "Lỗi",
+          description: `Có lỗi xảy ra khi khôi phục kit với id ${id}!`,
+        });
         console.error(
           `Error restoring kit with id ${id}:`,
           error.response.data || error.message
@@ -226,10 +288,22 @@ function ManagerContentKits() {
     }
   };
 
+  const showImagesModal = (images) => {
+    setCurrentImages(images); // Gán các ảnh vào state để hiển thị trong modal
+    setViewImagesModalVisible(true); // Hiển thị modal
+  };
+
   useEffect(() => {
-    fetchKits();
+    // Kiểm tra xem có phải lần tải đầu tiên hay không
+    if (isFirstLoad) {
+      fetchKits(1, 20, true); // Hiển thị thông báo lần đầu tải dữ liệu
+      setIsFirstLoad(false); // Đánh dấu lần tải đầu tiên đã hoàn thành
+    } else {
+      fetchKits(1, 20, false); // Không hiển thị thông báo trong các lần sau
+    }
+
     fetchCategories();
-  }, []);
+  }, [isFirstLoad]);
 
   const columns = [
     {
@@ -252,22 +326,17 @@ function ManagerContentKits() {
     },
     {
       title: "Image",
-      dataIndex: "kit-images", // Nếu URL ảnh được trả về trong `kit-images`
+      dataIndex: "kit-images",
       key: "image",
-      render: (images) => {
-        // Kiểm tra nếu có ảnh thì hiển thị, nếu không thì hiển thị một thông báo khác
-        if (images && images.length > 0) {
-          return (
-            <img
-              src={images[0].url}
-              alt="Kit Image"
-              style={{ width: "100px", height: "auto" }}
-            />
-          );
-        } else {
-          return <span>No Image</span>;
-        }
-      },
+      render: (images) => (
+        <Button
+          icon={<EyeOutlined />}
+          onClick={() => showImagesModal(images)}
+          disabled={!images || images.length === 0}
+        >
+          View Images
+        </Button>
+      ),
     },
     {
       title: "Purchase Cost",
@@ -334,10 +403,15 @@ function ManagerContentKits() {
 
     setEditingRecord(record);
 
+    if (record["kit-images"] && record["kit-images"].length > 0) {
+      setImagePreviews(record["kit-images"].map((img) => img.url)); // Hiển thị ảnh cũ
+    }
+
     // Thiết lập giá trị cho form, sử dụng category-id thay vì kit-category.id
     form.setFieldsValue({
       ...record,
       categoryId: record["category-id"], // Sử dụng category-id thay vì kit-category
+      purchaseCost: record["purchase-cost"] || 0,
     });
 
     setOpen(true);
@@ -355,6 +429,13 @@ function ManagerContentKits() {
         status: values.status ? true : false,
       };
 
+      // Nếu có ảnh mới thì cập nhật ảnh mới, nếu không giữ nguyên ảnh cũ
+      if (imageFiles.length > 0) {
+        kitData.imageFiles = imageFiles; // Sử dụng ảnh mới nếu có
+      } else if (editingRecord && editingRecord["kit-images"]) {
+        kitData.existingImages = editingRecord["kit-images"]; // Giữ nguyên ảnh cũ nếu không có ảnh mới
+      }
+
       if (editingRecord) {
         await updateKit(editingRecord.id, kitData);
       } else {
@@ -364,7 +445,8 @@ function ManagerContentKits() {
       setOpen(false);
       form.resetFields();
       setEditingRecord(null);
-      setImageFile(null); // Reset file đã chọn sau khi submit
+      setImageFiles([]); // Reset file đã chọn sau khi submit
+      setImagePreviews([]);
     } catch (error) {
       console.error("Failed to save or update kit:", error);
     }
@@ -410,6 +492,25 @@ function ManagerContentKits() {
           Thêm
         </button>
       </div>
+
+      {/* Modal hiển thị danh sách ảnh */}
+      <Modal
+        title="Uploaded Images"
+        visible={viewImagesModalVisible}
+        onCancel={() => setViewImagesModalVisible(false)}
+        footer={null}
+      >
+        <div className="grid grid-cols-3 gap-4">
+          {currentImages.map((image, index) => (
+            <img
+              key={index}
+              src={image.url}
+              alt={`Kit Image ${index + 1}`}
+              className="w-full h-auto"
+            />
+          ))}
+        </div>
+      </Modal>
 
       <Modal
         title={editingRecord ? "Edit Kit" : "Create New Kit"}
@@ -480,32 +581,59 @@ function ManagerContentKits() {
             </Select>
           </Form.Item>
 
-          <Form.Item label="Upload Image" name="image">
+          <Form.Item label="Upload Images" name="images">
             <Input
               type="file"
+              multiple
               onChange={(e) => {
-                const files = e.target.files;
-                if (files && files.length > 0) {
-                  setImageFile(files[0]); // Lưu file vào state
+                const files = Array.from(e.target.files); // Chuyển thành mảng để xử lý nhiều file
+                setImageFiles(files); // Lưu tất cả các file vào state
+                const filePreviews = files.map((file) => {
                   const reader = new FileReader();
-                  reader.onload = (event) => {
-                    setImagePreview(event.target.result); // Lưu URL của ảnh để hiển thị
-                  };
-                  reader.readAsDataURL(files[0]); // Đọc file dưới dạng URL
-                } else {
-                  setImageFile(null);
-                  setImagePreview(null); // Xóa bản xem trước nếu không có ảnh
-                  console.log("No file selected");
-                }
+                  return new Promise((resolve) => {
+                    reader.onload = (event) => resolve(event.target.result);
+                    reader.readAsDataURL(file);
+                  });
+                });
+
+                // Chờ tất cả các ảnh được load
+                Promise.all(filePreviews).then((previews) => {
+                  setImagePreviews(previews); // Cập nhật state để hiển thị preview của tất cả ảnh
+                });
               }}
             />
-            {imagePreview && (
-              <img
-                src={imagePreview}
-                alt="Image Preview"
-                style={{ width: "100px", height: "auto", marginTop: "10px" }}
-              />
-            )}
+            {/* Hiển thị preview của tất cả ảnh đã chọn */}
+            <div className="grid grid-cols-3 gap-4 mt-2">
+              {imagePreviews.map((preview, index) => (
+                <img
+                  key={index}
+                  src={preview}
+                  alt={`Preview ${index + 1}`}
+                  style={{ width: "100px", height: "auto", marginTop: "10px" }}
+                />
+              ))}
+            </div>
+
+            {/* Hiển thị ảnh cũ nếu có và không có ảnh mới được chọn */}
+            {!imageFiles.length &&
+              editingRecord &&
+              editingRecord["kit-images"] &&
+              editingRecord["kit-images"].length > 0 && (
+                <div className="grid grid-cols-3 gap-4 mt-2">
+                  {editingRecord["kit-images"].map((image, index) => (
+                    <img
+                      key={index}
+                      src={image.url}
+                      alt={`Existing Image ${index + 1}`}
+                      style={{
+                        width: "100px",
+                        height: "auto",
+                        marginTop: "10px",
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
           </Form.Item>
         </Form>
       </Modal>
