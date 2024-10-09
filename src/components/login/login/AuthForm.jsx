@@ -1,12 +1,11 @@
 import { Button, Form, Input } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
-
 import api from "../../../config/axios";
-import styles from "./AuthForm.module.css";
 import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Import the CSS
+import "react-toastify/dist/ReactToastify.css";
 import { jwtDecode } from "jwt-decode";
+import { UserOutlined, LockOutlined } from "@ant-design/icons";
 
 function LoginInput() {
   const navigate = useNavigate();
@@ -14,30 +13,25 @@ function LoginInput() {
 
   const handleOnFinish = async (values) => {
     try {
-      const response = await api.post("Users/Login", values);
+      const response = await api.post("users/login", values);
+      // console.log(response);
       // const { accessToken, refreshToken } = response.data.details;
       // localStorage.setItem("token", accessToken);
-      // localStorage.setItem("refreshToken", refreshToken);
-      const { accessToken } = response.data.details;
+
+      const { accessToken, refreshToken } = response.data.details;
+      localStorage.setItem("refreshToken", refreshToken);
 
       const decoded = jwtDecode(accessToken);
       const role =
         decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
 
       if (role === "customer") {
-        toast.error("Customers are not allowed to access this area!", {
-          position: "top-center",
-          autoClose: 3000,
-        });
-        return; // Ngăn chặn đăng nhập và điều hướng
+        toast.error("Customers are not allowed to access this area!");
+        return;
       }
 
       login(accessToken);
-
-      toast.success("User logged in Successfully!", {
-        position: "top-center",
-        autoClose: 1500,
-      });
+      toast.success("User logged in Successfully!");
 
       // Điều hướng dựa trên vai trò
       setTimeout(() => {
@@ -53,69 +47,86 @@ function LoginInput() {
             break;
         }
       }, 1500);
-    } catch (err) {
-      toast.error("Login failed. Please check your credentials.", {
-        position: "top-center",
-        autoClose: 3000,
-      });
+    } catch (error) {
+      toast.error("Login failed. Please check your credentials.");
     }
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.formsContainer}>
-        <div className={styles.signinSignup}>
-          <Form
-            labelCol={{ span: 24 }}
-            wrapperCol={{ span: 24 }}
-            style={{ maxWidth: 600 }}
-            className={styles.signInForm}
-            initialValues={{ remember: true }}
-            onFinish={handleOnFinish}
-            autoComplete="true"
+    <div
+      className="relative flex items-center justify-center min-h-screen bg-cover bg-center"
+      style={{ backgroundImage: `url('/Ustm.gif')` }}
+    >
+      {/* Overlay để làm mờ ảnh nền */}
+      <div className="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
+
+      <div className="relative z-10 w-full max-w-md p-8 space-y-8 bg-white bg-opacity-30 backdrop-blur-sm rounded-lg shadow-lg">
+        <h2 className="text-3xl font-extrabold text-center text-white">
+          Hello, welcome!
+        </h2>
+        <Form
+          name="login"
+          initialValues={{ remember: true }}
+          onFinish={handleOnFinish}
+          layout="vertical"
+          size="large"
+        >
+          <Form.Item
+            name="email"
+            rules={[
+              {
+                required: true,
+                message: "Please input your email!",
+              },
+              {
+                type: "email",
+                message: "Please enter a valid email address!",
+              },
+            ]}
           >
-            <h2 className={styles.title}>Sign in</h2>
-            <Form.Item
-              label="Email"
-              name="email"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your email!",
-                },
-              ]}
-            >
-              <Input
-                placeholder="Email"
-                prefix={<i className="fas fa-user"></i>}
-              />
-            </Form.Item>
-            <Form.Item
-              name="password"
-              label="Password"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input your password!",
-                },
-              ]}
-            >
-              <Input.Password
-                placeholder="Password"
-                prefix={<i className="fas fa-lock"></i>}
-              />
-            </Form.Item>
+            <Input
+              prefix={<UserOutlined className="text-gray-400" />}
+              placeholder="Email"
+              className="rounded-md"
+            />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            rules={[
+              {
+                required: true,
+                message: "Please input your password!",
+              },
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined className="text-gray-400" />}
+              placeholder="Password"
+              className="rounded-md"
+            />
+          </Form.Item>
+          <Form.Item>
             <Button
               type="primary"
               htmlType="submit"
-              className={`${styles.btn} ${styles.solid}`}
+              className="w-full bg-blue-500 hover:bg-blue-600 rounded-md transition duration-300 ease-in-out transform hover:scale-105"
             >
               Login
             </Button>
-          </Form>
-        </div>
+          </Form.Item>
+        </Form>
       </div>
-      <ToastContainer />
+      <ToastContainer
+        position="top-center"
+        autoClose={1500}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 }
