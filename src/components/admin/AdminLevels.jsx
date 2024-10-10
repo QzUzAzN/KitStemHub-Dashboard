@@ -1,55 +1,55 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import api from "../../config/axios";
+import { toast } from "react-toastify";
 import {
   Button,
-  Layout,
-  Table,
-  Modal,
   Form,
   Input,
-  message,
-  Spin,
+  Layout,
+  Modal,
   Space,
+  Spin,
+  Table,
   Typography,
 } from "antd";
 import {
-  SearchOutlined,
-  PlusOutlined,
-  EditOutlined,
   DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  SearchOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
-import { motion, AnimatePresence } from "framer-motion";
-import api from "../../config/axios";
 
+import { motion, AnimatePresence } from "framer-motion";
 const { Content } = Layout;
 const { Search } = Input;
 const { Title } = Typography;
 
-const AdminTypes = () => {
-  const [types, setTypes] = useState([]);
+function AdminLevels() {
+  const [levels, setLevels] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
-  const [editingType, setEditingType] = useState(null);
+  const [editingLevel, setEditingLevel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchResult, setSearchResult] = useState(null);
-
   useEffect(() => {
-    fetchTypes();
+    fetchLevels();
   }, []);
 
-  const fetchTypes = async () => {
-    setLoading(true);
+  const fetchLevels = async () => {
+    // setLoading(true);
     try {
-      const response = await api.get("types");
+      const response = await api.get("levels");
       if (response.data.status === "success") {
-        setTypes(response.data.details.data["component-types"]);
+        setLevels(response.data.details.data.levels);
+        // console.log(response.data);
       } else {
-        setTypes([]);
+        setLevels([]);
       }
     } catch (error) {
-      // console.error("Error fetching types:", error);
-      message.error("Failed to fetch types");
-      setTypes([]);
+      console.log(error);
+      toast.error("Failed to fetch levels");
+      setLevels([]);
     } finally {
       setLoading(false);
     }
@@ -70,6 +70,7 @@ const AdminTypes = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
+      // tùy chỉnh cách hiển thị giá trị của cột "status"
       render: (status) => (
         <span className={status ? "text-green-600" : "text-red-600"}>
           {status ? "Available" : "Unavailable"}
@@ -93,11 +94,7 @@ const AdminTypes = () => {
               <DeleteOutlined />
             </Button>
           ) : (
-            <Button
-              onClick={() => handleRestore(record)}
-              type="link"
-              // className="text-green-600"
-            >
+            <Button onClick={() => handleRestore(record)} type="link">
               <UndoOutlined />
             </Button>
           )}
@@ -105,10 +102,9 @@ const AdminTypes = () => {
       ),
     },
   ];
-
   const showModal = () => {
     setIsModalVisible(true);
-    setEditingType(null);
+    setEditingLevel(null);
     form.resetFields();
   };
 
@@ -117,87 +113,86 @@ const AdminTypes = () => {
     form.resetFields();
   };
 
-  const handleEdit = (type) => {
-    setEditingType(type);
-    form.setFieldsValue(type);
+  const handleEdit = (level) => {
+    setEditingLevel(level);
+    form.setFieldsValue(level);
     setIsModalVisible(true);
   };
-
-  const handleToggleStatus = async (type) => {
+  //level lấy data từ record
+  const handleToggleStatus = async (level) => {
     try {
-      await api.delete(`types/${type.id}`);
-      message.success(`Type deactivated successfully`);
-      await fetchTypes();
-      if (searchResult && searchResult.id === type.id) {
-        const updatedType = await api.get(`types/${type.id}`);
-        setSearchResult(updatedType.data.details.data.type);
+      await api.delete(`levels/${level.id}`);
+      toast.success(`Level deactivated successfully!`);
+      await fetchLevels();
+      if (searchResult && searchResult.id === level.id) {
+        const updateLevel = await api.get(`levels/${level.id}`);
+        setSearchResult(updateLevel.data.details.data.level);
       }
     } catch (error) {
-      // console.error("Error deactivating type:", error);
-      message.error("Failed to deactivate type");
+      console.error("Failed to deactivate level:", error);
+      toast.error("Failed to deactivate level");
     }
   };
-
-  const handleRestore = async (type) => {
+  const handleRestore = async (level) => {
     try {
-      await api.put(`types/restore/${type.id}`);
-      message.success(`Type activated successfully`);
-      await fetchTypes();
-      if (searchResult && searchResult.id === type.id) {
-        const updatedType = await api.get(`types/${type.id}`);
-        setSearchResult(updatedType.data.details.data.type);
+      await api.put(`levels/restore/${level.id}`);
+      toast.success(`Level activated successfully!`);
+      await fetchLevels();
+      if (searchResult && searchResult.id === level.id) {
+        const updateLevel = await api.get(`levels/${level.id}`);
+        setSearchResult(updateLevel.data.details.data.level);
       }
     } catch (error) {
-      message.error("Failed to activate type");
+      console.error("Failed to activate level:", error);
+      toast.error("Failed to activate level");
     }
   };
 
   const handleSubmit = async (values) => {
     try {
-      if (editingType) {
-        await api.put(`types`, values);
-        message.success("Type updated successfully");
+      if (editingLevel) {
+        await api.put(`levels`, values);
+        toast.success("Level updated successfully");
       } else {
-        await api.post("types", values);
-        message.success("Type added successfully");
+        await api.post("levels", values);
+        toast.success("Level added successfully");
       }
       setIsModalVisible(false);
       form.resetFields();
-      await fetchTypes();
+      await fetchLevels();
       if (searchResult && searchResult.id === values.id) {
-        const updatedType = await api.get(`types/${values.id}`);
-        setSearchResult(updatedType.data.details.data.type);
+        const updateLevel = await api.get(`levels/${values.id}`);
+        setSearchResult(updateLevel.data.details.data.level);
       }
     } catch (error) {
-      // console.error("Error submitting type:", error);
-      message.error("Failed to submit type");
+      console.error("Failed to submit level:", error);
+      toast.error("Failed to submit level!");
     }
   };
 
   const handleSearch = async (id) => {
     if (!id) {
-      message.error("Please enter a type ID");
+      toast.error("Please enter a level ID");
       return;
     } else if (isNaN(id)) {
-      message.error("ID is a number!");
+      toast.error("ID is not a number!");
       setSearchResult(null);
       return;
     }
     setLoading(true);
     try {
-      const response = await api.get(`types/${id}`);
+      const response = await api.get(`levels/${id}`);
       if (
         response.data.status === "success" &&
-        response.data.details.data.type
+        response.data.details.data.level
       ) {
-        setSearchResult(response.data.details.data.type);
-        message.success("Type found");
+        setSearchResult(response.data.details.data.level);
+        toast.success("Level found");
       } else {
-        throw new Error("Type not found");
+        throw new Error("Level not found");
       }
     } catch (error) {
-      // console.log(error);
-      message.error(error.response.data.details?.errors.notFound);
+      toast.error(error.response.data.details?.errors.notFound);
       setSearchResult(null);
     } finally {
       setLoading(false);
@@ -213,11 +208,11 @@ const AdminTypes = () => {
         className="flex justify-between items-center mb-6"
       >
         <Title level={2} className="m-0">
-          Types Management
+          Levels Management
         </Title>
         <Space size="middle">
           <Search
-            placeholder="Enter type ID"
+            placeholder="Enter level ID"
             onSearch={handleSearch}
             style={{ width: 250 }}
             className="shadow-sm"
@@ -236,7 +231,7 @@ const AdminTypes = () => {
             onClick={showModal}
             className="bg-green-500 border-green-500 hover:bg-green-600 hover:border-green-600 shadow-sm"
           >
-            Add New Type
+            Add New Level
           </Button>
         </Space>
       </motion.div>
@@ -280,14 +275,14 @@ const AdminTypes = () => {
           </motion.div>
         ) : (
           <motion.div
-            key="typeTable"
+            key="levelTable"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <Table
               columns={columns}
-              dataSource={types}
+              dataSource={levels}
               rowKey="id"
               className="shadow-sm"
               pagination={{
@@ -301,7 +296,9 @@ const AdminTypes = () => {
       </AnimatePresence>
       <Modal
         title={
-          <Title level={3}>{editingType ? "Edit Type" : "Add New Type"}</Title>
+          <Title level={3}>
+            {editingLevel ? "Edit Level" : "Add New Level"}
+          </Title>
         }
         visible={isModalVisible}
         onCancel={handleCancel}
@@ -309,7 +306,7 @@ const AdminTypes = () => {
         className="rounded-lg overflow-hidden"
       >
         <Form form={form} onFinish={handleSubmit} layout="vertical">
-          {editingType && (
+          {editingLevel && (
             <Form.Item name="id" label="Id">
               <Input disabled={true} />
             </Form.Item>
@@ -333,13 +330,13 @@ const AdminTypes = () => {
               htmlType="submit"
               className="bg-blue-500 hover:bg-blue-600 w-full"
             >
-              {editingType ? "Update" : "Add"}
+              {editingLevel ? "Update" : "Add"}
             </Button>
           </Form.Item>
         </Form>
       </Modal>
     </Content>
   );
-};
+}
 
-export default AdminTypes;
+export default AdminLevels;

@@ -18,7 +18,8 @@ function LoginInput() {
       // const { accessToken, refreshToken } = response.data.details;
       // localStorage.setItem("token", accessToken);
 
-      const { accessToken, refreshToken } = response.data.details;
+      const accessToken = response.data.details["access-token"];
+      const refreshToken = response.data.details["refresh-token"];
       localStorage.setItem("refreshToken", refreshToken);
 
       const decoded = jwtDecode(accessToken);

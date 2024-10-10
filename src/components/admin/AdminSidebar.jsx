@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Layout, Menu } from "antd";
-import { AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
+import {
+  AppstoreOutlined,
+  BarsOutlined,
+  FolderOutlined,
+} from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { NavLink } from "react-router-dom";
 
@@ -48,6 +52,14 @@ const AdminSidebar = () => {
             className={({ isActive }) => (isActive ? "font-bold" : "")}
           >
             Types
+          </NavLink>
+        </Menu.Item>
+        <Menu.Item key="3" icon={<FolderOutlined />}>
+          <NavLink
+            to="/admin/levels"
+            className={({ isActive }) => (isActive ? "font-bold" : "")}
+          >
+            Levels
           </NavLink>
         </Menu.Item>
       </Menu>
