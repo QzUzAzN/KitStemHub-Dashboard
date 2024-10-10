@@ -11,6 +11,7 @@ import ManagerContentLabs from "./components/manager/ManagerContentLabs";
 import ManagerContentPackage from "./components/manager/ManagerContentPackage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AdminLevels from "./components/admin/AdminLevels";
 
 function App() {
   // const router = createBrowserRouter([
@@ -60,6 +61,7 @@ function App() {
             <Route index element={<AdminCategories />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="types" element={<AdminTypes />} />
+            <Route path="levels" element={<AdminLevels />} />
           </Route>
 
           <Route
@@ -77,7 +79,18 @@ function App() {
           </Route>
           <Route path="/" element={<LoginRegisterPage />} />
         </Routes>
-        <ToastContainer />
+        <ToastContainer
+          position="top-right"
+          autoClose={1500}
+          hideProgressBar={true}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
       </Router>
     </AuthProvider>
   );
