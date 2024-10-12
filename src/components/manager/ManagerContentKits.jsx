@@ -13,13 +13,14 @@ import {
   Popconfirm,
   Select,
   Modal,
-  Switch,
   notification,
   Button,
+  Spin,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
 import { Option } from "antd/es/mentions";
+import Search from "antd/es/input/Search";
 
 function ManagerContentKits() {
   const [form] = Form.useForm();
@@ -38,35 +39,65 @@ function ManagerContentKits() {
     total: 0,
   });
   const [isFirstLoad, setIsFirstLoad] = useState(true); // Biến trạng thái để theo dõi lần tải đầu tiên
-
+  const [isSubmitting, setIsSubmitting] = useState(false); // Trạng thái loading cho create và update
+  const [searchTerm, setSearchTerm] = useState(""); // Thêm trạng thái tìm kiếm
+  const [filteredDataSource, setFilteredDataSource] = useState([]); // Thêm trạng thái cho dữ liệu lọc
   const fetchKits = async (
     page = 1,
     pageSize = 20,
-    showNotification = true
+    showNotification = true,
+    search = ""
   ) => {
     try {
       const response = await api.get("kits", {
         params: {
           page: page - 1,
           pageSize: pageSize,
+          search: search,
         },
       });
 
-      const kitsData = response.data.details.data.kits;
-      const totalPages = response.data.details.data["total-pages"];
-      const currentPage = response.data.details.data["current-page"];
-      setDataSource(kitsData);
+      // Ghi log toàn bộ phản hồi từ API để kiểm tra
+      console.log("API Response:", response.data);
+
+      // Kiểm tra xem phản hồi có tồn tại các trường cần thiết
+      if (
+        response.data &&
+        response.data.details &&
+        response.data.details.data &&
+        response.data.details.data.kits
+      ) {
+        const kitsData = response.data.details.data.kits;
+        const totalPages = response.data.details.data["total-pages"] || 0;
+        const currentPage = response.data.details.data["current-page"] || 1;
+
+        // Ghi log dữ liệu nhận được
+        console.log("Kits data:", kitsData);
+
+        // Cập nhật dữ liệu vào state
+        setDataSource(kitsData);
+        setFilteredDataSource(kitsData); // Cập nhật dữ liệu lọc
+        setPagination({
+          total: totalPages * pageSize,
+          current: currentPage,
+          pageSize: pageSize,
+        });
+      } else {
+        // Nếu không có dữ liệu mong đợi
+        setDataSource([]);
+        setFilteredDataSource([]); // Cập nhật dữ liệu lọc
+        setPagination({
+          total: 0,
+          current: 1,
+          pageSize: pageSize,
+        });
+        console.error("No kits data found in response:", response.data);
+      }
+
       setLoading(false);
 
-      // Cập nhật phân trang
-      setPagination({
-        total: totalPages * pageSize, // Tổng số mục dữ liệu dựa trên tổng số trang và số mục mỗi trang
-        current: currentPage, // Trang hiện tại
-        pageSize: pageSize, // Số mục trên mỗi trang
-      });
-      // Chỉ hiển thị thông báo nếu có yêu cầu
       if (showNotification) {
-        notification.destroy(); // Xóa tất cả thông báo hiện tại
+        notification.destroy();
         notification.success({
           message: "Thành công",
           description: "Lấy danh sách kits thành công!",
@@ -95,18 +126,18 @@ function ManagerContentKits() {
 
   const createKit = async (newKit) => {
     try {
+      setIsSubmitting(true); // Bắt đầu loading
       const formData = new FormData();
       formData.append("CategoryId", newKit.categoryId);
       formData.append("Name", newKit.name);
       formData.append("Brief", newKit.brief);
-      formData.append("Description", newKit.description || "");
+      formData.append("Description", newKit.description || ""); // Thêm Description
       formData.append("PurchaseCost", newKit.purchaseCost || 0);
-      formData.append("Status", newKit.status ? "true" : "false");
 
-      // Kiểm tra và thêm file ảnh vào FormData
+      // Thêm file ảnh vào FormData
       if (imageFiles && imageFiles.length > 0) {
         imageFiles.forEach((file) => {
-          formData.append("images", file);
+          formData.append("KitImagesList", file); // Sử dụng KitImagesList để thêm ảnh
         });
       }
 
@@ -118,25 +149,13 @@ function ManagerContentKits() {
 
       console.log("Created Kit:", response.data);
 
-      // Tính toán tổng số sản phẩm sau khi tạo mới
-      const totalItems = pagination.total + 1;
-      const totalPages = Math.ceil(totalItems / pagination.pageSize);
+      // Gọi lại fetchKits để làm mới danh sách sau khi thêm mới
+      await fetchKits(pagination.current, pagination.pageSize);
 
-      // Kiểm tra xem sản phẩm mới có nằm trên trang hiện tại hay không
-      let newPage = pagination.current;
-      if (newPage < totalPages) {
-        newPage = totalPages; // Điều hướng tới trang cuối nếu sản phẩm mới được tạo vượt quá số trang hiện tại
-      }
-
-      // Fetch lại dữ liệu với trang mới
-      fetchKits(newPage, pagination.pageSize);
-      setPagination((prev) => ({
-        ...prev,
-        total: totalItems, // Cập nhật tổng số mục dữ liệu sau khi thêm mới
-      }));
-
-      fetchCategories(); // Làm mới danh sách categories nếu cần
       form.resetFields();
+      setImageFiles([]);
+      setImagePreviews([]);
+
       notification.success({
         message: "Thành công",
         description: "Kit đã được tạo thành công!",
@@ -150,24 +169,26 @@ function ManagerContentKits() {
         "Error creating kit:",
         error.response?.data?.details?.errors || error.message
       );
+    } finally {
+      setIsSubmitting(false); // Kết thúc loading
     }
   };
 
   const updateKit = async (id, updatedKit) => {
     try {
+      setIsSubmitting(true); // Bắt đầu loading
       const formData = new FormData();
       formData.append("Id", id);
       formData.append("CategoryId", updatedKit.categoryId);
       formData.append("Name", updatedKit.name);
       formData.append("Brief", updatedKit.brief);
-      formData.append("Description", updatedKit.description || "");
+      formData.append("Description", updatedKit.description || ""); // Thêm Description
       formData.append("PurchaseCost", updatedKit.purchaseCost || 0);
-      formData.append("Status", updatedKit.status ? "true" : "false");
 
       // Nếu có ảnh mới thì thêm ảnh mới vào formData
       if (updatedKit.imageFiles && updatedKit.imageFiles.length > 0) {
         updatedKit.imageFiles.forEach((file) => {
-          formData.append("images", file);
+          formData.append("KitImagesList", file);
         });
       } else if (updatedKit.existingImages) {
         // Nếu không có ảnh mới, giữ lại ảnh cũ
@@ -197,11 +218,14 @@ function ManagerContentKits() {
         `Error updating kit with id ${id}:`,
         error.response?.data || error.message
       );
+    } finally {
+      setIsSubmitting(false); // Kết thúc loading
     }
   };
 
   const deleteKit = async (id) => {
     try {
+      setIsSubmitting(true); // Bắt đầu loading
       if (!id) {
         console.error("ID không hợp lệ khi xóa kit:", id);
         return;
@@ -236,35 +260,19 @@ function ManagerContentKits() {
         `Error deleting kit with id ${id}:`,
         error.response?.data || error.message
       );
+    } finally {
+      setIsSubmitting(false); // Kết thúc loading
     }
   };
 
   const restoreKit = async (id) => {
     try {
-      // Gọi API để lấy thông tin kit trước khi khôi phục
-      const kitResponse = await api.get(`kits/${id}`);
-      console.log(`Kit status before restore: ${kitResponse.data.status}`);
-
-      if (kitResponse.data.status === "true") {
-        console.log(
-          `Kit với id: ${id} hiện đang Available, không cần khôi phục.`
-        );
-        return;
-      }
-
-      console.log(`Attempting to restore kit with id: ${id}`);
-
-      // Sử dụng FormData để truyền ID như yêu cầu
-      const formData = new FormData();
-      formData.append("id", id);
-
-      const response = await api.put(`kits/restore/${id}`, formData, {
+      setIsSubmitting(true); // Bắt đầu loading
+      const response = await api.put(`kits/restore/${id}`, null, {
         headers: {
-          "Content-Type": "multipart/form-data", // Đảm bảo đúng Content-Type
           Accept: "*/*",
         },
       });
-
       console.log("Kit restored:", response.data);
       await fetchKits();
       notification.success({
@@ -273,18 +281,25 @@ function ManagerContentKits() {
       });
     } catch (error) {
       if (error.response) {
-        notification.error({
-          message: "Lỗi",
-          description: `Có lỗi xảy ra khi khôi phục kit với id ${id}!`,
-        });
         console.error(
           `Error restoring kit with id ${id}:`,
-          error.response.data || error.message
+          error.response.data
         );
-        console.log("Full error response:", error.response);
+        notification.error({
+          message: "Lỗi",
+          description: `Có lỗi xảy ra khi khôi phục kit với id ${id}: ${
+            error.response.data.details?.message || "Unknown error"
+          }`,
+        });
       } else {
-        console.error(`Error restoring kit với id ${id}:`, error.message);
+        console.error(`Error restoring kit with id ${id}:`, error.message);
+        notification.error({
+          message: "Lỗi",
+          description: `Có lỗi xảy ra khi khôi phục kit với id ${id}: ${error.message}`,
+        });
       }
+    } finally {
+      setIsSubmitting(false); // Kết thúc loading
     }
   };
 
@@ -293,17 +308,28 @@ function ManagerContentKits() {
     setViewImagesModalVisible(true); // Hiển thị modal
   };
 
-  useEffect(() => {
-    // Kiểm tra xem có phải lần tải đầu tiên hay không
-    if (isFirstLoad) {
-      fetchKits(1, 20, true); // Hiển thị thông báo lần đầu tải dữ liệu
-      setIsFirstLoad(false); // Đánh dấu lần tải đầu tiên đã hoàn thành
-    } else {
-      fetchKits(1, 20, false); // Không hiển thị thông báo trong các lần sau
-    }
+  // Hàm lọc dữ liệu trực tiếp trên client
+  const handleSearchChange = (e) => {
+    const value = e.target.value.toLowerCase();
+    setSearchTerm(value);
 
-    fetchCategories();
-  }, [isFirstLoad]);
+    if (value.trim() === "") {
+      setFilteredDataSource(dataSource); // Hiển thị lại toàn bộ dữ liệu nếu không có từ khóa
+    } else {
+      const filteredData = dataSource.filter(
+        (kit) => kit.name.toLowerCase().includes(value) // Lọc các kit có tên chứa từ khóa
+      );
+      setFilteredDataSource(filteredData); // Cập nhật danh sách lọc
+    }
+  };
+
+  useEffect(() => {
+    if (isFirstLoad) {
+      fetchKits(); // Tải dữ liệu lần đầu
+      setIsFirstLoad(false); // Đánh dấu rằng đã tải lần đầu
+    }
+    fetchCategories(); // Tải dữ liệu categories
+  }, [isFirstLoad]); // Không cần phải phụ thuộc vào searchTerm
 
   const columns = [
     {
@@ -323,6 +349,15 @@ function ManagerContentKits() {
       dataIndex: "brief",
       key: "brief",
       width: 450,
+    },
+    {
+      title: "Description", // Thêm cột Description
+      dataIndex: "description",
+      key: "description",
+      width: 500, // Đặt chiều rộng cho cột
+      render: (description) => (
+        <span>{description ? description : "No description available"}</span>
+      ),
     },
     {
       title: "Image",
@@ -367,7 +402,7 @@ function ManagerContentKits() {
         <div className="flex gap-5 text-xl">
           <EditOutlined
             onClick={() => handleEdit(record)}
-            style={{ cursor: "pointer" }}
+            className="cursor-pointer"
           />
           {record.status ? (
             <Popconfirm
@@ -387,7 +422,7 @@ function ManagerContentKits() {
                 restoreKit(record.id);
               }}
             >
-              <UndoOutlined className="cursor-pointer text-green-500" />
+              <UndoOutlined className="restore-button cursor-pointer text-green-400" />
             </Popconfirm>
           )}
         </div>
@@ -403,6 +438,7 @@ function ManagerContentKits() {
 
     setEditingRecord(record);
 
+    // Nếu có ảnh hiện tại, hiển thị ảnh cũ
     if (record["kit-images"] && record["kit-images"].length > 0) {
       setImagePreviews(record["kit-images"].map((img) => img.url)); // Hiển thị ảnh cũ
     }
@@ -414,7 +450,7 @@ function ManagerContentKits() {
       purchaseCost: record["purchase-cost"] || 0,
     });
 
-    setOpen(true);
+    setOpen(true); // Mở modal form
   };
 
   const handleSaveOrUpdate = async (values) => {
@@ -458,11 +494,21 @@ function ManagerContentKits() {
         <div className="text-2xl font-semibold text-gray-700">
           Manager Panel
         </div>
+
+        {/* Search Input */}
+        <div className="flex items-center">
+          <Search
+            placeholder="Search Kits"
+            onChange={handleSearchChange} // Xử lý khi thay đổi tìm kiếm
+            enterButton
+            className="search-product"
+          />
+        </div>
       </div>
 
       <Table
         bordered
-        dataSource={dataSource}
+        dataSource={filteredDataSource}
         columns={columns}
         loading={loading}
         rowClassName={(record) =>
@@ -518,124 +564,121 @@ function ManagerContentKits() {
         onCancel={() => setOpen(false)}
         onOk={() => form.submit()}
       >
-        <Form form={form} labelCol={{ span: 24 }} onFinish={handleSaveOrUpdate}>
-          <Form.Item
-            label="Name"
-            name="name"
-            rules={[{ required: true, message: "Please input the name!" }]}
+        <Spin spinning={isSubmitting}>
+          {/* Thêm Spin vào modal */}
+          <Form
+            form={form}
+            labelCol={{ span: 24 }}
+            onFinish={handleSaveOrUpdate}
           >
-            <Input />
-          </Form.Item>
+            <Form.Item
+              label="Name"
+              name="name"
+              rules={[{ required: true, message: "Please input the name!" }]}
+            >
+              <Input />
+            </Form.Item>
 
-          <Form.Item
-            label="Brief"
-            name="brief"
-            rules={[{ required: true, message: "Please input the brief!" }]}
-          >
-            <Input />
-          </Form.Item>
+            <Form.Item
+              label="Brief"
+              name="brief"
+              rules={[{ required: true, message: "Please input the brief!" }]}
+            >
+              <Input />
+            </Form.Item>
 
-          <Form.Item
-            label="Description"
-            name="description"
-            rules={[
-              { required: true, message: "Please input the description!" },
-            ]}
-          >
-            <Input.TextArea />
-          </Form.Item>
+            <Form.Item
+              label="Description"
+              name="description"
+              rules={[
+                { required: true, message: "Please input the description!" },
+              ]}
+            >
+              <Input.TextArea rows={3} />
+            </Form.Item>
 
-          <Form.Item
-            label="Purchase Cost"
-            name="purchaseCost"
-            rules={[
-              { required: true, message: "Please input the purchase cost!" },
-              {
-                type: "number",
-                min: 0,
-                message: "Cost must be a positive number",
-              },
-            ]}
-          >
-            <InputNumber min={0} />
-          </Form.Item>
+            <Form.Item
+              label="Purchase Cost"
+              name="purchaseCost"
+              rules={[
+                { required: true, message: "Please input the purchase cost!" },
+                {
+                  type: "number",
+                  min: 0,
+                  message: "Cost must be a positive number",
+                },
+              ]}
+            >
+              <InputNumber min={0} />
+            </Form.Item>
 
-          <Form.Item label="Status" name="status" valuePropName="checked">
-            <Switch
-              checkedChildren="Available"
-              unCheckedChildren="Unavailable"
-            />
-          </Form.Item>
+            <Form.Item label="Category" name="categoryId">
+              <Select>
+                {categories.map((category) => (
+                  <Option key={category.id} value={category.id}>
+                    {category.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
 
-          <Form.Item
-            label="Category"
-            name="categoryId"
-            rules={[{ required: true, message: "Please select a category!" }]}
-          >
-            <Select>
-              {categories.map((category) => (
-                <Option key={category.id} value={category.id}>
-                  {category.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="Upload Images" name="images">
-            <Input
-              type="file"
-              multiple
-              onChange={(e) => {
-                const files = Array.from(e.target.files); // Chuyển thành mảng để xử lý nhiều file
-                setImageFiles(files); // Lưu tất cả các file vào state
-                const filePreviews = files.map((file) => {
-                  const reader = new FileReader();
-                  return new Promise((resolve) => {
-                    reader.onload = (event) => resolve(event.target.result);
-                    reader.readAsDataURL(file);
+            <Form.Item label="Upload Images" name="images">
+              <Input
+                type="file"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files);
+                  setImageFiles(files);
+                  const filePreviews = files.map((file) => {
+                    const reader = new FileReader();
+                    return new Promise((resolve) => {
+                      reader.onload = (event) => resolve(event.target.result);
+                      reader.readAsDataURL(file);
+                    });
                   });
-                });
 
-                // Chờ tất cả các ảnh được load
-                Promise.all(filePreviews).then((previews) => {
-                  setImagePreviews(previews); // Cập nhật state để hiển thị preview của tất cả ảnh
-                });
-              }}
-            />
-            {/* Hiển thị preview của tất cả ảnh đã chọn */}
-            <div className="grid grid-cols-3 gap-4 mt-2">
-              {imagePreviews.map((preview, index) => (
-                <img
-                  key={index}
-                  src={preview}
-                  alt={`Preview ${index + 1}`}
-                  style={{ width: "100px", height: "auto", marginTop: "10px" }}
-                />
-              ))}
-            </div>
-
-            {/* Hiển thị ảnh cũ nếu có và không có ảnh mới được chọn */}
-            {!imageFiles.length &&
-              editingRecord &&
-              editingRecord["kit-images"] &&
-              editingRecord["kit-images"].length > 0 && (
-                <div className="grid grid-cols-3 gap-4 mt-2">
-                  {editingRecord["kit-images"].map((image, index) => (
-                    <img
-                      key={index}
-                      src={image.url}
-                      alt={`Existing Image ${index + 1}`}
-                      style={{
-                        width: "100px",
-                        height: "auto",
-                        marginTop: "10px",
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-          </Form.Item>
-        </Form>
+                  Promise.all(filePreviews).then((previews) => {
+                    setImagePreviews(previews);
+                  });
+                }}
+              />
+              <div className="grid grid-cols-3 gap-4 mt-2">
+                {imagePreviews.map((preview, index) => (
+                  <img
+                    key={index}
+                    src={preview}
+                    alt={`Preview ${index + 1}`}
+                    style={{
+                      width: "100px",
+                      height: "auto",
+                      marginTop: "10px",
+                    }}
+                  />
+                ))}
+              </div>
+              {!imageFiles.length &&
+                editingRecord &&
+                editingRecord["kit-images"] &&
+                editingRecord["kit-images"].length > 0 && (
+                  <div className="grid grid-cols-3 gap-4 mt-2">
+                    {editingRecord["kit-images"].map((image, index) => (
+                      <img
+                        key={index}
+                        src={image.url}
+                        alt={`Existing Image ${index + 1}`}
+                        style={{
+                          width: "100px",
+                          height: "auto",
+                          marginTop: "10px",
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+            </Form.Item>
+          </Form>
+        </Spin>{" "}
+        {/* Kết thúc Spin */}
       </Modal>
     </Form>
   );
