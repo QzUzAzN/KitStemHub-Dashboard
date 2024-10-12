@@ -4,6 +4,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   PlusCircleOutlined,
+  SearchOutlined,
   UndoOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
@@ -38,6 +39,8 @@ function ManagerLabs() {
     total: 0, // Tổng số items
     pageSize: 20, // Số mục trên mỗi trang (cố định là 20)
   });
+  const [filteredDataSource, setFilteredDataSource] = useState([]); // Dữ liệu đã lọc
+  const [searchTerm, setSearchTerm] = useState(""); // Trạng thái cho tìm kiếm
 
   // Hàm xử lý khi chọn file từ Upload component
   const handleFileChange = (info) => {
@@ -80,6 +83,7 @@ function ManagerLabs() {
       console.log(data);
 
       setDataSource(data.labs); // Cập nhật dữ liệu lab
+      setFilteredDataSource(data.labs);
 
       // Tính tổng số items dựa trên totalPages và pageSize
       setPagination({
@@ -260,6 +264,19 @@ function ManagerLabs() {
     }
   };
 
+  const handleSearch = (e) => {
+    const value = e.target.value.toLowerCase();
+    setSearchTerm(value);
+
+    // Lọc dữ liệu dựa trên labname hoặc kitname
+    const filteredData = dataSource.filter(
+      (lab) =>
+        lab.name.toLowerCase().includes(value) || // Lọc theo labname
+        lab.kit.name.toLowerCase().includes(value) // Lọc theo kitname
+    );
+    setFilteredDataSource(filteredData); // Cập nhật dữ liệu đã lọc
+  };
+
   const columns = [
     {
       title: "STT", // Cột Số Thứ Tự
@@ -398,6 +415,7 @@ function ManagerLabs() {
   useEffect(() => {
     const fetchData = async () => {
       await fetchLabs();
+      notification.destroy();
       notification.success({
         message: "Thành công",
         description: "Lấy danh sách labs thành công!",
@@ -416,12 +434,21 @@ function ManagerLabs() {
         <div className="text-2xl font-semibold text-gray-700">
           Lab Manager Panel
         </div>
+
+        {/* Input search */}
+        <Input
+          placeholder="Search Labs or Kits"
+          prefix={<SearchOutlined />}
+          value={searchTerm}
+          onChange={handleSearch}
+          style={{ width: 300 }}
+        />
       </div>
 
       {/* Table hiển thị danh sách labs */}
       <Table
         bordered
-        dataSource={dataSource}
+        dataSource={filteredDataSource}
         columns={columns}
         loading={loading}
         rowClassName={(record) =>
