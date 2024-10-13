@@ -12,38 +12,12 @@ import ManagerContentPackage from "./components/manager/ManagerContentPackage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AdminLevels from "./components/admin/AdminLevels";
+import StaffPage from "./pages/StaffPage";
+import OrderConfirmation from "./components/staff/OrderConfirmation";
+import SupportHistory from "./components/staff/SupportHistory";
+import RequestSupportManagement from "./components/staff/RequestSupportManagement";
 
 function App() {
-  // const router = createBrowserRouter([
-  //   {
-  //     path: "/",
-
-  //     element: <LoginRegister />,
-  //   },
-  //   {
-  //     path: "/admin",
-
-  //     element: <AdminPage />,
-  //   },
-  //   {
-  //     path: "/manager",
-  //     element: <ManagerPage />,
-  //     children: [
-  //       {
-  //         path: "kits",
-  //         element: <ManagerContentKits />,
-  //       },
-  //       {
-  //         path: "labs",
-  //         element: <ManagerContentLabs />,
-  //       },
-  //       {
-  //         path: "package",
-  //         element: <ManagerContentPackage />,
-  //       },
-  //     ],
-  //   },
-  // ]);
   return (
     // {/* <RouterProvider router={router} /> */}
     <AuthProvider>
@@ -72,10 +46,25 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<div>Welcome to Manager Dashboard</div>} />
+            <Route index element={<ManagerContentKits />} />
             <Route path="kits" element={<ManagerContentKits />} />
             <Route path="labs" element={<ManagerContentLabs />} />
             <Route path="package" element={<ManagerContentPackage />} />
+          </Route>
+          <Route path="/" element={<LoginRegisterPage />} />
+
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute allowedRoles={["staff"]}>
+                <StaffPage />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<OrderConfirmation />} />
+            <Route path="order-confirmation" element={<OrderConfirmation />} />
+            <Route path="labs-support" element={<RequestSupportManagement />} />
+            <Route path="support-history" element={<SupportHistory />} />
           </Route>
           <Route path="/" element={<LoginRegisterPage />} />
         </Routes>

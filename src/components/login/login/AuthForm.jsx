@@ -43,6 +43,9 @@ function LoginInput() {
           case "manager":
             navigate("/manager");
             break;
+          case "staff":
+            navigate("/staff");
+            break;
           default:
             navigate("/");
             break;
@@ -59,7 +62,7 @@ function LoginInput() {
       style={{ backgroundImage: `url('/Ustm.gif')` }}
     >
       {/* Overlay để làm mờ ảnh nền */}
-      <div className="absolute inset-0 bg-black opacity-50 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-black opacity-10 backdrop-blur-sm"></div>
 
       <div className="relative z-10 w-full max-w-md p-8 space-y-8 bg-white bg-opacity-30 backdrop-blur-sm rounded-lg shadow-lg">
         <h2 className="text-3xl font-extrabold text-center text-white">
