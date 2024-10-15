@@ -77,7 +77,7 @@ function RequestSupportManagement() {
 
   const columns = [
     {
-      title: "STAFF ID",
+      title: "MÃ NHÂN VIÊN",
       dataIndex: "staff-id",
       key: "staff-id",
       render: (staffId, record) =>
@@ -95,19 +95,19 @@ function RequestSupportManagement() {
         ),
     },
     {
-      title: "LAB SUPPORT ID",
+      title: "MÃ HỖ TRỢ BÀI LAB",
       dataIndex: "id",
       key: "id",
       render: (id) => <span className="font-medium">{id}</span>,
     },
     {
-      title: "ORDER SUPPORT ID",
+      title: "MÃ HỖ TRỢ ĐƠN HÀNG",
       dataIndex: "order-support-id",
       key: "order-support-id",
       render: (id) => <span className="font-medium text-purple-600">{id}</span>,
     },
     {
-      title: "IS FINISHED",
+      title: "TIẾN ĐỘ",
       dataIndex: "is-finished",
       key: "is-finished",
       render: (isFinished) => (
@@ -121,7 +121,7 @@ function RequestSupportManagement() {
       ),
     },
     {
-      title: "CREATE DATE",
+      title: "NGÀY TẠO ĐƠN HÀNG",
       dataIndex: "create-date",
       key: "create-date",
       render: (date) => <span className="text-gray-600">{date}</span>,
