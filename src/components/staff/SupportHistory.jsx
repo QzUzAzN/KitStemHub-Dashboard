@@ -10,12 +10,24 @@ function SupportHistory() {
   const [supportHistory, setSupportHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 20,
+    total: 0,
+  });
 
   useEffect(() => {
-    const fetchSupportHistory = async () => {
+    const fetchSupportHistory = async (page = 1) => {
       try {
-        const response = await api.get("labsupports?supported=true");
+        const response = await api.get(
+          `labsupports?page=${page - 1}&supported=true`
+        );
         setSupportHistory(response.data.detail.data["lab-supports"]);
+        setPagination({
+          ...pagination,
+          current: page,
+          total: response.data.detail.data["total-pages"],
+        });
         setIsLoading(false);
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu:", error);
@@ -184,9 +196,7 @@ function SupportHistory() {
             expandedRowRender,
             rowExpandable: () => true,
           }}
-          pagination={{
-            pageSize: 10,
-          }}
+          pagination={pagination}
           className="shadow-sm"
           rowClassName="hover:bg-gray-50 transition-colors duration-200"
         />

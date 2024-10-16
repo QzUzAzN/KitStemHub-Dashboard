@@ -15,6 +15,7 @@ import {
   CheckOutlined,
   UserOutlined,
   PhoneOutlined,
+  MailOutlined,
 } from "@ant-design/icons";
 import api from "../../config/axios";
 import { toast } from "react-toastify";
@@ -24,16 +25,28 @@ const { Title, Text } = Typography;
 function RequestSupportManagement() {
   const [labSupports, setLabSupports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 20,
+    total: 0,
+  });
 
   useEffect(() => {
     fetchLabSupports();
   }, []);
 
-  const fetchLabSupports = async () => {
+  const fetchLabSupports = async (page = 1) => {
     try {
-      const response = await api.get("labsupports?supported=false");
+      const response = await api.get(
+        `labsupports?page=${page - 1}&supported=false`
+      );
       if (response.data.status === "success") {
         setLabSupports(response.data.detail.data["lab-supports"]);
+        setPagination({
+          ...pagination,
+          current: page,
+          total: response.data.details.data["total-pages"],
+        });
       } else {
         message.error("Không thể tải danh sách hỗ trợ");
       }
@@ -90,11 +103,14 @@ function RequestSupportManagement() {
   const columns = [
     {
       title: "Nhân viên hỗ trợ",
-      dataIndex: "staff-id",
-      key: "staff-id",
-      render: (staffId, record) =>
-        staffId ? (
-          <Text className="font-medium text-blue-600">{staffId}</Text>
+      dataIndex: ["staff", "email"],
+      key: "staffEmail",
+      render: (email, record) =>
+        email ? (
+          <Space>
+            <MailOutlined className="text-gray-500" />
+            <Text className="font-medium text-blue-600">{email}</Text>
+          </Space>
         ) : (
           <Button
             type="primary"
@@ -236,7 +252,7 @@ function RequestSupportManagement() {
               expandedRowRender,
               rowExpandable: (record) => record.user != null,
             }}
-            pagination={{ pageSize: 10 }}
+            pagination={pagination}
             className="shadow-sm"
             rowClassName="hover:bg-gray-50 transition-colors duration-200"
           />
