@@ -14,16 +14,25 @@ function OrderConfirmation() {
   const [statusFilter, setStatusFilter] = useState("Tất cả");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 20,
+    total: 0,
+  });
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+  const fetchOrders = async (page = 1, pageSize = 20) => {
     try {
-      const response = await api.get("orders");
+      setLoading(true);
+      const response = await api.get(
+        `orders?page=${page - 1}&size=${pageSize}`
+      );
       if (response.data.status === "success") {
         setOrders(response.data.details.data.orders);
+        setPagination({
+          ...pagination,
+          current: page,
+          total: response.data.details.data["total-pages"] * pageSize,
+        });
       } else {
         toast.error("Không thể tải danh sách đơn hàng");
       }
@@ -33,6 +42,14 @@ function OrderConfirmation() {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const handleTableChange = (pagination) => {
+    fetchOrders(pagination.current, pagination.pageSize);
   };
 
   const columns = [
@@ -206,8 +223,9 @@ function OrderConfirmation() {
           rowExpandable: (record) => record.user != null,
         }}
         className="shadow-md rounded-lg overflow-hidden"
-        pagination={{ pageSize: 10 }}
+        pagination={pagination}
         loading={loading}
+        onChange={handleTableChange}
         rowKey="id"
       />
     </motion.div>
