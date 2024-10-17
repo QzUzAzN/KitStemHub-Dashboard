@@ -45,7 +45,7 @@ function RequestSupportManagement() {
         setPagination({
           ...pagination,
           current: page,
-          total: response.data.details.data["total-pages"],
+          total: response.data.detail.data["total-pages"],
         });
       } else {
         message.error("Không thể tải danh sách hỗ trợ");
