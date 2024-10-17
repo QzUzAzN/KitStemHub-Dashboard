@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Table, Input, Select, Tag, Typography } from "antd";
 import { motion } from "framer-motion";
 import { SearchOutlined } from "@ant-design/icons";
@@ -20,11 +20,21 @@ function OrderConfirmation() {
     total: 0,
   });
 
-  const fetchOrders = async (page = 1, pageSize = 20) => {
+  const fetchOrders = async (
+    page = 1,
+    pageSize = 20,
+    status = "Tất cả",
+    emailQuery = ""
+  ) => {
     try {
       setLoading(true);
+      const statusQuery =
+        status === "Tất cả" ? "" : `&shipping-status=${status}`;
+      const emailQueryParam = emailQuery ? `&customer-email=${emailQuery}` : "";
       const response = await api.get(
-        `orders?page=${page - 1}&size=${pageSize}`
+        `orders?page=${
+          page - 1
+        }&size=${pageSize}${statusQuery}${emailQueryParam}`
       );
       if (response.data.status === "success") {
         setOrders(response.data.details.data.orders);
@@ -37,7 +47,7 @@ function OrderConfirmation() {
         toast.error("Không thể tải danh sách đơn hàng");
       }
     } catch (error) {
-      console.error("Lỗi khi tải danh sách đơn hàng:", error);
+      // console.error("Lỗi khi tải danh sách đơn hàng:", error);
       toast.error("Đã xảy ra lỗi khi tải danh sách đơn hàng");
     } finally {
       setLoading(false);
@@ -49,7 +59,22 @@ function OrderConfirmation() {
   }, []);
 
   const handleTableChange = (pagination) => {
-    fetchOrders(pagination.current, pagination.pageSize);
+    fetchOrders(
+      pagination.current,
+      pagination.pageSize,
+      statusFilter,
+      searchText
+    );
+  };
+
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
+    fetchOrders(1, pagination.pageSize, value, searchText); // Gọi API với filter trạng thái và email
+  };
+
+  const handleSearch = (value) => {
+    setSearchText(value);
+    fetchOrders(1, pagination.pageSize, statusFilter, value); // Gọi API khi tìm kiếm email
   };
 
   const columns = [
@@ -79,6 +104,7 @@ function OrderConfirmation() {
             color = "red";
             break;
         }
+
         return <Tag color={color}>{status}</Tag>;
       },
     },
@@ -150,22 +176,20 @@ function OrderConfirmation() {
       const response = await api.put(endpoint);
       if (response.data.status === "success") {
         toast.success(response.data.details.message);
-        await fetchOrders();
+        await fetchOrders(
+          pagination.current,
+          pagination.pageSize,
+          statusFilter,
+          searchText
+        ); // Cập nhật lại danh sách sau khi thay đổi
       } else {
         toast.error("Không thể cập nhật trạng thái đơn hàng");
       }
     } catch (error) {
-      console.error("Lỗi khi cập nhật trạng thái đơn hàng:", error);
+      // console.error("Lỗi khi cập nhật trạng thái đơn hàng:", error);
       toast.error("Đã xảy ra lỗi khi cập nhật trạng thái đơn hàng");
     }
   };
-
-  const filteredData = orders.filter(
-    (item) =>
-      (statusFilter === "Tất cả" || item["shipping-status"] === statusFilter) &&
-      (item.id.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.user["user-name"].toLowerCase().includes(searchText.toLowerCase()))
-  );
 
   const expandedRowRender = (record) => {
     const user = record.user;
@@ -197,15 +221,15 @@ function OrderConfirmation() {
       <h1 className="text-2xl font-bold mb-6">Xác nhận đơn hàng</h1>
       <div className="flex justify-between mb-4">
         <Search
-          placeholder="Tìm kiếm theo Mã đơn hàng hoặc Email khách hàng"
-          onChange={(e) => setSearchText(e.target.value)}
+          placeholder="Tìm kiếm theo Email khách hàng"
+          onSearch={handleSearch} // Gọi API khi tìm kiếm
           style={{ width: 300 }}
           prefix={<SearchOutlined className="text-gray-400" />}
         />
         <Select
           defaultValue="Tất cả"
           style={{ width: 200 }}
-          onChange={(value) => setStatusFilter(value)}
+          onChange={handleStatusFilterChange} // Thay đổi để gọi API với filter trạng thái và email
         >
           <Option value="Tất cả">Tất cả trạng thái</Option>
           <Option value="CHỜ XÁC NHẬN">Chờ xác nhận</Option>
@@ -215,14 +239,12 @@ function OrderConfirmation() {
           <Option value="GIAO HÀNG THẤT BẠI">Giao hàng thất bại</Option>
         </Select>
       </div>
+
       <Table
         columns={columns}
-        dataSource={filteredData}
-        expandable={{
-          expandedRowRender: expandedRowRender,
-          rowExpandable: (record) => record.user != null,
-        }}
-        className="shadow-md rounded-lg overflow-hidden"
+        dataSource={orders}
+        expandable={{ expandedRowRender }}
+        className="w-full"
         pagination={pagination}
         loading={loading}
         onChange={handleTableChange}
