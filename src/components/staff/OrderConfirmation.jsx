@@ -14,6 +14,8 @@ function OrderConfirmation() {
   const [statusFilter, setStatusFilter] = useState("Tất cả");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sortField, setSortField] = useState("createdat");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
@@ -24,17 +26,20 @@ function OrderConfirmation() {
     page = 1,
     pageSize = 20,
     status = "Tất cả",
-    emailQuery = ""
+    emailQuery = "",
+    currentSortField = sortField,
+    currentSortOrder = sortOrder
   ) => {
     try {
       setLoading(true);
       const statusQuery =
         status === "Tất cả" ? "" : `&shipping-status=${status}`;
       const emailQueryParam = emailQuery ? `&customer-email=${emailQuery}` : "";
+      const sortQuery = `&sort-fields=${currentSortField}&sort-orders=${currentSortOrder}`;
       const response = await api.get(
         `orders?page=${
           page - 1
-        }&size=${pageSize}${statusQuery}${emailQueryParam}`
+        }&size=${pageSize}${statusQuery}${emailQueryParam}${sortQuery}`
       );
       if (response.data.status === "success") {
         setOrders(response.data.details.data.orders);
@@ -56,14 +61,29 @@ function OrderConfirmation() {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [sortField, sortOrder]);
 
-  const handleTableChange = (pagination) => {
+  const handleTableChange = (pagination, filters, sorter) => {
+    const newSortField = "createdat";
+    let newSortOrder = "desc";
+
+    if (sorter.order) {
+      newSortOrder = sorter.order === "ascend" ? "asc" : "desc";
+    }
+
+    // console.log("New Sort Field:", newSortField);
+    // console.log("New Sort Order:", newSortOrder);
+
+    setSortField(newSortField);
+    setSortOrder(newSortOrder);
+
     fetchOrders(
       pagination.current,
       pagination.pageSize,
       statusFilter,
-      searchText
+      searchText,
+      newSortField,
+      newSortOrder
     );
   };
 
@@ -83,6 +103,23 @@ function OrderConfirmation() {
       dataIndex: "id",
       key: "id",
       render: (text) => <a>{text}</a>,
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "created-at",
+      key: "created-at",
+      sorter: true,
+      render: (date) => {
+        const parsedDate = new Date(date);
+        if (isNaN(parsedDate)) return "Ngày không hợp lệ";
+        return parsedDate.toLocaleString("vi-VN", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      },
     },
     {
       title: "Trạng thái giao hàng",
@@ -218,7 +255,9 @@ function OrderConfirmation() {
       transition={{ duration: 0.5 }}
       className="p-6"
     >
-      <h1 className="text-2xl font-bold mb-6">Xác nhận đơn hàng</h1>
+      <h1 className="text-center text-3xl font-bold text-gray-800 mb-6">
+        Xác nhận đơn hàng
+      </h1>
       <div className="flex justify-between mb-4">
         <Search
           placeholder="Tìm kiếm theo Email khách hàng"
