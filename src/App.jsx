@@ -16,6 +16,8 @@ import StaffPage from "./pages/StaffPage";
 import OrderConfirmation from "./components/staff/OrderConfirmation";
 import SupportHistory from "./components/staff/SupportHistory";
 import RequestSupportManagement from "./components/staff/RequestSupportManagement";
+import ManagerUser from "./components/manager/ManagerUser";
+import ManagerStaff from "./components/manager/ManagerStaff";
 
 function App() {
   return (
@@ -49,7 +51,9 @@ function App() {
             <Route index element={<ManagerContentKits />} />
             <Route path="kits" element={<ManagerContentKits />} />
             <Route path="labs" element={<ManagerContentLabs />} />
-            <Route path="package" element={<ManagerContentPackage />} />
+            <Route path="packages" element={<ManagerContentPackage />} />
+            <Route path="user" element={<ManagerUser />} />
+            <Route path="staff" element={<ManagerStaff />} />
           </Route>
           <Route path="/" element={<LoginRegisterPage />} />
 
