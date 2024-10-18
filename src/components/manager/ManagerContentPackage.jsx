@@ -44,7 +44,11 @@ function ManagerContentPackage() {
   const [isLabModalOpen, setIsLabModalOpen] = useState(false); // Modal to view lab
   const [availableLabs, setAvailableLabs] = useState([]); // State to store related Labs
 
-  const fetchPackages = async (page = 1, pageSize = 20) => {
+  const fetchPackages = async (
+    page = 1,
+    pageSize = 20,
+    showNotification = true
+  ) => {
     try {
       setLoading(true);
       const response = await api.get("packages", {
@@ -78,12 +82,20 @@ function ManagerContentPackage() {
       }
 
       setLoading(false);
+      if (showNotification) {
+        notification.destroy();
+        notification.success({
+          message: "Thành công",
+          description: "Lấy danh sách package thành công",
+          duration: 3,
+        });
+      }
     } catch (error) {
       console.error("Error fetching packages:", error);
       setLoading(false);
       notification.error({
-        message: "Error",
-        description: "An error occurred while fetching the package list!",
+        message: "Lỗi",
+        description: "Đã xảy ra lỗi khi lấy danh sách package!",
       });
     }
   };
@@ -117,12 +129,13 @@ function ManagerContentPackage() {
         notification.success({
           message: "Success",
           description: "Package created successfully!",
+          duration: 3,
         });
 
         // Refetch all packages on the current page after creating a new one
         fetchPackages(pagination.current, pagination.pageSize);
       } else {
-        throw new Error("Failed to create the package, please try again.");
+        throw new Error("Không tạo được gói, vui lòng thử lại.");
       }
     } catch (error) {
       console.error(
@@ -130,9 +143,9 @@ function ManagerContentPackage() {
         error.response?.data || error.message
       );
       notification.error({
-        message: "Error",
-        description:
-          error.response?.data?.message || "Failed to create the package!",
+        message: "Lỗi",
+        description: error.response?.data?.message || "Không tạo được gói!",
+        duration: 3,
       });
     }
   };
@@ -148,16 +161,18 @@ function ManagerContentPackage() {
       fetchPackages(pagination.current, pagination.pageSize);
 
       notification.success({
-        message: "Success",
-        description: "Package updated successfully!",
+        message: "Thành công",
+        description: "Gói được cập nhật thành công!",
+        duration: 3,
       });
     } catch (error) {
       console.error("Error updating package:", error.response || error.message);
       notification.error({
-        message: "Error",
-        description: `An error occurred while updating the package: ${
+        message: "Lỗi",
+        description: `Đã xảy ra lỗi khi cập nhật gói: ${
           error.response?.data?.message || error.message
         }`,
+        duration: 3,
       });
     } finally {
       setIsSubmitting(false);
@@ -185,13 +200,15 @@ function ManagerContentPackage() {
       );
 
       notification.success({
-        message: "Success",
-        description: "Package hidden successfully!",
+        message: "Thành công",
+        description: "Gói ẩn thành công!",
+        duration: 3,
       });
     } catch (error) {
       notification.error({
-        message: "Error",
-        description: "An error occurred while hiding the package!",
+        message: "Lỗi",
+        description: "Đã xảy ra lỗi khi ẩn gói!",
+        duration: 3,
       });
       console.error(
         `Error hiding package with id ${id}:`,
@@ -223,13 +240,14 @@ function ManagerContentPackage() {
       );
 
       notification.success({
-        message: "Success",
-        description: "Package restored successfully!",
+        message: "Thành công",
+        description: "Đã khôi phục gói thành công!",
       });
     } catch (error) {
       notification.error({
-        message: "Error",
-        description: "An error occurred while restoring the package!",
+        message: "Lỗi",
+        description: "Đã xảy ra lỗi khi khôi phục gói!",
+        duration: 3,
       });
       console.error(
         `Error restoring package with id ${id}:`,
@@ -300,15 +318,16 @@ function ManagerContentPackage() {
         setIsLabModalOpen(true);
       } else {
         notification.info({
-          message: "Info",
-          description: "No labs available for this package.",
+          message: "Thông tin",
+          description: "Không có bài labs có sẵn cho gói này.",
+          duration: 3,
         });
       }
     } catch (error) {
       console.error("Error fetching lab details:", error);
       notification.error({
-        message: "Error",
-        description: "Failed to fetch lab details!",
+        message: "Lỗi",
+        description: "Không thể lấy thông tin chi tiết về bài lab!",
       });
     }
   };
@@ -410,6 +429,22 @@ function ManagerContentPackage() {
         </div>
       </div>
 
+      <div className="flex mt-5 ml-5">
+        <button
+          onClick={() => {
+            form.resetFields();
+            setEditingRecord(null);
+            setOpen(true);
+          }}
+          className="flex mr-10 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+        >
+          <div>
+            <PlusCircleOutlined />
+          </div>
+          Thêm
+        </button>
+      </div>
+
       <Table
         bordered
         dataSource={filteredDataSource}
@@ -428,18 +463,6 @@ function ManagerContentPackage() {
           },
         }}
       />
-
-      <Button
-        type="primary"
-        onClick={() => {
-          form.resetFields();
-          setEditingRecord(null);
-          setOpen(true);
-        }}
-        icon={<PlusCircleOutlined />}
-      >
-        Add Package
-      </Button>
 
       <Modal
         title={editingRecord ? "Edit Package" : "Create New Package"}
@@ -467,7 +490,7 @@ function ManagerContentPackage() {
                   label="Select Kit"
                   rules={[{ required: true, message: "Please select a Kit!" }]}
                 >
-                  <Select onChange={handleKitChange}>
+                  <Select onChange={handleKitChange} placeholder="Select Kit">
                     {kits.map((kit) => (
                       <Option key={kit.id} value={kit.id}>
                         {kit.name}
@@ -496,7 +519,7 @@ function ManagerContentPackage() {
               label="Select Level"
               rules={[{ required: true, message: "Please select a level!" }]}
             >
-              <Select>
+              <Select placeholder="Select Level">
                 {levels.map((level) => (
                   <Option key={level.id} value={level.id}>
                     {level.name}

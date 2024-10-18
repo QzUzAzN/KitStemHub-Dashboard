@@ -444,7 +444,22 @@ function ManagerLabs() {
           style={{ width: 300 }}
         />
       </div>
-
+      {/* Nút Thêm */}
+      <div className="flex mt-5 ml-5">
+        <button
+          onClick={() => {
+            form.resetFields(); // Đặt lại các trường form khi thêm mới
+            setEditingRecord(null); // Đặt lại record để chuyển sang trạng thái thêm mới
+            setOpen(true); // Mở Modal để thêm mới
+          }}
+          className="flex mr-10 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+        >
+          <div>
+            <PlusCircleOutlined />
+          </div>
+          Thêm
+        </button>
+      </div>
       {/* Table hiển thị danh sách labs */}
       <Table
         bordered
@@ -464,23 +479,6 @@ function ManagerLabs() {
           },
         }}
       />
-
-      {/* Nút Thêm */}
-      <div className="flex justify-end mt-5">
-        <button
-          onClick={() => {
-            form.resetFields(); // Đặt lại các trường form khi thêm mới
-            setEditingRecord(null); // Đặt lại record để chuyển sang trạng thái thêm mới
-            setOpen(true); // Mở Modal để thêm mới
-          }}
-          className="flex mr-10 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
-        >
-          <div>
-            <PlusCircleOutlined />
-          </div>
-          Thêm
-        </button>
-      </div>
 
       {/* Modal để tạo mới hoặc chỉnh sửa */}
       <Modal
@@ -585,7 +583,7 @@ function ManagerLabs() {
             name="kit"
             rules={[{ required: true, message: "Please select a kit!" }]}
           >
-            <Select>
+            <Select placeholder="Select Kit">
               {kits.map((kit) => (
                 <Option key={kit.id} value={kit.id}>
                   {console.log(kit.id)}
@@ -600,7 +598,7 @@ function ManagerLabs() {
             name="level"
             rules={[{ required: true, message: "Please select a level!" }]}
           >
-            <Select>
+            <Select placeholder="Select Level">
               {levels.map((level) => (
                 <Option key={level.id} value={level.id}>
                   {level.name}

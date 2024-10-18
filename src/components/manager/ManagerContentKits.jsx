@@ -506,6 +506,21 @@ function ManagerContentKits() {
         </div>
       </div>
 
+      <div className="flex mt-5 ml-5">
+        <button
+          onClick={() => {
+            form.resetFields();
+            setEditingRecord(null);
+            setOpen(true);
+          }}
+          className="flex mr-10 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+        >
+          <div>
+            <PlusCircleOutlined />
+          </div>
+          Thêm
+        </button>
+      </div>
       <Table
         bordered
         dataSource={filteredDataSource}
@@ -522,22 +537,6 @@ function ManagerContentKits() {
           onChange: (page) => fetchKits(page),
         }}
       />
-
-      <div className="flex justify-end mt-5">
-        <button
-          onClick={() => {
-            form.resetFields();
-            setEditingRecord(null);
-            setOpen(true);
-          }}
-          className="flex mr-10 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
-        >
-          <div>
-            <PlusCircleOutlined />
-          </div>
-          Thêm
-        </button>
-      </div>
 
       {/* Modal hiển thị danh sách ảnh */}
       <Modal
