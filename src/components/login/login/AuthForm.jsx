@@ -2,8 +2,7 @@ import { Button, Form, Input } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import api from "../../../config/axios";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import { jwtDecode } from "jwt-decode";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 
@@ -14,46 +13,63 @@ function LoginInput() {
   const handleOnFinish = async (values) => {
     try {
       const response = await api.post("users/login", values);
-      // console.log(response);
-      // const { accessToken, refreshToken } = response.data.details;
-      // localStorage.setItem("token", accessToken);
 
-      const accessToken = response.data.details["access-token"];
-      const refreshToken = response.data.details["refresh-token"];
-      localStorage.setItem("refreshToken", refreshToken);
+      if (response.data && response.data.details) {
+        const accessToken = response.data.details["access-token"];
+        const refreshToken = response.data.details["refresh-token"];
 
-      const decoded = jwtDecode(accessToken);
-      const role =
-        decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
-
-      if (role === "customer") {
-        toast.error("Customers are not allowed to access this area!");
-        return;
-      }
-
-      login(accessToken);
-      toast.success("User logged in Successfully!");
-
-      // Điều hướng dựa trên vai trò
-      setTimeout(() => {
-        switch (role) {
-          case "admin":
-            navigate("/admin");
-            break;
-          case "manager":
-            navigate("/manager");
-            break;
-          case "staff":
-            navigate("/staff");
-            break;
-          default:
-            navigate("/");
-            break;
+        if (!accessToken) {
+          throw new Error("Access token is missing from the response");
         }
-      }, 1500);
+
+        localStorage.setItem("refreshToken", refreshToken);
+
+        const decoded = jwtDecode(accessToken);
+        const role =
+          decoded[
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+          ];
+
+        if (role === "customer") {
+          toast.error("Customers are not allowed to access this area!");
+          return;
+        }
+
+        login(accessToken);
+        toast.success("User logged in Successfully!");
+
+        // Điều hướng dựa trên vai trò
+        setTimeout(() => {
+          switch (role) {
+            case "admin":
+              navigate("/admin");
+              break;
+            case "manager":
+              navigate("/manager");
+              break;
+            case "staff":
+              navigate("/staff");
+              break;
+            default:
+              navigate("/");
+              break;
+          }
+        }, 1500);
+      } else {
+        throw new Error("Invalid response format");
+      }
     } catch (error) {
-      toast.error("Login failed. Please check your credentials.");
+      // console.log("Error message:", error.message);
+      if (error.response.status !== 401)
+        toast.error("An error occurred. Please try again later.");
     }
+
+    // setIsSubmitting(false);
+  };
+
+  const onFinishFailed = (errorInfo) => {
+    // console.log("Failed:", errorInfo);
+    toast.error("Please fill in all required fields correctly.");
   };
 
   return (
@@ -72,6 +88,7 @@ function LoginInput() {
           name="login"
           initialValues={{ remember: true }}
           onFinish={handleOnFinish}
+          onFinishFailed={onFinishFailed}
           layout="vertical"
           size="large"
         >
@@ -120,17 +137,6 @@ function LoginInput() {
           </Form.Item>
         </Form>
       </div>
-      <ToastContainer
-        position="top-center"
-        autoClose={1500}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
     </div>
   );
 }

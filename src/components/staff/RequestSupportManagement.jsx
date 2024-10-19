@@ -1,14 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Table,
-  Button,
-  message,
-  Modal,
-  Card,
-  Typography,
-  Space,
-  Tag,
-} from "antd";
+import { Table, Button, Modal, Card, Typography, Space, Tag } from "antd";
 import { motion } from "framer-motion";
 import {
   PlusOutlined,
@@ -48,7 +39,7 @@ function RequestSupportManagement() {
           total: response.data.detail.data["total-pages"],
         });
       } else {
-        message.error("Không thể tải danh sách hỗ trợ");
+        toast.error("Không thể tải danh sách hỗ trợ");
       }
     } catch (error) {
       console.error("Lỗi khi tải danh sách hỗ trợ:", error);
@@ -66,14 +57,14 @@ function RequestSupportManagement() {
         try {
           const response = await api.put(`labsupports/${record.id}/accept`);
           if (response.data.status === "success") {
-            message.success(response.data.details.message);
+            toast.success(response.data.details.message);
             fetchLabSupports();
           } else {
-            message.error("Không thể phân công nhân viên");
+            toast.error("Không thể phân công nhân viên");
           }
         } catch (error) {
           console.error("Lỗi khi phân công nhân viên:", error);
-          message.error("Đã xảy ra lỗi khi phân công nhân viên");
+          toast.error("Đã xảy ra lỗi khi phân công nhân viên");
         }
       },
     });
@@ -87,14 +78,14 @@ function RequestSupportManagement() {
         try {
           const response = await api.put(`labsupports/${record.id}/finished`);
           if (response.data.status === "success") {
-            message.success(response.data.details.message);
+            toast.success(response.data.details.message);
             fetchLabSupports();
           } else {
-            message.error("Không thể hoàn thành hỗ trợ");
+            toast.error("Không thể hoàn thành hỗ trợ");
           }
         } catch (error) {
           console.error("Lỗi khi hoàn thành hỗ trợ:", error);
-          message.error("Đã xảy ra lỗi khi hoàn thành hỗ trợ");
+          toast.error("Đã xảy ra lỗi khi hoàn thành hỗ trợ");
         }
       },
     });
