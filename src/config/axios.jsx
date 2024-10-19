@@ -1,30 +1,23 @@
 import axios from "axios";
-const baseUrl = "http://54.66.193.22:5001/api/";
-// const baseUrl = "https://54.66.193.22:5000/api/";
+import { toast } from "react-toastify";
+// const baseUrl = "http://54.66.193.22:5001/api/";
+const baseUrl = "https://54.66.193.22:5000/api/";
 
-const config = {
-  baseUrl: baseUrl,
-};
+const api = axios.create({
+  baseURL: baseUrl,
+});
 
-const api = axios.create(config);
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token")?.replaceAll('"', "");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-api.defaults.baseURL = baseUrl;
-
-// handle before call API
-const handleBefore = (config) => {
-  // handle hành động trước khi call API
-
-  // lấy ra cái token và đính kèm theo cái request
-  const token = localStorage.getItem("token")?.replaceAll('"', "");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-};
-
-api.interceptors.request.use(handleBefore, (error) => Promise.reject(error));
-
-//////////////////////////////////
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -38,35 +31,31 @@ api.interceptors.response.use(
     // it means the token has expired and we need to refresh it
     //Cờ _retry để đảm bảo rằng không thực hiện lại việc gọi API quá nhiều lần nếu lỗi 401
     if (error.response.status === 401 && !originalRequest._retry) {
-      // console.log("Token expired or unauthorized - 401 error");
       originalRequest._retry = true;
-
       try {
         const currentRefreshToken = localStorage.getItem("refreshToken");
-        // console.log(currentRefreshToken);
         const response = await axios.post(
-          `http://54.66.193.22:5001/api/Users/RefreshToken/${currentRefreshToken}`
-          // `https://54.66.193.22:5000/api/Users/RefreshToken/${currentRefreshToken}`
+
+          `${baseUrl}Users/RefreshToken/${currentRefreshToken}`
+
         );
-        // console.log("ggggg" + response.data);
         const { accessToken, refreshToken } = response.data.details;
-        // console.log(accessToken);
         localStorage.setItem("token", accessToken);
         localStorage.setItem("refreshToken", refreshToken);
-
-        // Retry the original request with the new token
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-
         return axios(originalRequest);
-      } catch (error) {
-        // Xử lý lỗi refresh token (ví dụ: chuyển hướng về trang đăng nhập)
-        window.location.href = "/";
-        // console.log(error);
-        return Promise.reject(error);
+      } catch (refreshError) {
+        //axios chịu trách nhiệm cho việc bắt 401 ở login
+        toast.error("Invalid email or password. Please try again.");
+        // console.error("Error refreshing token:", refreshError);
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        // window.location.href = "/login";
+        return Promise.reject(refreshError);
       }
     }
-
     return Promise.reject(error);
   }
 );
+
 export default api;

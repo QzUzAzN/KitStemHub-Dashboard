@@ -6,7 +6,6 @@ import {
   Modal,
   Form,
   Input,
-  message,
   Spin,
   Space,
   Typography,
@@ -20,6 +19,7 @@ import {
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../config/axios";
+import { toast } from "react-toastify";
 
 const { Content } = Layout;
 const { Search } = Input;
@@ -56,8 +56,8 @@ const AdminDashboard = () => {
         setCategories([]);
       }
     } catch (error) {
-      console.error("Error fetching categories:", error);
-      message.error("Failed to fetch categories");
+      // console.error("Error fetching categories:", error);
+      toast.error("Failed to fetch categories");
       setCategories([]);
     } finally {
       setLoading(false);
@@ -160,7 +160,7 @@ const AdminDashboard = () => {
         onOk: async () => {
           try {
             await api.delete(`categories/${id}`);
-            message.success("Category hidden successfully");
+            toast.success("Category hidden successfully");
             await fetchCategories();
             if (searchResult && searchResult.id === id) {
               const updatedCategory = await api.get(`categories/${id}`);
@@ -168,7 +168,7 @@ const AdminDashboard = () => {
             }
           } catch (error) {
             console.error("Error in hide operation:", error);
-            message.error(
+            toast.error(
               `Failed to hide category: ${error.message || "Unknown error"}`
             );
           }
@@ -176,7 +176,7 @@ const AdminDashboard = () => {
       });
     } catch (error) {
       console.error("Error in hide confirmation:", error);
-      message.error("An error occurred while trying to hide the category");
+      toast.error("An error occurred while trying to hide the category");
     }
   };
 
@@ -184,7 +184,7 @@ const AdminDashboard = () => {
     try {
       const response = await api.put(`categories/restore/${id}`);
       if (response.data && response.data.status === "success") {
-        message.success(response.data.details.message);
+        toast.success(response.data.details.message);
         await fetchCategories();
         if (searchResult && searchResult.id === id) {
           const updatedCategory = await api.get(`categories/${id}`);
@@ -195,7 +195,7 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error("Error in activate operation:", error);
-      message.error(
+      toast.error(
         `Failed to activate category: ${error.message || "Unknown error"}`
       );
     }
@@ -208,11 +208,11 @@ const AdminDashboard = () => {
       if (editingCategory) {
         response = await api.put(`categories`, values);
         console.log("Update response:", response.data);
-        message.success("Category updated successfully");
+        toast.success("Category updated successfully");
       } else {
         response = await api.post("categories", values);
         if (response.data && response.data.status === "success") {
-          message.success("Category added successfully");
+          toast.success("Category added successfully");
         } else {
           throw new Error("Unexpected response structure");
         }
@@ -226,13 +226,13 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error("Error submitting category:", error);
-      message.error("Failed to submit category");
+      toast.error("Failed to submit category");
     }
   };
 
   const handleSearch = async (id) => {
     if (!id) {
-      message.error("Please enter a category ID");
+      toast.error("Please enter a category ID");
       return;
     }
     setLoading(true);
@@ -249,13 +249,13 @@ const AdminDashboard = () => {
           // id: category.id,
         });
 
-        message.success("Category found");
+        toast.success("Category found");
       } else {
         throw new Error("Category not found");
       }
     } catch (error) {
       // console.error("Error searching category:", error);
-      message.error(error.message || "Category not found");
+      toast.error("Category not found");
       setSearchResult(null);
     } finally {
       setLoading(false);

@@ -24,6 +24,17 @@ function App() {
     // {/* <RouterProvider router={router} /> */}
     <AuthProvider>
       <Router>
+        <ToastContainer
+          position="top-right"
+          autoClose={1500}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
         <Routes>
           <Route path="/login" element={<LoginRegisterPage />} />
           <Route
@@ -72,18 +83,6 @@ function App() {
           </Route>
           <Route path="/" element={<LoginRegisterPage />} />
         </Routes>
-        <ToastContainer
-          position="top-right"
-          autoClose={1500}
-          hideProgressBar={true}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-        />
       </Router>
     </AuthProvider>
   );

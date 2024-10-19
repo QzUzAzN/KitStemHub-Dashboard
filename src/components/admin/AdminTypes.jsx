@@ -6,7 +6,6 @@ import {
   Modal,
   Form,
   Input,
-  message,
   Spin,
   Space,
   Typography,
@@ -20,6 +19,7 @@ import {
 } from "@ant-design/icons";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../config/axios";
+import { toast } from "react-toastify";
 
 const { Content } = Layout;
 const { Search } = Input;
@@ -48,7 +48,7 @@ const AdminTypes = () => {
       }
     } catch (error) {
       // console.error("Error fetching types:", error);
-      message.error("Failed to fetch types");
+      toast.error("Failed to fetch types");
       setTypes([]);
     } finally {
       setLoading(false);
@@ -126,7 +126,7 @@ const AdminTypes = () => {
   const handleToggleStatus = async (type) => {
     try {
       await api.delete(`types/${type.id}`);
-      message.success(`Type deactivated successfully`);
+      toast.success(`Type deactivated successfully`);
       await fetchTypes();
       if (searchResult && searchResult.id === type.id) {
         const updatedType = await api.get(`types/${type.id}`);
@@ -134,21 +134,21 @@ const AdminTypes = () => {
       }
     } catch (error) {
       // console.error("Error deactivating type:", error);
-      message.error("Failed to deactivate type");
+      toast.error("Failed to deactivate type");
     }
   };
 
   const handleRestore = async (type) => {
     try {
       await api.put(`types/restore/${type.id}`);
-      message.success(`Type activated successfully`);
+      toast.success(`Type activated successfully`);
       await fetchTypes();
       if (searchResult && searchResult.id === type.id) {
         const updatedType = await api.get(`types/${type.id}`);
         setSearchResult(updatedType.data.details.data.type);
       }
     } catch (error) {
-      message.error("Failed to activate type");
+      toast.error("Failed to activate type");
     }
   };
 
@@ -156,10 +156,10 @@ const AdminTypes = () => {
     try {
       if (editingType) {
         await api.put(`types`, values);
-        message.success("Type updated successfully");
+        toast.success("Type updated successfully");
       } else {
         await api.post("types", values);
-        message.success("Type added successfully");
+        toast.success("Type added successfully");
       }
       setIsModalVisible(false);
       form.resetFields();
@@ -170,16 +170,16 @@ const AdminTypes = () => {
       }
     } catch (error) {
       // console.error("Error submitting type:", error);
-      message.error("Failed to submit type");
+      toast.error("Failed to submit type");
     }
   };
 
   const handleSearch = async (id) => {
     if (!id) {
-      message.error("Please enter a type ID");
+      toast.error("Please enter a type ID");
       return;
     } else if (isNaN(id)) {
-      message.error("ID is a number!");
+      toast.error("ID is a number!");
       setSearchResult(null);
       return;
     }
@@ -191,13 +191,13 @@ const AdminTypes = () => {
         response.data.details.data.type
       ) {
         setSearchResult(response.data.details.data.type);
-        message.success("Type found");
+        toast.success("Type found");
       } else {
         throw new Error("Type not found");
       }
     } catch (error) {
       // console.log(error);
-      message.error(error.response.data.details?.errors.notFound);
+      toast.error(error.response.data.details?.errors.notFound);
       setSearchResult(null);
     } finally {
       setLoading(false);
