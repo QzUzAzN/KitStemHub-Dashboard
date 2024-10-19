@@ -31,7 +31,19 @@ function ManagerSidebar() {
       key: "sub3",
       icon: <DropboxOutlined />,
       label: <p className="font-medium">Quản lí Package</p>,
-      onClick: handleNavigate("/manager/package"),
+      onClick: handleNavigate("/manager/packages"),
+    },
+    {
+      key: "sub4",
+      icon: <DropboxOutlined />,
+      label: <p className="font-medium">Quản lí người dùng</p>,
+      onClick: handleNavigate("/manager/user"),
+    },
+    {
+      key: "sub5",
+      icon: <DropboxOutlined />,
+      label: <p className="font-medium">Quản lí nhân vien</p>,
+      onClick: handleNavigate("/manager/staff"),
     },
   ];
 
