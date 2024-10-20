@@ -287,8 +287,6 @@ function AdminLevels() {
               className="shadow-sm"
               pagination={{
                 pageSize: 10,
-                showSizeChanger: true,
-                showQuickJumper: true,
               }}
             />
           </motion.div>

@@ -126,17 +126,20 @@ function RequestSupportManagement() {
       render: (name) => <Text className="text-purple-600">{name}</Text>,
     },
     {
-      title: "Khách hàng",
-      key: "customer",
+      title: "Thông tin khách hàng",
+      key: "customerInfo",
       render: (_, record) => (
         <Space direction="vertical" size="small">
-          <Text>
-            <UserOutlined className="mr-1" />
+          <Text strong className="text-blue-600">
             {`${record.user["first-name"]} ${record.user["last-name"]}`}
           </Text>
-          <Text>
+          <Text className="text-gray-600">
             <PhoneOutlined className="mr-1" />
             {record.user.phone}
+          </Text>
+          <Text className="text-gray-500 text-xs">
+            <MailOutlined className="mr-1" />
+            {record.user.email}
           </Text>
         </Space>
       ),
@@ -153,6 +156,25 @@ function RequestSupportManagement() {
           {isFinished ? "Hoàn thành" : "Đang xử lý"}
         </Tag>
       ),
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "created-at",
+      key: "created-at",
+      render: (createdAt) => {
+        const date = new Date(createdAt);
+        return (
+          <Text className="text-gray-600">
+            {date.toLocaleString("vi-VN", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        );
+      },
     },
     {
       title: "Xác nhận đã hỗ trợ",

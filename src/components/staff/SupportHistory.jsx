@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import api from "../../config/axios";
 import { Table, Tag, Space, Typography, Spin, Alert, Card } from "antd";
-import { StarFilled, UserOutlined, PhoneOutlined } from "@ant-design/icons";
+import {
+  StarFilled,
+  UserOutlined,
+  PhoneOutlined,
+  MailOutlined,
+} from "@ant-design/icons";
 import { motion } from "framer-motion";
 
 const { Title, Text } = Typography;
@@ -66,17 +71,20 @@ function SupportHistory() {
       render: (text) => <Text className="text-gray-800">{text}</Text>,
     },
     {
-      title: "Khách hàng",
-      key: "customer",
+      title: "Thông tin khách hàng",
+      key: "customerInfo",
       render: (_, record) => (
         <Space direction="vertical" size="small">
-          <Text>
-            <UserOutlined className="mr-1" />
+          <Text strong className="text-blue-600">
             {`${record.user["first-name"]} ${record.user["last-name"]}`}
           </Text>
-          <Text>
+          <Text className="text-gray-600">
             <PhoneOutlined className="mr-1" />
             {record.user.phone}
+          </Text>
+          <Text className="text-gray-500 text-xs">
+            <MailOutlined className="mr-1" />
+            {record.user.email}
           </Text>
         </Space>
       ),
@@ -97,6 +105,25 @@ function SupportHistory() {
           )}
         </Space>
       ),
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "created-at",
+      key: "created-at",
+      render: (createdAt) => {
+        const date = new Date(createdAt);
+        return (
+          <Text className="text-gray-600">
+            {date.toLocaleString("vi-VN", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        );
+      },
     },
     {
       title: "Trạng thái",
