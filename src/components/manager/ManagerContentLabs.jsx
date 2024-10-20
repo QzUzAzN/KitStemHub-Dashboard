@@ -24,7 +24,7 @@ import { useEffect, useState } from "react";
 import { Option } from "antd/es/mentions";
 import api from "../../config/axios";
 
-function ManagerLabs() {
+function ManagerContentLabs() {
   const [form] = Form.useForm();
 
   const [dataSource, setDataSource] = useState([]); // Sử dụng dữ liệu labs từ props
@@ -35,13 +35,14 @@ function ManagerLabs() {
   const [editingRecord, setEditingRecord] = useState(null); // Trạng thái để biết là thêm mới hay chỉnh sửa
   const [loading, setLoading] = useState(true); // Thêm state để hiển thị trạng thái loading
   const [pagination, setPagination] = useState({
-    current: 0, // Bắt đầu từ trang 0
+    current: 1, // Bắt đầu từ trang 0
     total: 0, // Tổng số items
     pageSize: 20, // Số mục trên mỗi trang (cố định là 20)
   });
-  const [filteredDataSource, setFilteredDataSource] = useState([]); // Dữ liệu đã lọc
-  const [searchTerm, setSearchTerm] = useState(""); // Trạng thái cho tìm kiếm
-
+  const [filters, setFilters] = useState({
+    labName: "",
+    kitName: "",
+  }); // Bộ lọc cho lab name và kit name
   // Hàm xử lý khi chọn file từ Upload component
   const handleFileChange = (info) => {
     if (info.file.status === "removed") {
@@ -68,32 +69,70 @@ function ManagerLabs() {
   //     setLoading(false); // Tắt loading nếu có lỗi
   //   }
   // };
-  const fetchLabs = async (page = 0) => {
+  const fetchLabs = async (
+    page = 1,
+    pageSize = 20,
+    searchFilters = filters,
+    showNotification = true
+  ) => {
     try {
       setLoading(true); // Bắt đầu loading khi gọi API
+      // Nếu page nhỏ hơn 1, ta đặt nó về 1 để không gửi giá trị âm
+      const currentPage = Math.max(0, page - 1); // Đảm bảo page không bao giờ âm
+      const params = {
+        page: currentPage, // API bắt đầu từ trang 0
+        pageSize: pageSize,
+        "lab-name": searchFilters.labName || filters.labName, // Lọc theo lab name
+        "kit-name": searchFilters.kitName || filters.kitName, // Lọc theo kit name
+      };
 
+      // Gọi API với tham số page và kiểm tra tham số
+      console.log("Fetching labs with params:", params);
       // Gọi API với tham số page
       const response = await api.get("labs", {
-        params: {
-          Page: page,
-        },
+        params,
       });
 
-      const data = response.data.details.data;
-      console.log(data);
+      if (
+        response.data &&
+        response.data.details &&
+        response.data.details.data &&
+        response.data.details.data.labs
+      ) {
+        const labsData = response.data.details.data.labs;
+        const totalPages = response.data.details.data["total-pages"] || 0;
+        const currentPage = response.data.details.data["current-page"] || 0;
 
-      setDataSource(data.labs); // Cập nhật dữ liệu lab
-      setFilteredDataSource(data.labs);
+        // Cập nhật dữ liệu lab vào state
+        setDataSource(labsData);
 
-      // Tính tổng số items dựa trên totalPages và pageSize
-      setPagination({
-        current: data["current-page"], // Trang hiện tại từ API
-        total: data["total-pages"] * 20, // Tổng số items (totalPages * pageSize)
-        pageSize: 20, // Số mục trên mỗi trang
-      });
+        // Tính toán pagination
+        setPagination({
+          total: totalPages * pageSize,
+          current: currentPage + 1,
+          pageSize: pageSize,
+        });
+      } else {
+        // Nếu không có dữ liệu mong đợi
+        setDataSource([]);
+        setPagination({
+          total: 0,
+          current: 1,
+          pageSize: pageSize,
+        });
+      }
 
       setLoading(false);
+      if (showNotification) {
+        notification.destroy();
+        notification.success({
+          message: "Thành công",
+          description: "Lấy danh sách labs thành công!",
+          duration: 3,
+        });
+      }
     } catch (error) {
+      notification.destroy();
       notification.error({
         message: "Lỗi",
         description: "Có lỗi xảy ra khi lấy danh sách labs!",
@@ -131,7 +170,7 @@ function ManagerLabs() {
       formData.append("Status", newLab.status ? "true" : "false");
       // Kiểm tra file trước khi thêm vào formData
       if (!file) {
-        alert("Please upload a file before submitting.");
+        alert("Vui lòng tải lên một tệp trước khi gửi.");
         return; // Ngừng nếu không có file
       }
       formData.append("File", file);
@@ -142,13 +181,15 @@ function ManagerLabs() {
       });
 
       console.log("Created Lab:", response.data);
-      fetchLabs(); // Refresh lại danh sách sau khi thêm mới
+      fetchLabs(pagination.current, pagination.pageSize); // Refresh lại danh sách sau khi thêm mới
+      notification.destroy();
       notification.success({
         message: "Thành công",
         description: "Lab đã được tạo thành công!",
         duration: 3,
       });
     } catch (error) {
+      notification.destroy();
       notification.error({
         message: "Lỗi",
         description: "Có lỗi xảy ra khi tạo lab!",
@@ -187,13 +228,15 @@ function ManagerLabs() {
       });
 
       console.log("Updated Lab:", response.data);
-      fetchLabs(); // Refresh lại danh sách sau khi cập nhật
+      fetchLabs(pagination.current, pagination.pageSize);
+      notification.destroy();
       notification.success({
         message: "Thành công",
         description: "Lab đã được cập nhật thành công!",
         duration: 3,
       });
     } catch (error) {
+      notification.destroy();
       notification.error({
         message: "Lỗi",
         description: "Có lỗi xảy ra khi cập nhật lab!",
@@ -221,13 +264,15 @@ function ManagerLabs() {
         },
         data: { id },
       });
-      await fetchLabs(); // Refresh lại danh sách sau khi xóa
+      await fetchLabs(pagination.current, pagination.pageSize); // Refresh lại danh sách sau khi xóa
+      notification.destroy();
       notification.success({
         message: "Thành công",
         description: "Lab đã được xóa thành công!",
         duration: 3,
       });
     } catch (error) {
+      notification.destroy();
       notification.error({
         message: "Lỗi",
         description: "Có lỗi xảy ra khi xóa lab!",
@@ -248,13 +293,15 @@ function ManagerLabs() {
         },
       });
 
-      await fetchLabs();
+      await fetchLabs(pagination.current, pagination.pageSize);
+      notification.destroy();
       notification.success({
         message: "Thành công",
         description: "Lab đã được khôi phục thành công!",
         duration: 3,
       });
     } catch (error) {
+      notification.destroy();
       notification.error({
         message: "Lỗi",
         description: "Có lỗi xảy ra khi khôi phục lab!",
@@ -264,17 +311,24 @@ function ManagerLabs() {
     }
   };
 
-  const handleSearch = (e) => {
-    const value = e.target.value.toLowerCase();
-    setSearchTerm(value);
+  // Hàm xử lý khi submit filter (khi người dùng nhấn Search)
+  const handleFilterSubmit = (values) => {
+    const updatedFilters = {
+      ...filters,
+      ...values, // Chỉ update những trường mà người dùng đã điền
+    };
+    setFilters(updatedFilters); // Cập nhật filters với các giá trị mới
+    fetchLabs(1, pagination.pageSize, updatedFilters); // Gọi API với filter đã cập nhật
+  };
 
-    // Lọc dữ liệu dựa trên labname hoặc kitname
-    const filteredData = dataSource.filter(
-      (lab) =>
-        lab.name.toLowerCase().includes(value) || // Lọc theo labname
-        lab.kit.name.toLowerCase().includes(value) // Lọc theo kitname
-    );
-    setFilteredDataSource(filteredData); // Cập nhật dữ liệu đã lọc
+  // Hàm reset bộ lọc (Reset tất cả input và fetch lại tất cả dữ liệu)
+  const resetFilters = () => {
+    form.resetFields(); // Reset các input
+    setFilters({
+      labName: "",
+      kitName: "",
+    });
+    fetchLabs(1, pagination.pageSize); // Fetch lại mà không có filter
   };
 
   const columns = [
@@ -282,7 +336,9 @@ function ManagerLabs() {
       title: "STT", // Cột Số Thứ Tự
       key: "index", // Đặt tên cho cột
       render: (text, record, index) => (
-        <span>{pagination.current * pagination.pageSize + index + 1}</span>
+        <span>
+          {(pagination.current - 1) * pagination.pageSize + index + 1}
+        </span>
       ),
     },
     {
@@ -291,33 +347,33 @@ function ManagerLabs() {
       key: "id",
     },
     {
-      title: "Name",
+      title: "Tên",
       dataIndex: "name",
       key: "name",
     },
     {
-      title: "Price",
+      title: "Giá",
       dataIndex: "price",
       key: "price",
       render: (price) => <span>{price.toLocaleString()} VND</span>, // Hiển thị số tiền
     },
     {
-      title: "Max Support Times",
+      title: "Số lần hỗ trợ tối đa",
       dataIndex: "max-support-times",
       key: "maxSupportTimes",
     },
     {
-      title: "Author",
+      title: "Tác giả",
       dataIndex: "author",
       key: "author",
     },
     {
-      title: "Status",
+      title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
         <span style={{ color: status ? "green" : "red" }}>
-          {status ? "Available" : "Unavailable"}
+          {status ? "Có sẵn" : "Không có sẵn"}
         </span>
       ),
     },
@@ -328,13 +384,13 @@ function ManagerLabs() {
       render: (kitName) => <span>{kitName}</span>,
     },
     {
-      title: "Level",
+      title: "Cấp độ",
       dataIndex: ["level", "name"], // Lấy tên từ level.name
       key: "level",
       render: (levelName) => <span>{levelName}</span>,
     },
     {
-      title: "Action",
+      title: "Hành động",
       key: "action",
       render: (_, record) => (
         <div className="flex gap-5 text-xl">
@@ -378,7 +434,7 @@ function ManagerLabs() {
     try {
       console.log(values);
       if (!file) {
-        alert("Please upload a file before submitting.");
+        alert("Vui lòng tải lên một tệp trước khi gửi.");
         return;
       }
 
@@ -413,17 +469,7 @@ function ManagerLabs() {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      await fetchLabs();
-      notification.destroy();
-      notification.success({
-        message: "Thành công",
-        description: "Lấy danh sách labs thành công!",
-        duration: 3,
-      });
-    };
-
-    fetchData();
+    fetchLabs();
     fetchLevelsAndKits();
   }, []);
 
@@ -431,18 +477,21 @@ function ManagerLabs() {
     <Form form={form} component={false}>
       {/* Header */}
       <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
-        <div className="text-2xl font-semibold text-gray-700">
-          Lab Manager Panel
-        </div>
+        <div className="text-3xl font-semibold text-gray-700">Quản lý Lab</div>
 
         {/* Input search */}
-        <Input
-          placeholder="Search Labs or Kits"
-          prefix={<SearchOutlined />}
-          value={searchTerm}
-          onChange={handleSearch}
-          style={{ width: 300 }}
-        />
+        <Form layout="inline" onFinish={handleFilterSubmit}>
+          <Form.Item name="labName">
+            <Input placeholder="Tên Lab" />
+          </Form.Item>
+          <Form.Item name="kitName">
+            <Input placeholder="Tên Kit" />
+          </Form.Item>
+          <Button type="primary" htmlType="submit">
+            Tìm kiếm
+          </Button>
+          <Button onClick={resetFilters}>Đặt lại</Button>
+        </Form>
       </div>
       {/* Nút Thêm */}
       <div className="flex mt-5 ml-5">
@@ -463,7 +512,7 @@ function ManagerLabs() {
       {/* Table hiển thị danh sách labs */}
       <Table
         bordered
-        dataSource={filteredDataSource}
+        dataSource={dataSource}
         columns={columns}
         loading={loading}
         rowClassName={(record) =>
@@ -471,18 +520,21 @@ function ManagerLabs() {
         }
         rowKey="id"
         pagination={{
-          current: pagination.current + 1, // Hiển thị trang hiện tại, cộng 1 vì Ant Design bắt đầu từ 1
+          current: pagination.current, // Hiển thị trang hiện tại, cộng 1 vì Ant Design bắt đầu từ 1
           total: pagination.total, // Tổng số items
           pageSize: pagination.pageSize, // Số mục trên mỗi trang (luôn là 20)
+          showSizeChanger: false,
           onChange: (page) => {
-            fetchLabs(page - 1); // Gọi lại API với trang mới (page - 1 vì API bắt đầu từ 0)
+            // Đảm bảo trang không bao giờ là số âm
+            const safePage = Math.max(1, page);
+            fetchLabs(safePage, pagination.pageSize, filters); // Gọi lại API với trang mới
           },
         }}
       />
 
       {/* Modal để tạo mới hoặc chỉnh sửa */}
       <Modal
-        title={editingRecord ? "Edit Lab" : "Create New Lab"}
+        title={editingRecord ? "Chỉnh sửa Lab" : "Tạo mới Lab"}
         open={isOpen}
         onCancel={() => setOpen(false)} // Đóng modal
         onOk={() => form.submit()} // Gọi hàm submit khi bấm OK
@@ -496,12 +548,12 @@ function ManagerLabs() {
         >
           {/* Name */}
           <Form.Item
-            label="Name"
+            label="Tên"
             name="name"
             rules={[
               {
                 required: true,
-                message: "Please input the name!",
+                message: "Vui lòng nhập tên!",
               },
             ]}
           >
@@ -515,12 +567,12 @@ function ManagerLabs() {
             rules={[
               {
                 required: true,
-                message: "Please input the price!",
+                message: "Vui lòng nhập giá!",
               },
               {
                 type: "number",
                 min: 0,
-                message: "Price must be a positive number",
+                message: "Giá phải lớn hơn 0",
               },
             ]}
           >
@@ -529,17 +581,17 @@ function ManagerLabs() {
 
           {/* Max Support Times */}
           <Form.Item
-            label="Max Support Times"
+            label="Số lần hỗ trợ tối đa"
             name="maxSupportTimes"
             rules={[
               {
                 required: true,
-                message: "Please input the max support times!",
+                message: "Vui lòng nhập số lần hỗ trợ tối đa!",
               },
               {
                 type: "number",
                 min: 0,
-                message: "Max support times must be a positive number",
+                message: "Số lần hỗ trợ tối đa phải là số dương",
               },
             ]}
           >
@@ -548,12 +600,12 @@ function ManagerLabs() {
 
           {/* Author */}
           <Form.Item
-            label="Author"
+            label="Tác giả"
             name="author"
             rules={[
               {
                 required: true,
-                message: "Please input the author!",
+                message: "Vui lòng nhập tác giả!",
               },
             ]}
           >
@@ -581,7 +633,7 @@ function ManagerLabs() {
           <Form.Item
             label="Kit"
             name="kit"
-            rules={[{ required: true, message: "Please select a kit!" }]}
+            rules={[{ required: true, message: "Vui lòng chọn kit!" }]}
           >
             <Select placeholder="Select Kit">
               {kits.map((kit) => (
@@ -594,9 +646,9 @@ function ManagerLabs() {
           </Form.Item>
 
           <Form.Item
-            label="Level"
+            label="Cấp độ"
             name="level"
-            rules={[{ required: true, message: "Please select a level!" }]}
+            rules={[{ required: true, message: "Vui lòng chọn cấp độ!" }]}
           >
             <Select placeholder="Select Level">
               {levels.map((level) => (
@@ -608,16 +660,16 @@ function ManagerLabs() {
           </Form.Item>
 
           <Form.Item
-            label="File"
+            label="Tệp"
             name="file"
-            rules={[{ required: false, message: "Please upload a file!" }]}
+            rules={[{ required: false, message: "Vui lòng tải lên một tệp!" }]}
           >
             <Upload
               beforeUpload={() => false}
               onChange={handleFileChange}
               maxCount={1}
             >
-              <Button icon={<UploadOutlined />}>Upload File</Button>
+              <Button icon={<UploadOutlined />}>Tải tệp lên</Button>
             </Upload>
           </Form.Item>
         </Form>
@@ -626,4 +678,4 @@ function ManagerLabs() {
   );
 }
 
-export default ManagerLabs;
+export default ManagerContentLabs;

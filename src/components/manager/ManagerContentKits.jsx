@@ -20,7 +20,7 @@ import {
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
 import { Option } from "antd/es/mentions";
-import Search from "antd/es/input/Search";
+// import Search from "antd/es/input/Search";
 
 function ManagerContentKits() {
   const [form] = Form.useForm();
@@ -38,29 +38,35 @@ function ManagerContentKits() {
     pageSize: 20,
     total: 0,
   });
-  const [isFirstLoad, setIsFirstLoad] = useState(true); // Biến trạng thái để theo dõi lần tải đầu tiên
+  // const [isFirstLoad, setIsFirstLoad] = useState(true); // Biến trạng thái để theo dõi lần tải đầu tiên
   const [isSubmitting, setIsSubmitting] = useState(false); // Trạng thái loading cho create và update
-  const [searchTerm, setSearchTerm] = useState(""); // Thêm trạng thái tìm kiếm
-  const [filteredDataSource, setFilteredDataSource] = useState([]); // Thêm trạng thái cho dữ liệu lọc
+  const [filters, setFilters] = useState({
+    kitName: "",
+    categoryName: "",
+    fromPrice: null,
+    toPrice: null,
+  });
+
+  // Hàm fetch dữ liệu từ API
   const fetchKits = async (
     page = 1,
     pageSize = 20,
     showNotification = true,
-    search = ""
+    searchFilters = filters
   ) => {
     try {
+      // Chuẩn bị các tham số tìm kiếm theo điều kiện của fromPrice và toPrice
+      const params = {
+        page: page - 1,
+        pageSize: pageSize,
+        "kit-name": searchFilters.kitName || filters.kitName,
+        "category-name": searchFilters.categoryName || filters.categoryName,
+      };
+
       const response = await api.get("kits", {
-        params: {
-          page: page - 1,
-          pageSize: pageSize,
-          search: search,
-        },
+        params,
       });
 
-      // Ghi log toàn bộ phản hồi từ API để kiểm tra
-      console.log("API Response:", response.data);
-
-      // Kiểm tra xem phản hồi có tồn tại các trường cần thiết
       if (
         response.data &&
         response.data.details &&
@@ -71,27 +77,19 @@ function ManagerContentKits() {
         const totalPages = response.data.details.data["total-pages"] || 0;
         const currentPage = response.data.details.data["current-page"] || 1;
 
-        // Ghi log dữ liệu nhận được
-        console.log("Kits data:", kitsData);
-
-        // Cập nhật dữ liệu vào state
         setDataSource(kitsData);
-        setFilteredDataSource(kitsData); // Cập nhật dữ liệu lọc
         setPagination({
           total: totalPages * pageSize,
           current: currentPage,
           pageSize: pageSize,
         });
       } else {
-        // Nếu không có dữ liệu mong đợi
         setDataSource([]);
-        setFilteredDataSource([]); // Cập nhật dữ liệu lọc
         setPagination({
           total: 0,
           current: 1,
           pageSize: pageSize,
         });
-        console.error("No kits data found in response:", response.data);
       }
 
       setLoading(false);
@@ -247,6 +245,7 @@ function ManagerContentKits() {
 
       await fetchKits(); // Làm mới danh sách kits sau khi xóa
       fetchCategories(); // Làm mới danh sách categories
+      notification.destroy();
       notification.success({
         message: "Thành công",
         description: "Kit đã được xóa thành công!",
@@ -275,6 +274,7 @@ function ManagerContentKits() {
       });
       console.log("Kit restored:", response.data);
       await fetchKits();
+      notification.destroy();
       notification.success({
         message: "Thành công",
         description: "Kit đã được khôi phục thành công!",
@@ -288,7 +288,7 @@ function ManagerContentKits() {
         notification.error({
           message: "Lỗi",
           description: `Có lỗi xảy ra khi khôi phục kit với id ${id}: ${
-            error.response.data.details?.message || "Unknown error"
+            error.response.data.details?.message || "Lỗi không xác định"
           }`,
         });
       } else {
@@ -308,28 +308,30 @@ function ManagerContentKits() {
     setViewImagesModalVisible(true); // Hiển thị modal
   };
 
-  // Hàm lọc dữ liệu trực tiếp trên client
-  const handleSearchChange = (e) => {
-    const value = e.target.value.toLowerCase();
-    setSearchTerm(value);
+  // Hàm xử lý khi submit filter (khi người dùng nhấn Search)
+  const handleFilterSubmit = (values) => {
+    const updatedFilters = {
+      ...filters,
+      ...values, // Chỉ update những trường mà người dùng đã điền
+    };
+    setFilters(updatedFilters); // Cập nhật filters với các giá trị mới
+    fetchKits(1, pagination.pageSize, false, updatedFilters); // Gọi API với filter đã cập nhật
+  };
 
-    if (value.trim() === "") {
-      setFilteredDataSource(dataSource); // Hiển thị lại toàn bộ dữ liệu nếu không có từ khóa
-    } else {
-      const filteredData = dataSource.filter(
-        (kit) => kit.name.toLowerCase().includes(value) // Lọc các kit có tên chứa từ khóa
-      );
-      setFilteredDataSource(filteredData); // Cập nhật danh sách lọc
-    }
+  // Hàm reset bộ lọc (Reset tất cả input và fetch lại tất cả dữ liệu)
+  const resetFilters = () => {
+    form.resetFields(); // Reset các input
+    setFilters({
+      kitName: "",
+      categoryName: "",
+    });
+    fetchKits(1, pagination.pageSize); // Fetch lại mà không có filter
   };
 
   useEffect(() => {
-    if (isFirstLoad) {
-      fetchKits(); // Tải dữ liệu lần đầu
-      setIsFirstLoad(false); // Đánh dấu rằng đã tải lần đầu
-    }
-    fetchCategories(); // Tải dữ liệu categories
-  }, [isFirstLoad]); // Không cần phải phụ thuộc vào searchTerm
+    fetchKits(); // Lần đầu tải trang
+    fetchCategories(); // Lấy danh mục
+  }, []);
 
   const columns = [
     {
@@ -339,19 +341,19 @@ function ManagerContentKits() {
       width: 50,
     },
     {
-      title: "Name",
+      title: "Tên",
       dataIndex: "name",
       key: "name",
       width: 300,
     },
     {
-      title: "Brief",
+      title: "Tóm tắt",
       dataIndex: "brief",
       key: "brief",
       width: 450,
     },
     {
-      title: "Description", // Thêm cột Description
+      title: "Mô tả", // Thêm cột Description
       dataIndex: "description",
       key: "description",
       width: 500, // Đặt chiều rộng cho cột
@@ -360,7 +362,7 @@ function ManagerContentKits() {
       ),
     },
     {
-      title: "Image",
+      title: "Ảnh",
       dataIndex: "kit-images",
       key: "image",
       render: (images) => (
@@ -374,13 +376,13 @@ function ManagerContentKits() {
       ),
     },
     {
-      title: "Purchase Cost",
+      title: "Giá",
       dataIndex: "purchase-cost",
       key: "purchaseCost",
       render: (cost) => <span>{cost ? cost.toLocaleString() : "0"} VND</span>,
     },
     {
-      title: "Status",
+      title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
@@ -390,13 +392,13 @@ function ManagerContentKits() {
       ),
     },
     {
-      title: "Category",
+      title: "Thể Loại",
       dataIndex: ["kits-category", "name"],
       key: "kits-category",
       render: (categoryName) => <span>{categoryName}</span>,
     },
     {
-      title: "Action",
+      title: "Hành động",
       key: "action",
       render: (_, record) => (
         <div className="flex gap-5 text-xl">
@@ -491,18 +493,22 @@ function ManagerContentKits() {
   return (
     <Form form={form} component={false}>
       <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
-        <div className="text-2xl font-semibold text-gray-700">
-          Manager Panel
-        </div>
+        <div className="text-3xl font-semibold text-gray-700">Quản lý Kit</div>
 
         {/* Search Input */}
         <div className="flex items-center">
-          <Search
-            placeholder="Search Kits"
-            onChange={handleSearchChange} // Xử lý khi thay đổi tìm kiếm
-            enterButton
-            className="search-product"
-          />
+          <Form layout="inline" onFinish={handleFilterSubmit}>
+            <Form.Item name="kitName">
+              <Input placeholder="Tên Kit" />
+            </Form.Item>
+            <Form.Item name="categoryName">
+              <Input placeholder="Tên loại Kit" />
+            </Form.Item>
+            <Button type="primary" htmlType="submit">
+              Tìm Kiếm
+            </Button>
+            <Button onClick={resetFilters}>Đặt Lại</Button>
+          </Form>
         </div>
       </div>
 
@@ -523,7 +529,7 @@ function ManagerContentKits() {
       </div>
       <Table
         bordered
-        dataSource={filteredDataSource}
+        dataSource={dataSource}
         columns={columns}
         loading={loading}
         rowClassName={(record) =>
@@ -531,16 +537,17 @@ function ManagerContentKits() {
         }
         rowKey="id"
         pagination={{
-          total: pagination.total, // Tổng số sản phẩm
-          current: pagination.current, // Trang hiện tại
-          pageSize: pagination.pageSize, // Số sản phẩm mỗi trang
-          onChange: (page) => fetchKits(page),
+          total: pagination.total,
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          onChange: (page) => fetchKits(page, pagination.pageSize), // Gọi lại API khi chuyển trang, giữ filter
+          showSizeChanger: false, // Bỏ dropdown chọn số bản ghi mỗi trang
         }}
       />
 
       {/* Modal hiển thị danh sách ảnh */}
       <Modal
-        title="Uploaded Images"
+        title="Ảnh đã tải lên"
         visible={viewImagesModalVisible}
         onCancel={() => setViewImagesModalVisible(false)}
         footer={null}
@@ -558,7 +565,7 @@ function ManagerContentKits() {
       </Modal>
 
       <Modal
-        title={editingRecord ? "Edit Kit" : "Create New Kit"}
+        title={editingRecord ? "Chỉnh sửa Kit" : "Tạo mới Kit"}
         open={isOpen}
         onCancel={() => setOpen(false)}
         onOk={() => form.submit()}
@@ -571,47 +578,45 @@ function ManagerContentKits() {
             onFinish={handleSaveOrUpdate}
           >
             <Form.Item
-              label="Name"
+              label="Tên"
               name="name"
-              rules={[{ required: true, message: "Please input the name!" }]}
+              rules={[{ required: true, message: "Vui lòng nhập tên!" }]}
             >
               <Input />
             </Form.Item>
 
             <Form.Item
-              label="Brief"
+              label="Tóm tắt"
               name="brief"
-              rules={[{ required: true, message: "Please input the brief!" }]}
+              rules={[{ required: true, message: "Vui lòng nhập tóm tắt!" }]}
             >
               <Input />
             </Form.Item>
 
             <Form.Item
-              label="Description"
+              label="Mô tả"
               name="description"
-              rules={[
-                { required: true, message: "Please input the description!" },
-              ]}
+              rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
             >
               <Input.TextArea rows={3} />
             </Form.Item>
 
             <Form.Item
-              label="Purchase Cost"
+              label="Giá"
               name="purchaseCost"
               rules={[
-                { required: true, message: "Please input the purchase cost!" },
+                { required: true, message: "Vui lòng nhập giá!" },
                 {
                   type: "number",
                   min: 0,
-                  message: "Cost must be a positive number",
+                  message: "Giá phải lớn hơn 0",
                 },
               ]}
             >
               <InputNumber min={0} />
             </Form.Item>
 
-            <Form.Item label="Category" name="categoryId">
+            <Form.Item label="Thể loại" name="categoryId">
               <Select>
                 {categories.map((category) => (
                   <Option key={category.id} value={category.id}>
@@ -621,7 +626,7 @@ function ManagerContentKits() {
               </Select>
             </Form.Item>
 
-            <Form.Item label="Upload Images" name="images">
+            <Form.Item label="Tải ảnh lên" name="images">
               <Input
                 type="file"
                 multiple

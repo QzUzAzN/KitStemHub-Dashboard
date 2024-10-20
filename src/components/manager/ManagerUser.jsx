@@ -1,40 +1,58 @@
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
 import {
+  Button,
   Form,
   Input,
-  InputNumber,
-  Modal,
   notification,
   Popconfirm,
-  Spin,
+  Select,
   Table,
 } from "antd";
-import { DeleteOutlined, EditOutlined, UndoOutlined } from "@ant-design/icons";
+import { DeleteOutlined, UndoOutlined } from "@ant-design/icons";
+import { Option } from "antd/es/mentions";
 
 function ManagerUser() {
   const [form] = Form.useForm();
   const [dataSource, setDataSource] = useState([]);
-  const [isOpen, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [editingRecord, setEditingRecord] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
     total: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [filters, setFilters] = useState({
+    email: "",
+    phoneNumber: "",
+    firstName: "",
+    lastName: "",
+    status: undefined,
+  });
 
   // Fetch user data from API
-  const fetchUsers = async (page = 1, pageSize = 20) => {
+  const fetchUsers = async (
+    page = 1,
+    pageSize = 20,
+    searchFilters = filters,
+    showNotification = true
+  ) => {
     try {
-      const response = await api.get("/users", {
-        params: {
-          role: "customer", // Role "customer"
-          page: page - 1,
-          pageSize: pageSize,
-        },
+      setLoading(true);
+      const params = {
+        role: "customer", // Role "customer"
+        email: searchFilters.email || undefined,
+        "phone-number": searchFilters.phoneNumber || undefined,
+        "first-name": searchFilters.firstName || undefined,
+        "last-name": searchFilters.lastName || undefined,
+        status:
+          searchFilters.status === undefined ? undefined : searchFilters.status,
+        page: page - 1,
+        pageSize: pageSize,
+      };
+      console.log("params: ", params);
+      const response = await api.get("users", {
+        params,
       });
 
       if (
@@ -43,11 +61,11 @@ function ManagerUser() {
         response.data.details.data &&
         response.data.details.data.users
       ) {
-        const usersData = response.data.details.data.users;
+        const userData = response.data.details.data.users;
         const totalPages = response.data.details.data["total-pages"] || 0;
-        const currentPage = response.data.details.data["current-page"] || 1;
+        const currentPage = response.data.details.data["current-page"] || 0;
 
-        setDataSource(usersData);
+        setDataSource(userData);
         setPagination({
           total: totalPages * pageSize,
           current: currentPage,
@@ -64,12 +82,14 @@ function ManagerUser() {
       }
 
       setLoading(false);
-      notification.destroy();
-      notification.success({
-        message: "Thành công",
-        description: "Lấy danh sách người dùng thành công!",
-        duration: 3,
-      });
+      if (showNotification) {
+        notification.destroy();
+        notification.success({
+          message: "Thành công",
+          description: "Lấy danh sách người dùng thành công!",
+          duration: 3,
+        });
+      }
     } catch (error) {
       console.error("Error fetching users:", error);
       setLoading(false);
@@ -79,29 +99,6 @@ function ManagerUser() {
         description: "Có lỗi xảy ra khi lấy danh sách người dùng!",
         duration: 3,
       });
-    }
-  };
-
-  const updateUser = async (id, updatedUser) => {
-    try {
-      setIsSubmitting(true);
-      const response = await api.put(`/users/${id}`, updatedUser);
-      console.log("Updated User:", response.data);
-      await fetchUsers();
-      notification.destroy();
-      notification.success({
-        message: "Thành công",
-        description: "Người dùng đã được cập nhật thành công!",
-      });
-    } catch (error) {
-      notification.destroy();
-      notification.error({
-        message: "Lỗi",
-        description: "Có lỗi xảy ra khi cập nhật người dùng!",
-      });
-      console.error(`Error updating user with id ${id}:`, error.message);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -155,78 +152,67 @@ function ManagerUser() {
     }
   };
 
-  const handleEdit = (record) => {
-    setEditingRecord(record);
-    form.setFieldsValue({
-      ...record,
-      status: record.status ? true : false,
-    });
-    setOpen(true);
+  const handleFilterSubmit = (values) => {
+    console.log("filter: ", values);
+    setFilters(values);
+    fetchUsers(1, pagination.pageSize, values);
   };
 
-  const handleSaveOrUpdate = async (values) => {
-    try {
-      const userData = {
-        id: editingRecord ? editingRecord.id : null,
-        ...values,
-      };
-      if (editingRecord) {
-        await updateUser(editingRecord.id, userData);
-      }
-      setOpen(false);
-      form.resetFields();
-      setEditingRecord(null);
-    } catch (error) {
-      console.error("Failed to save or update user:", error);
-    }
+  const resetFilters = () => {
+    form.resetFields();
+    setFilters({
+      email: "",
+      phoneNumber: "",
+      firstName: "",
+      lastName: "",
+      status: undefined,
+    });
+    fetchUsers(1, pagination.pageSize);
   };
 
   useEffect(() => {
-    if (isFirstLoad) {
-      fetchUsers(); // Tải dữ liệu lần đầu
-      setIsFirstLoad(false);
-    }
-  }, [isFirstLoad]);
+    fetchUsers();
+  }, []);
 
   const columns = [
     {
-      title: "User Name",
+      title: "Email",
       dataIndex: "user-name",
       key: "user-name",
       width: 200,
     },
     {
-      title: "First Name",
+      title: "Tên",
       dataIndex: "first-name",
       key: "first-name",
       width: 150,
     },
     {
-      title: "Last Name",
+      title: "Họ",
       dataIndex: "last-name",
       key: "last-name",
       width: 150,
     },
     {
-      title: "Phone Number",
+      title: "Số điện thoại",
       dataIndex: "phone-number",
       key: "phone-number",
       width: 150,
     },
     {
-      title: "Address",
+      title: "Địa chỉ",
       dataIndex: "address",
       key: "address",
       width: 300,
     },
     {
-      title: "Points",
+      title: "Điểm",
       dataIndex: "points",
       key: "points",
       render: (points) => <span>{points || 0}</span>,
     },
     {
-      title: "Status",
+      title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
@@ -236,14 +222,10 @@ function ManagerUser() {
       ),
     },
     {
-      title: "Action",
+      title: "Hành động",
       key: "action",
       render: (_, record) => (
         <div className="flex gap-5 text-xl">
-          <EditOutlined
-            onClick={() => handleEdit(record)}
-            className="cursor-pointer"
-          />
           {record.status ? (
             <Popconfirm
               title="Bạn có chắc chắn muốn xóa?"
@@ -270,11 +252,37 @@ function ManagerUser() {
     },
   ];
   return (
-    <Form form={form} component={false}>
+    <Form form={form} component={false} onFinish={handleFilterSubmit}>
       <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
         <div className="text-2xl font-semibold text-gray-700">
           Quản Lý Người Dùng
         </div>
+        {/* Filter Form */}
+        <Form layout="inline" onFinish={handleFilterSubmit}>
+          <Form.Item name="email">
+            <Input placeholder="Email" />
+          </Form.Item>
+          <Form.Item name="phoneNumber">
+            <Input placeholder="Số điện thoại" />
+          </Form.Item>
+          <Form.Item name="firstName">
+            <Input placeholder="Tên" />
+          </Form.Item>
+          <Form.Item name="lastName">
+            <Input placeholder="Họ" />
+          </Form.Item>
+          <Form.Item name="status">
+            <Select placeholder="Trạng thái" style={{ width: 120 }}>
+              <Option value={undefined}>Tất cả</Option>
+              <Option value={true}>Có</Option>
+              <Option value={false}>Không</Option>
+            </Select>
+          </Form.Item>
+          <Button type="primary" htmlType="submit">
+            Tìm kiếm
+          </Button>
+          <Button onClick={resetFilters}>Đặt lại</Button>
+        </Form>
       </div>
 
       <Table
@@ -290,71 +298,6 @@ function ManagerUser() {
           onChange: (page) => fetchUsers(page),
         }}
       />
-
-      <Modal
-        title={editingRecord ? "Edit User" : "Create New User"}
-        open={isOpen}
-        onCancel={() => setOpen(false)}
-        onOk={() => form.submit()}
-      >
-        <Spin spinning={isSubmitting}>
-          <Form
-            form={form}
-            labelCol={{ span: 24 }}
-            onFinish={handleSaveOrUpdate}
-          >
-            <Form.Item
-              label="First Name"
-              name="              first-name"
-              rules={[
-                { required: true, message: "Please input the first name!" },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item
-              label="Last Name"
-              name="last-name"
-              rules={[
-                { required: true, message: "Please input the last name!" },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item
-              label="Phone Number"
-              name="phone-number"
-              rules={[
-                { required: true, message: "Please input the phone number!" },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item
-              label="Address"
-              name="address"
-              rules={[{ required: true, message: "Please input the address!" }]}
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item
-              label="Points"
-              name="points"
-              rules={[{ required: true, message: "Please input the points!" }]}
-            >
-              <InputNumber min={0} />
-            </Form.Item>
-
-            <Form.Item label="Status" name="status" valuePropName="checked">
-              <Input type="checkbox" />
-            </Form.Item>
-          </Form>
-        </Spin>
-      </Modal>
     </Form>
   );
 }
