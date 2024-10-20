@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Table, Input, Select, Tag, Typography } from "antd";
+import { Table, Input, Select, Tag, Typography, Space } from "antd";
 import { motion } from "framer-motion";
-import { SearchOutlined } from "@ant-design/icons";
+import { SearchOutlined, PhoneOutlined, MailOutlined } from "@ant-design/icons";
 import api from "../../config/axios";
 import { toast } from "react-toastify";
 
@@ -151,9 +151,23 @@ function OrderConfirmation() {
       key: "shipping-address",
     },
     {
-      title: "Số điện thoại",
-      dataIndex: "phone-number",
-      key: "phone-number",
+      title: "Thông tin khách hàng",
+      key: "customerInfo",
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          <Text strong className="text-blue-600">
+            {`${record.user["first-name"]} ${record.user["last-name"]}`}
+          </Text>
+          <Text className="text-gray-600">
+            <PhoneOutlined className="mr-1" />
+            {record.user["phone-number"]}
+          </Text>
+          <Text className="text-gray-500 text-xs">
+            <MailOutlined className="mr-1" />
+            {record.user["user-name"]}
+          </Text>
+        </Space>
+      ),
     },
     {
       title: "Đã tải lab",
