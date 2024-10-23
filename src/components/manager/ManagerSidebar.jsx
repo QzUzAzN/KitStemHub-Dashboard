@@ -16,31 +16,31 @@ function ManagerSidebar() {
   };
   const items = [
     {
-      key: "sub1",
       icon: <RobotOutlined />,
       label: <p className="font-medium">Quản lí Kits</p>,
       onClick: handleNavigate("/manager/kits"),
     },
     {
-      key: "sub2",
+      icon: <RobotOutlined />,
+      label: <p className="font-medium">Quản lí Components</p>,
+      onClick: handleNavigate("/manager/components"),
+    },
+    {
       icon: <FilePdfOutlined />,
       label: <p className="font-medium">Quản lí Labs</p>,
       onClick: handleNavigate("/manager/labs"),
     },
     {
-      key: "sub3",
       icon: <DropboxOutlined />,
       label: <p className="font-medium">Quản lí Package</p>,
       onClick: handleNavigate("/manager/packages"),
     },
     {
-      key: "sub4",
       icon: <DropboxOutlined />,
       label: <p className="font-medium">Quản lí người dùng</p>,
       onClick: handleNavigate("/manager/user"),
     },
     {
-      key: "sub5",
       icon: <DropboxOutlined />,
       label: <p className="font-medium">Quản lí nhân vien</p>,
       onClick: handleNavigate("/manager/staff"),

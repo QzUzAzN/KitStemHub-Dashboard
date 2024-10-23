@@ -18,6 +18,7 @@ import SupportHistory from "./components/staff/SupportHistory";
 import RequestSupportManagement from "./components/staff/RequestSupportManagement";
 import ManagerUser from "./components/manager/ManagerUser";
 import ManagerStaff from "./components/manager/ManagerStaff";
+import ManagerContentComponent from "./components/manager/ManagerContentComponent";
 
 function App() {
   return (
@@ -61,6 +62,7 @@ function App() {
           >
             <Route index element={<ManagerContentKits />} />
             <Route path="kits" element={<ManagerContentKits />} />
+            <Route path="components" element={<ManagerContentComponent />} />
             <Route path="labs" element={<ManagerContentLabs />} />
             <Route path="packages" element={<ManagerContentPackage />} />
             <Route path="user" element={<ManagerUser />} />
