@@ -476,7 +476,7 @@ function ManagerContentLabs() {
   return (
     <Form form={form} component={false}>
       {/* Header */}
-      <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
+      <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
         <div className="text-3xl font-semibold text-gray-700">Quản lý Lab</div>
 
         {/* Input search */}
@@ -494,7 +494,7 @@ function ManagerContentLabs() {
         </Form>
       </div>
       {/* Nút Thêm */}
-      <div className="flex mt-5 ml-5">
+      <div className="flex justify-end ml-5 mb-3">
         <button
           onClick={() => {
             form.resetFields(); // Đặt lại các trường form khi thêm mới

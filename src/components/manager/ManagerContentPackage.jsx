@@ -62,7 +62,7 @@ function ManagerContentPackage() {
         page: page - 1, // Backend counts from 0
         pageSize: pageSize,
         name: searchFilters.name,
-        "level-id": searchFilters.levelId,
+        // "level-id": searchFilters.levelId,
         "from-price": searchFilters.fromPrice,
         "to-price": searchFilters.toPrice,
         "kit-name": searchFilters.kitName,
@@ -70,6 +70,10 @@ function ManagerContentPackage() {
         status: searchFilters.status,
         "include-labs": searchFilters.includeLabs,
       };
+
+      if (searchFilters.levelId !== undefined) {
+        params["level-id"] = searchFilters.levelId;
+      }
       console.log("params: ", params);
       const response = await api.get("packages", {
         params,
@@ -452,7 +456,7 @@ function ManagerContentPackage() {
 
   return (
     <Form form={form} component={false}>
-      <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
+      <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
         <div className="text-3xl font-semibold text-gray-700">
           Quản Lý Gói Kit
         </div>
@@ -471,6 +475,7 @@ function ManagerContentPackage() {
               onChange={(value) => setFilters({ ...filters, levelId: value })}
               style={{ width: "200px" }} // Đặt kích thước cho Select Level
             >
+              <Option value={undefined}>Tất cả các cấp độ</Option>
               {levels.map((level) => (
                 <Option key={level.id} value={level.id}>
                   {level.name}
@@ -515,7 +520,6 @@ function ManagerContentPackage() {
               onChange={(value) => setFilters({ ...filters, status: value })}
               style={{ width: "200px" }} // Đặt kích thước cho "Status"
             >
-              <Option value={undefined}>All</Option>
               <Option value={true}>Available</Option>
               <Option value={false}>Unavailable</Option>
             </Select>
@@ -547,7 +551,7 @@ function ManagerContentPackage() {
         </div>
       </div>
 
-      <div className="flex justify-end mt-5 ml-5">
+      <div className="flex justify-end ml-5 mb-3">
         <button
           onClick={() => {
             form.resetFields();
@@ -638,7 +642,7 @@ function ManagerContentPackage() {
               label="Chọn cấp độ Level"
               rules={[{ required: true, message: "Vui lòng chọn cấp độ!" }]}
             >
-              <Select placeholder="Select Level">
+              <Select placeholder="Chọn cấp độ">
                 {levels.map((level) => (
                   <Option key={level.id} value={level.id}>
                     {level.name}

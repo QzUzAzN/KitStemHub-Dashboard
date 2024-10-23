@@ -223,7 +223,6 @@ function ManagerContentKits() {
 
   const deleteKit = async (id) => {
     try {
-      setIsSubmitting(true); // Bắt đầu loading
       if (!id) {
         console.error("ID không hợp lệ khi xóa kit:", id);
         return;
@@ -259,14 +258,11 @@ function ManagerContentKits() {
         `Error deleting kit with id ${id}:`,
         error.response?.data || error.message
       );
-    } finally {
-      setIsSubmitting(false); // Kết thúc loading
     }
   };
 
   const restoreKit = async (id) => {
     try {
-      setIsSubmitting(true); // Bắt đầu loading
       const response = await api.put(`kits/restore/${id}`, null, {
         headers: {
           Accept: "*/*",
@@ -298,8 +294,6 @@ function ManagerContentKits() {
           description: `Có lỗi xảy ra khi khôi phục kit với id ${id}: ${error.message}`,
         });
       }
-    } finally {
-      setIsSubmitting(false); // Kết thúc loading
     }
   };
 
@@ -492,7 +486,7 @@ function ManagerContentKits() {
 
   return (
     <Form form={form} component={false}>
-      <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
+      <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
         <div className="text-3xl font-semibold text-gray-700">Quản lý Kit</div>
 
         {/* Search Input */}
@@ -512,7 +506,7 @@ function ManagerContentKits() {
         </div>
       </div>
 
-      <div className="flex mt-5 ml-5">
+      <div className="flex justify-end ml-5">
         <button
           onClick={() => {
             form.resetFields();
