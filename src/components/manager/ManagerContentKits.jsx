@@ -16,6 +16,7 @@ import {
   notification,
   Button,
   Spin,
+  Switch,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
@@ -33,6 +34,10 @@ function ManagerContentKits() {
   const [imagePreviews, setImagePreviews] = useState([]); // Mảng để lưu preview của nhiều ảnh
   const [viewImagesModalVisible, setViewImagesModalVisible] = useState(false); // Modal hiển thị tất cả ảnh
   const [currentImages, setCurrentImages] = useState([]); // Mảng lưu trữ ảnh hiện tại để xem
+  const [viewComponentsModalVisible, setViewComponentsModalVisible] =
+    useState(false); // Modal hiển thị thành phần
+  const [componentsData, setComponentsData] = useState([]); // State để lưu các thành phần của kit hiện tại
+  const [isFetchingComponents, setIsFetchingComponents] = useState(false); // Trạng thái loading khi fetch component
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
@@ -131,6 +136,13 @@ function ManagerContentKits() {
       formData.append("Brief", newKit.brief);
       formData.append("Description", newKit.description || ""); // Thêm Description
       formData.append("PurchaseCost", newKit.purchaseCost || 0);
+      // Append the status as a boolean, assuming the backend expects true/false
+      formData.append("Status", newKit.status ? true : false);
+      // Thêm ComponentId và ComponentQuantity
+      newKit.components.forEach((component, index) => {
+        formData.append(`ComponentId[${index}]`, component.componentId);
+        formData.append(`ComponentQuantity[${index}]`, component.quantity); // Add quantity here
+      });
 
       // Thêm file ảnh vào FormData
       if (imageFiles && imageFiles.length > 0) {
@@ -182,7 +194,14 @@ function ManagerContentKits() {
       formData.append("Brief", updatedKit.brief);
       formData.append("Description", updatedKit.description || ""); // Thêm Description
       formData.append("PurchaseCost", updatedKit.purchaseCost || 0);
+      // Thêm ComponentId và ComponentQuantity
+      updatedKit.components.forEach((component, index) => {
+        formData.append(`ComponentId[${index}]`, component.componentId);
+        formData.append(`ComponentQuantity[${index}]`, component.quantity); // Add quantity here
+      });
 
+      // Thêm trường Status (giả sử API cần)
+      formData.append("Status", updatedKit.status ? true : false);
       // Nếu có ảnh mới thì thêm ảnh mới vào formData
       if (updatedKit.imageFiles && updatedKit.imageFiles.length > 0) {
         updatedKit.imageFiles.forEach((file) => {
@@ -322,9 +341,55 @@ function ManagerContentKits() {
     fetchKits(1, pagination.pageSize); // Fetch lại mà không có filter
   };
 
+  // Hàm để gọi API và hiển thị components trong modal
+  const handleViewComponents = async (kitId) => {
+    setIsFetchingComponents(true);
+    try {
+      const response = await api.get(`kits/${kitId}`);
+
+      if (
+        response.data &&
+        response.data.details &&
+        response.data.details.data.kit &&
+        response.data.details.data.kit.components
+      ) {
+        setComponentsData(response.data.details.data.kit.components); // Lưu các thành phần của kit vào state
+      } else {
+        setComponentsData([]); // Không có thành phần
+      }
+
+      setViewComponentsModalVisible(true); // Mở modal
+      setIsFetchingComponents(false); // Dừng loading
+    } catch (error) {
+      console.error("Error fetching components:", error);
+      setIsFetchingComponents(false); // Dừng loading nếu có lỗi
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi lấy danh sách thành phần!",
+        duration: 3,
+      });
+    }
+  };
+
+  const fetchComponents = async () => {
+    try {
+      const response = await api.get("/components"); // Đường dẫn tới API lấy components
+      if (
+        response.data &&
+        response.data.details &&
+        response.data.details.data
+      ) {
+        setComponentsData(response.data.details.data["component-models"]); // Đổ dữ liệu vào componentsData
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy thành phần:", error);
+    }
+  };
+
   useEffect(() => {
     fetchKits(); // Lần đầu tải trang
     fetchCategories(); // Lấy danh mục
+    fetchComponents();
   }, []);
 
   const columns = [
@@ -353,6 +418,18 @@ function ManagerContentKits() {
       width: 500, // Đặt chiều rộng cho cột
       render: (description) => (
         <span>{description ? description : "No description available"}</span>
+      ),
+    },
+    {
+      title: "Thành phần", // Thêm cột Thành phần
+      key: "components",
+      render: (record) => (
+        <Button
+          icon={<EyeOutlined />}
+          onClick={() => handleViewComponents(record.id)}
+        >
+          View Components
+        </Button>
       ),
     },
     {
@@ -426,27 +503,49 @@ function ManagerContentKits() {
     },
   ];
 
-  const handleEdit = (record) => {
-    if (!record || !record["category-id"]) {
-      console.error("Invalid record or missing category-id:", record);
-      return; // Ngăn chặn tiếp tục nếu record không hợp lệ
+  const handleEdit = async (record) => {
+    try {
+      if (!record || !record["category-id"]) {
+        console.error("Invalid record or missing category-id:", record);
+        return; // Prevent further action if the record is invalid
+      }
+
+      setEditingRecord(record);
+
+      // Fetch kit details, including components
+      const response = await api.get(`/kits/${record.id}`);
+      const kitData = response.data.details.data.kit;
+      console.log("Kit data: ", kitData);
+      // Map the existing components to set them in the form
+      const components = kitData.components.map((component) => ({
+        componentId: component["component-id"], // Mapping correct field names
+        quantity: component["component-quantity"], // Mapping correct field names
+      }));
+
+      // If there are current images, show the old images
+      if (kitData["kit-images"] && kitData["kit-images"].length > 0) {
+        setImagePreviews(kitData["kit-images"].map((img) => img.url)); // Show old images
+      }
+
+      // Set form values including components and other fields
+      form.setFieldsValue({
+        name: kitData.name,
+        brief: kitData.brief,
+        description: kitData.description || "",
+        components: components, // Set existing components
+        purchaseCost: kitData["purchase-cost"] || 0,
+        categoryId: kitData["category-id"], // Use category-id
+        status: kitData.status,
+      });
+
+      setOpen(true); // Open the form modal
+    } catch (error) {
+      console.error("Failed to fetch kit details:", error);
+      notification.error({
+        message: "Error",
+        description: "Failed to load the kit details.",
+      });
     }
-
-    setEditingRecord(record);
-
-    // Nếu có ảnh hiện tại, hiển thị ảnh cũ
-    if (record["kit-images"] && record["kit-images"].length > 0) {
-      setImagePreviews(record["kit-images"].map((img) => img.url)); // Hiển thị ảnh cũ
-    }
-
-    // Thiết lập giá trị cho form, sử dụng category-id thay vì kit-category.id
-    form.setFieldsValue({
-      ...record,
-      categoryId: record["category-id"], // Sử dụng category-id thay vì kit-category
-      purchaseCost: record["purchase-cost"] || 0,
-    });
-
-    setOpen(true); // Mở modal form
   };
 
   const handleSaveOrUpdate = async (values) => {
@@ -459,6 +558,7 @@ function ManagerContentKits() {
         description: values.description || "",
         purchaseCost: values.purchaseCost || 0,
         status: values.status ? true : false,
+        components: values.components || [],
       };
 
       // Nếu có ảnh mới thì cập nhật ảnh mới, nếu không giữ nguyên ảnh cũ
@@ -539,6 +639,39 @@ function ManagerContentKits() {
         }}
       />
 
+      {/* Modal hiển thị danh sách thành phần */}
+      <Modal
+        title="Danh sách thành phần"
+        visible={viewComponentsModalVisible}
+        onCancel={() => setViewComponentsModalVisible(false)}
+        footer={null}
+      >
+        <Spin spinning={isFetchingComponents}>
+          <Table
+            dataSource={componentsData}
+            columns={[
+              {
+                title: "ID Thành phần",
+                dataIndex: "component-id",
+                key: "component-id",
+              },
+              {
+                title: "Tên Thành phần",
+                dataIndex: "component-name",
+                key: "component-name",
+              },
+              {
+                title: "Số lượng",
+                dataIndex: "component-quantity",
+                key: "component-quantity",
+              },
+            ]}
+            rowKey="component-id"
+            pagination={false}
+          />
+        </Spin>
+      </Modal>
+
       {/* Modal hiển thị danh sách ảnh */}
       <Modal
         title="Ảnh đã tải lên"
@@ -594,6 +727,76 @@ function ManagerContentKits() {
             >
               <Input.TextArea rows={3} />
             </Form.Item>
+
+            {/* Form List để chọn component và số lượng */}
+            <Form.List name="components">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map(({ key, name, fieldKey, ...restField }) => (
+                    <div key={key} style={{ display: "flex", gap: "10px" }}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "componentId"]}
+                        fieldKey={[fieldKey, "componentId"]}
+                        label="Chọn thành phần"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng chọn thành phần!",
+                          },
+                        ]}
+                        style={{ flex: 1 }}
+                      >
+                        <Select placeholder="Chọn thành phần">
+                          {componentsData.map((component) => (
+                            <Select.Option
+                              key={component.id}
+                              value={component.id}
+                            >
+                              {component.name}
+                            </Select.Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+
+                      <Form.Item
+                        {...restField}
+                        name={[name, "quantity"]}
+                        fieldKey={[fieldKey, "quantity"]}
+                        label="Số lượng"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Vui lòng nhập số lượng!",
+                          },
+                        ]}
+                        style={{ flex: 1 }}
+                      >
+                        <InputNumber
+                          min={1}
+                          placeholder="Số lượng"
+                          style={{ width: "100%" }}
+                        />
+                      </Form.Item>
+
+                      <Button onClick={() => remove(name)} type="danger">
+                        Xóa
+                      </Button>
+                    </div>
+                  ))}
+                  <Form.Item>
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      block
+                      icon={<PlusCircleOutlined />}
+                    >
+                      Thêm thành phần
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+            </Form.List>
 
             <Form.Item
               label="Giá"
@@ -673,6 +876,19 @@ function ManagerContentKits() {
                     ))}
                   </div>
                 )}
+            </Form.Item>
+
+            {/* Thêm trường Trạng thái */}
+            <Form.Item
+              name="status"
+              label="Trạng thái"
+              valuePropName="checked"
+              rules={[{ required: true, message: "Vui lòng chọn trạng thái!" }]}
+            >
+              <Switch
+                checkedChildren="Available"
+                unCheckedChildren="Unavailable"
+              />
             </Form.Item>
           </Form>
         </Spin>{" "}
