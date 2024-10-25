@@ -47,14 +47,23 @@ function SupportHistory() {
   const columns = [
     {
       title: "Nhân viên hỗ trợ",
-      dataIndex: ["staff", "user-name"],
-      key: "staffName",
-      render: (text) => (
-        <Space>
-          <UserOutlined className="text-gray-500" />
-          <Text>{text}</Text>
-        </Space>
-      ),
+      dataIndex: ["staff", "email", "first-name", "last-name"],
+      key: "staffEmail",
+      render: (text, record) =>
+        record.staff && record.staff.email ? (
+          <Space direction="vertical" size="small">
+            <Text className="font-medium text-blue-600 ">
+              {`${record.staff["first-name"] ?? "Chưa có tên"} ${
+                record.staff["last-name"] ?? ""
+              }`}
+            </Text>
+
+            <Text className=" text-gray-600">
+              <MailOutlined className="text-gray-500 pr-2" />
+              {record.staff.email}
+            </Text>
+          </Space>
+        ) : null,
     },
     {
       title: "Mã hỗ trợ",
@@ -65,10 +74,25 @@ function SupportHistory() {
       ),
     },
     {
-      title: "Tên bài Lab",
-      dataIndex: ["lab", "name"],
-      key: "labName",
-      render: (text) => <Text className="text-gray-800">{text}</Text>,
+      title: "Thông tin bài Lab",
+      key: "labInfo",
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          <Text strong className="text-purple-600">
+            {record.lab.name}
+          </Text>
+          <Text className="text-gray-600">Tác giả: {record.lab.author}</Text>
+          {/* <Text className="text-gray-600">
+            Giá: {record.lab.price.toLocaleString()} VND
+          </Text> */}
+          <Text className="text-gray-600">
+            Hỗ trợ tối đa: {record.lab["max-support-times"]} lần
+          </Text>
+          <Text className="text-gray-600">
+            Cấp độ: {record.lab.level ? record.lab.level.name : "Chưa xác định"}
+          </Text>
+        </Space>
+      ),
     },
     {
       title: "Thông tin khách hàng",
