@@ -303,7 +303,7 @@ function OrderConfirmation() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="p-6"
+      className="m-6 p-6 bg-white min-h-screen"
     >
       <h1 className="text-center text-3xl font-bold text-gray-800 mb-6">
         Xác nhận đơn hàng
@@ -311,14 +311,14 @@ function OrderConfirmation() {
       <div className="flex justify-between mb-4">
         <Search
           placeholder="Tìm kiếm theo Email khách hàng"
-          onSearch={handleSearch} // Gọi API khi tìm kiếm
+          onSearch={handleSearch}
           style={{ width: 300 }}
           prefix={<SearchOutlined className="text-gray-400" />}
         />
         <Select
           defaultValue="Tất cả"
           style={{ width: 200 }}
-          onChange={handleStatusFilterChange} // Thay đổi để gọi API với filter trạng thái và email
+          onChange={handleStatusFilterChange}
         >
           <Option value="Tất cả">Tất cả trạng thái</Option>
           <Option value="CHỜ XÁC NHẬN">Chờ xác nhận</Option>
@@ -333,7 +333,10 @@ function OrderConfirmation() {
         columns={columns}
         dataSource={orders}
         className="w-full"
-        pagination={pagination}
+        pagination={{
+          ...pagination,
+          showSizeChanger: false, // This removes the page size selector
+        }}
         loading={loading}
         onChange={handleTableChange}
         rowKey="id"

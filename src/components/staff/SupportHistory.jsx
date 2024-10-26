@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../config/axios";
 import { Table, Tag, Space, Typography, Spin, Alert, Card } from "antd";
-import {
-  StarFilled,
-  UserOutlined,
-  PhoneOutlined,
-  MailOutlined,
-} from "@ant-design/icons";
+import { StarFilled, PhoneOutlined, MailOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
 
 const { Title, Text } = Typography;
@@ -114,19 +109,25 @@ function SupportHistory() {
       ),
     },
     {
-      title: "Đánh giá",
-      dataIndex: "rating",
-      key: "rating",
-      render: (rating) => (
-        <Space>
-          {rating !== 0 ? (
-            <>
-              <Text className="font-medium">{rating}</Text>
-              <StarFilled className="text-yellow-400" />
-            </>
-          ) : (
-            <Text>Chưa Đánh Giá</Text>
-          )}
+      title: "Đánh giá và Feedback",
+      key: "rating-feedback",
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          <Space>
+            {record.rating !== 0 ? (
+              <>
+                {/* <Text className="font-medium">{record.rating}</Text> */}
+                {Array.from({ length: record.rating }, (_, index) => (
+                  <StarFilled key={index} className="text-yellow-400" />
+                ))}
+              </>
+            ) : (
+              <Text>Chưa Đánh Giá</Text>
+            )}
+          </Space>
+          <Text className="font-medium">
+            {record["feed-back"] || "Chưa có feedback"}
+          </Text>
         </Space>
       ),
     },
@@ -164,58 +165,6 @@ function SupportHistory() {
     },
   ];
 
-  const expandedRowRender = (record) => {
-    const user = record.user;
-    const lab = record.lab;
-    return (
-      <Card className="bg-gray-50 shadow-sm">
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <Title level={5} className="text-blue-600 mb-2">
-              Thông tin khách hàng:
-            </Title>
-            <Text className="block text-gray-700">
-              Họ và tên:{" "}
-              <span className="font-medium">{`${user["first-name"]} ${user["last-name"]}`}</span>
-            </Text>
-            <Text className="block text-gray-700">
-              Email: <span className="font-medium">{user.email}</span>
-            </Text>
-            <Text className="block text-gray-700">
-              Số điện thoại: <span className="font-medium">{user.phone}</span>
-            </Text>
-          </div>
-          <div>
-            <Title level={5} className="text-green-600 mb-2">
-              Thông tin bài Lab:
-            </Title>
-            <Text className="block text-gray-700">
-              Tác giả: <span className="font-medium">{lab.author}</span>
-            </Text>
-            <Text className="block text-gray-700">
-              Giá:{" "}
-              <span className="font-medium text-red-500">
-                {lab.price.toLocaleString()} VND
-              </span>
-            </Text>
-            <Text className="block text-gray-700">
-              Số lần hỗ trợ tối đa:{" "}
-              <span className="font-medium">{lab["max-support-times"]}</span>
-            </Text>
-          </div>
-          <div>
-            <Title level={5} className="text-purple-600 mb-2">
-              Phản hồi:
-            </Title>
-            <Text className="text-gray-700">
-              {record["feed-back"] || "Không có phản hồi"}
-            </Text>
-          </div>
-        </div>
-      </Card>
-    );
-  };
-
   if (isLoading)
     return (
       <Spin
@@ -230,7 +179,7 @@ function SupportHistory() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="p-6 bg-gray-100 min-h-screen"
+      className="p-6  min-h-screen "
     >
       <Card className="shadow-lg rounded-lg overflow-hidden">
         <Title
@@ -243,10 +192,6 @@ function SupportHistory() {
           columns={columns}
           dataSource={supportHistory}
           rowKey="id"
-          expandable={{
-            expandedRowRender,
-            rowExpandable: () => true,
-          }}
           pagination={pagination}
           className="shadow-sm"
           rowClassName="hover:bg-gray-50 transition-colors duration-200"

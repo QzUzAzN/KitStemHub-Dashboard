@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Layout, Menu, Dropdown, Typography, Spin } from "antd";
+import { Layout, Menu, Dropdown, Typography, Spin, Avatar } from "antd";
 import {
   UserOutlined,
   LogoutOutlined,
-  BellOutlined,
-  MailOutlined,
+  DashboardOutlined,
 } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -22,58 +21,54 @@ const HeaderNavbar = () => {
     try {
       await logout();
       navigate("/login");
-    } catch (error) {
-      // console.error("Logout failed:", error);
+    } catch {
+      // Handle error silently
     } finally {
       setIsLoggingOut(false);
     }
   };
 
   const menuItems = (
-    <Menu>
+    <Menu className="bg-white rounded-md shadow-lg">
       <Menu.Item key="1" icon={<UserOutlined />}>
-        <Link to="#">Profile</Link>
+        <Link to="profile" className="text-gray-700 hover:text-blue-600">
+          Profile
+        </Link>
       </Menu.Item>
       <Menu.Item key="2" icon={<LogoutOutlined />} onClick={handleLogout}>
-        Logout
+        <span className="text-gray-700 hover:text-blue-600">Logout</span>
       </Menu.Item>
     </Menu>
   );
 
   return (
     <>
-      <Header className="bg-gray-900 p-4 flex justify-between items-center shadow-md transition duration-500 ease-in-out">
-        {/* Left: Logo and Search Bar */}
+      <Header className="bg-blue-50 p-4 flex justify-between items-center shadow-md transition duration-500 ease-in-out">
         <div className="flex items-center space-x-6">
-          <div className="text-white text-xl font-bold">Staff Dashboard</div>
+          <div className="text-gray-800 text-xl font-bold flex items-center">
+            <DashboardOutlined className="mr-2 text-blue-600" />
+            Staff Dashboard
+          </div>
         </div>
 
-        {/* Right: Notification, Mail, and Profile Dropdown */}
         <div className="flex items-center space-x-8">
-          <Dropdown
-            overlay={<Menu></Menu>}
-            placement="bottomRight"
-            trigger={["click"]}
-          >
-            <BellOutlined className="text-2xl text-white cursor-pointer hover:text-blue-400 transition duration-300" />
-          </Dropdown>
-          <Dropdown
-            overlay={<Menu></Menu>}
-            placement="bottomRight"
-            trigger={["click"]}
-          >
-            <MailOutlined className="text-2xl text-white cursor-pointer hover:text-blue-400 transition duration-300" />
-          </Dropdown>
           <Dropdown
             overlay={menuItems}
             placement="bottomRight"
             trigger={["click"]}
           >
-            <div className="flex items-center space-x-2 cursor-pointer text-white hover:text-blue-400 transition duration-300">
-              <UserOutlined className="text-2xl" />
-              <Text className="text-white font-semibold hidden md:block">
-                {user?.name || "Staff"}
-              </Text>
+            <div className="flex items-center cursor-pointer text-gray-700 hover:text-blue-600 transition duration-300">
+              <Avatar
+                size={40}
+                src="/avatar.jpg"
+                className="mr-3 border-2 border-white shadow-sm"
+              />
+              <div className="flex flex-col">
+                <Text className="text-gray-800 font-semibold">
+                  {user?.name || "Alexa Rawles"}
+                </Text>
+                <Text className="text-blue-600 text-xs">Staff</Text>
+              </div>
             </div>
           </Dropdown>
         </div>
