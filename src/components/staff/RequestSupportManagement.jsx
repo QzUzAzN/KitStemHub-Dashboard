@@ -91,16 +91,37 @@ function RequestSupportManagement() {
     });
   };
 
+  const fetchLabSupportDetails = async (labSupportId) => {
+    try {
+      const response = await api.get(`labsupports/${labSupportId}`);
+      if (response.data.status === "success") {
+        return response.data.detail.data["lab-support"];
+      }
+    } catch (error) {
+      console.error("Error fetching lab support details:", error);
+      toast.error("Không thể tải thông tin chi tiết hỗ trợ");
+    }
+    return null;
+  };
+
   const columns = [
     {
       title: "Nhân viên hỗ trợ",
-      dataIndex: ["staff", "email"],
+      dataIndex: ["staff", "email", "first-name", "last-name"],
       key: "staffEmail",
-      render: (email, record) =>
-        email ? (
-          <Space>
-            <MailOutlined className="text-gray-500" />
-            <Text className="font-medium text-blue-600">{email}</Text>
+      render: (text, record) =>
+        record.staff && record.staff.email ? (
+          <Space direction="vertical" size="small">
+            <Text className="font-medium text-blue-600 ">
+              {`${record.staff["first-name"] ?? "Chưa có tên"} ${
+                record.staff["last-name"] ?? ""
+              }`}
+            </Text>
+
+            <Text className=" text-gray-600">
+              <MailOutlined className="text-gray-500 pr-2" />
+              {record.staff.email}
+            </Text>
           </Space>
         ) : (
           <Button
@@ -120,10 +141,25 @@ function RequestSupportManagement() {
       render: (id) => <Text className="font-semibold text-gray-700">{id}</Text>,
     },
     {
-      title: "Tên bài Lab",
-      dataIndex: ["lab", "name"],
-      key: "labName",
-      render: (name) => <Text className="text-purple-600">{name}</Text>,
+      title: "Thông tin bài Lab",
+      key: "labInfo",
+      render: (_, record) => (
+        <Space direction="vertical" size="small">
+          <Text strong className="text-purple-600">
+            {record.lab.name}
+          </Text>
+          <Text className="text-gray-600">Tác giả: {record.lab.author}</Text>
+          {/* <Text className="text-gray-600">
+            Giá: {record.lab.price.toLocaleString()} VND
+          </Text> */}
+          <Text className="text-gray-600">
+            Hỗ trợ tối đa: {record.lab["max-support-times"]} lần
+          </Text>
+          <Text className="text-gray-600">
+            Cấp độ: {record.lab.level ? record.lab.level.name : "Chưa xác định"}
+          </Text>
+        </Space>
+      ),
     },
     {
       title: "Thông tin khách hàng",
@@ -197,50 +233,6 @@ function RequestSupportManagement() {
     },
   ];
 
-  const expandedRowRender = (record) => {
-    const user = record.user;
-    const lab = record.lab;
-    return (
-      <Card className="bg-gray-50 shadow-inner">
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <Title level={5} className="text-blue-600 mb-2">
-              Thông tin khách hàng:
-            </Title>
-            <Text className="block text-gray-700">
-              Họ và tên:{" "}
-              <span className="font-medium">{`${user["first-name"]} ${user["last-name"]}`}</span>
-            </Text>
-            <Text className="block text-gray-700">
-              Email: <span className="font-medium">{user.email}</span>
-            </Text>
-            <Text className="block text-gray-700">
-              Số điện thoại: <span className="font-medium">{user.phone}</span>
-            </Text>
-          </div>
-          <div>
-            <Title level={5} className="text-green-600 mb-2">
-              Thông tin bài Lab:
-            </Title>
-            <Text className="block text-gray-700">
-              Tác giả: <span className="font-medium">{lab.author}</span>
-            </Text>
-            <Text className="block text-gray-700">
-              Giá:{" "}
-              <span className="font-medium text-red-500">
-                {lab.price.toLocaleString()} VND
-              </span>
-            </Text>
-            <Text className="block text-gray-700">
-              Số lần hỗ trợ tối đa:{" "}
-              <span className="font-medium">{lab["max-support-times"]}</span>
-            </Text>
-          </div>
-        </div>
-      </Card>
-    );
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -261,10 +253,7 @@ function RequestSupportManagement() {
             dataSource={labSupports}
             loading={loading}
             rowKey="id"
-            expandable={{
-              expandedRowRender,
-              rowExpandable: (record) => record.user != null,
-            }}
+            expandable={{}}
             pagination={pagination}
             className="shadow-sm"
             rowClassName="hover:bg-gray-50 transition-colors duration-200"

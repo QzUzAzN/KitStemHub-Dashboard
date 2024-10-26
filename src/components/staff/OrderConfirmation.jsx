@@ -1,13 +1,32 @@
-import { useState, useEffect } from "react";
-import { Table, Input, Select, Tag, Typography, Space } from "antd";
+import React, { useState, useEffect } from "react";
+import {
+  Table,
+  Input,
+  Select,
+  Tag,
+  Typography,
+  Space,
+  Modal,
+  Button,
+  Spin,
+  Card,
+  Image,
+  Divider,
+} from "antd";
 import { motion } from "framer-motion";
-import { SearchOutlined, PhoneOutlined, MailOutlined } from "@ant-design/icons";
+import {
+  SearchOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
 import api from "../../config/axios";
 import { toast } from "react-toastify";
 
 const { Search } = Input;
 const { Option } = Select;
 const { Text } = Typography;
+const { Title } = Typography;
 
 function OrderConfirmation() {
   const [searchText, setSearchText] = useState("");
@@ -21,6 +40,10 @@ function OrderConfirmation() {
     pageSize: 20,
     total: 0,
   });
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
+  const [colorStatus, setColorStatus] = useState("");
 
   const fetchOrders = async (
     page = 1,
@@ -97,6 +120,21 @@ function OrderConfirmation() {
     fetchOrders(1, pagination.pageSize, statusFilter, value); // Gọi API khi tìm kiếm email
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "ĐÃ XÁC NHẬN":
+        return "blue";
+      case "ĐANG GIAO HÀNG":
+        return "orange";
+      case "GIAO HÀNG THÀNH CÔNG":
+        return "green";
+      case "GIAO HÀNG THẤT BẠI":
+        return "red";
+      default:
+        return "default";
+    }
+  };
+
   const columns = [
     {
       title: "Mã đơn hàng",
@@ -126,22 +164,7 @@ function OrderConfirmation() {
       dataIndex: "shipping-status",
       key: "shipping-status",
       render: (status) => {
-        let color = "default";
-        switch (status) {
-          case "ĐÃ XÁC NHẬN":
-            color = "blue";
-            break;
-          case "ĐANG GIAO HÀNG":
-            color = "orange";
-            break;
-          case "GIAO HÀNG THÀNH CÔNG":
-            color = "green";
-            break;
-          case "GIAO HÀNG THẤT BẠI":
-            color = "red";
-            break;
-        }
-
+        const color = getStatusColor(status);
         return <Tag color={color}>{status}</Tag>;
       },
     },
@@ -170,12 +193,6 @@ function OrderConfirmation() {
       ),
     },
     {
-      title: "Đã tải lab",
-      dataIndex: "is-lab-downloaded",
-      key: "is-lab-downloaded",
-      render: (isDownloaded) => (isDownloaded ? "Có" : "Không"),
-    },
-    {
       title: "Tổng giá",
       dataIndex: "total-price",
       key: "total-price",
@@ -186,6 +203,7 @@ function OrderConfirmation() {
       dataIndex: "note",
       key: "note",
     },
+
     {
       title: "Action",
       key: "action",
@@ -200,6 +218,18 @@ function OrderConfirmation() {
           <Option value="GIAO HÀNG THÀNH CÔNG">Giao hàng thành công</Option>
           <Option value="GIAO HÀNG THẤT BẠI">Giao hàng thất bại</Option>
         </Select>
+      ),
+    },
+    {
+      title: "Chi tiết",
+      key: "details",
+      render: (_, record) => (
+        <Button
+          icon={<EyeOutlined />}
+          onClick={() => showOrderDetails(record.id)}
+        >
+          Xem chi tiết
+        </Button>
       ),
     },
   ];
@@ -242,24 +272,30 @@ function OrderConfirmation() {
     }
   };
 
-  const expandedRowRender = (record) => {
-    const user = record.user;
-    return (
-      <div>
-        <Text strong>Thông tin khách hàng:</Text>
-        <p>
-          Họ và tên: {user["first-name"]} {user["last-name"]}
-        </p>
-        <p>Email: {user["user-name"]}</p>
-        <p>Số điện thoại: {user["phone-number"]}</p>
-        <p>Địa chỉ: {user["address"]}</p>
-        <p>Điểm tích lũy: {user["points"]}</p>
-        <p>
-          Trạng thái tài khoản:{" "}
-          {user["status"] ? "Hoạt động" : "Không hoạt động"}
-        </p>
-      </div>
-    );
+  const showOrderDetails = async (orderId) => {
+    setModalVisible(true);
+    setLoadingOrderDetails(true);
+    try {
+      const response = await api.get(`orders/${orderId}`);
+      if (response.data.status === "success") {
+        const orderData = response.data.details.data.order;
+        setSelectedOrder(orderData);
+        setColorStatus(getStatusColor(orderData["shipping-status"]));
+      } else {
+        toast.error("Không thể tải thông tin chi tiết đơn hàng");
+      }
+    } catch (error) {
+      toast.error("Đã xảy ra lỗi khi tải thông tin chi tiết đơn hàng");
+    } finally {
+      setLoadingOrderDetails(false);
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
   };
 
   return (
@@ -296,13 +332,191 @@ function OrderConfirmation() {
       <Table
         columns={columns}
         dataSource={orders}
-        expandable={{ expandedRowRender }}
         className="w-full"
         pagination={pagination}
         loading={loading}
         onChange={handleTableChange}
         rowKey="id"
       />
+
+      <Modal
+        title={<Title level={3}>Chi tiết đơn hàng: {selectedOrder?.id}</Title>}
+        visible={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        footer={null}
+        width={900}
+      >
+        {loadingOrderDetails ? (
+          <div className="text-center">
+            <Spin size="large" />
+          </div>
+        ) : selectedOrder ? (
+          <div>
+            <Card title="Thông tin đơn hàng" className="mb-6 shadow-sm">
+              <Space direction="vertical" size="middle" className="w-full">
+                <div className="flex justify-between">
+                  <Text>Mã đơn hàng:</Text>
+                  <Text strong>{selectedOrder.id}</Text>
+                </div>
+                <div className="flex justify-between">
+                  <Text>Ngày tạo:</Text>
+                  <Text strong>
+                    {new Date(selectedOrder["created-at"]).toLocaleString()}
+                  </Text>
+                </div>
+                <div className="flex justify-between">
+                  <Text>Trạng thái:</Text>
+                  <Tag
+                    bordered={false}
+                    color={colorStatus}
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: "bold",
+                      margin: "0px",
+                    }}
+                  >
+                    {selectedOrder["shipping-status"]}
+                  </Tag>
+                </div>
+                <div className="flex justify-between">
+                  <Text>Địa chỉ giao hàng:</Text>
+                  <Text strong>{selectedOrder["shipping-address"]}</Text>
+                </div>
+                <div className="flex justify-between">
+                  <Text>Số điện thoại:</Text>
+                  <Text strong>{selectedOrder["phone-number"]}</Text>
+                </div>
+                <div className="flex justify-between">
+                  <Text>Tổng giá:</Text>
+                  <Text strong>
+                    {formatCurrency(selectedOrder["total-price"])}
+                  </Text>
+                </div>
+                <div className="flex justify-between">
+                  <Text>Ghi chú:</Text>
+                  <Text strong>{selectedOrder.note || "Không có"}</Text>
+                </div>
+              </Space>
+            </Card>
+
+            <Card title="Danh sách sản phẩm" className="mb-6 shadow-sm">
+              {selectedOrder["package-orders"].map((packageOrder, index) => (
+                <React.Fragment key={index}>
+                  <div className="flex items-center py-4">
+                    <div className="mr-4">
+                      <Image
+                        src={
+                          packageOrder.package?.kit?.["kit-images"]?.[0]?.url ||
+                          "https://via.placeholder.com/100"
+                        }
+                        alt={packageOrder.package?.kit?.name || "Package Image"}
+                        width={80}
+                        height={80}
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
+                    <div className="flex-grow">
+                      <Text strong className="block">
+                        {packageOrder.package?.kit?.name || "Unknown Package"}
+                      </Text>
+
+                      <Text type="secondary block">
+                        {packageOrder.package?.name || "Unknown Name"}
+                      </Text>
+                      <Text>
+                        {formatCurrency(packageOrder.package?.price || 0)} x{" "}
+                        {packageOrder["package-quantity"] || 0}
+                      </Text>
+                    </div>
+                    <div className="text-right">
+                      <Text strong>
+                        {formatCurrency(
+                          (packageOrder.package?.price || 0) *
+                            (packageOrder["package-quantity"] || 0)
+                        )}
+                      </Text>
+                    </div>
+                  </div>
+
+                  {index < selectedOrder["package-orders"].length - 1 && (
+                    <Divider />
+                  )}
+                </React.Fragment>
+              ))}
+            </Card>
+
+            <Card title="Bài Labs" className="mb-6 shadow-sm">
+              <Table
+                dataSource={selectedOrder["package-orders"].flatMap(
+                  (po) => po.package?.["package-labs"] || []
+                )}
+                columns={[
+                  {
+                    title: "Tên Lab",
+                    dataIndex: "name",
+                    key: "name",
+                  },
+                  {
+                    title: "Giá",
+                    dataIndex: "price",
+                    key: "price",
+                    render: (price) => formatCurrency(price),
+                  },
+                  {
+                    title: "Số lần hỗ trợ tối đa",
+                    dataIndex: "max-support-times",
+                    key: "max-support-times",
+                  },
+                  {
+                    title: "Tác giả",
+                    dataIndex: "author",
+                    key: "author",
+                  },
+                  {
+                    title: "Cấp độ",
+                    dataIndex: ["level", "name"],
+                    key: "level",
+                    render: (text, record) =>
+                      record.level ? record.level.name : "N/A",
+                  },
+                ]}
+                pagination={false}
+                rowKey="id"
+              />
+            </Card>
+
+            <Card title="Tổng kết đơn hàng" className="shadow-sm">
+              <Space direction="vertical" size="middle" className="w-full">
+                <div className="flex justify-between">
+                  <Text>Tạm tính:</Text>
+                  <Text strong>{formatCurrency(selectedOrder.price)}</Text>
+                </div>
+                <div className="flex justify-between">
+                  <Text>Phí vận chuyển:</Text>
+                  <Text strong>
+                    {formatCurrency(selectedOrder["shipping-fee"])}
+                  </Text>
+                </div>
+                <div className="flex justify-between">
+                  <Text>Giảm giá:</Text>
+                  <Text strong>-{formatCurrency(selectedOrder.discount)}</Text>
+                </div>
+                <Divider />
+                <div className="flex justify-between">
+                  <Text strong className="text-lg">
+                    Tổng cộng:
+                  </Text>
+                  <Text strong className="text-lg text-green-600">
+                    {formatCurrency(selectedOrder["total-price"])}
+                  </Text>
+                </div>
+              </Space>
+            </Card>
+          </div>
+        ) : (
+          <p>Không có thông tin chi tiết</p>
+        )}
+      </Modal>
     </motion.div>
   );
 }
