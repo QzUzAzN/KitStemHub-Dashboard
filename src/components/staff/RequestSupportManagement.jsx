@@ -238,7 +238,7 @@ function RequestSupportManagement() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="p-6 bg-gray-100 min-h-screen"
+      className="p-6  min-h-screen "
     >
       <Card className="shadow-lg rounded-lg overflow-hidden">
         <Space direction="vertical" size="large" className="w-full">

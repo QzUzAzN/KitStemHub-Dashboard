@@ -19,6 +19,7 @@ import RequestSupportManagement from "./components/staff/RequestSupportManagemen
 import ManagerUser from "./components/manager/ManagerUser";
 import ManagerStaff from "./components/manager/ManagerStaff";
 import ManagerContentComponent from "./components/manager/ManagerContentComponent";
+import StaffProfile from "./components/staff/StaffProfile";
 
 function App() {
   return (
@@ -82,6 +83,7 @@ function App() {
             <Route path="order-confirmation" element={<OrderConfirmation />} />
             <Route path="labs-support" element={<RequestSupportManagement />} />
             <Route path="support-history" element={<SupportHistory />} />
+            <Route path="profile" element={<StaffProfile />} />
           </Route>
           <Route path="/" element={<LoginRegisterPage />} />
         </Routes>
