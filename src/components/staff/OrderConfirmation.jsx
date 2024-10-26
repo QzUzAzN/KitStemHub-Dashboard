@@ -12,6 +12,7 @@ import {
   Card,
   Image,
   Divider,
+  Tooltip,
 } from "antd";
 import { motion } from "framer-motion";
 import {
@@ -19,6 +20,8 @@ import {
   PhoneOutlined,
   MailOutlined,
   EyeOutlined,
+  SortDescendingOutlined,
+  SortAscendingOutlined,
 } from "@ant-design/icons";
 import api from "../../config/axios";
 import { toast } from "react-toastify";
@@ -143,20 +146,43 @@ function OrderConfirmation() {
       render: (text) => <a>{text}</a>,
     },
     {
-      title: "Ngày tạo",
+      title: (
+        <Space>
+          Ngày tạo
+          <Tooltip title={sortOrder !== "desc" ? "Mới Nhất" : "Cũ Nhất"}>
+            <Button
+              type="text"
+              icon={
+                sortOrder === "desc" ? (
+                  <SortDescendingOutlined />
+                ) : (
+                  <SortAscendingOutlined />
+                )
+              }
+              onClick={() =>
+                setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+              }
+              size="small"
+            />
+          </Tooltip>
+        </Space>
+      ),
       dataIndex: "created-at",
       key: "created-at",
-      sorter: true,
-      render: (date) => {
-        const parsedDate = new Date(date);
-        if (isNaN(parsedDate)) return "Ngày không hợp lệ";
-        return parsedDate.toLocaleString("vi-VN", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+
+      render: (createdAt) => {
+        const date = new Date(createdAt);
+        return (
+          <Text className="text-gray-600">
+            {date.toLocaleString("vi-VN", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </Text>
+        );
       },
     },
     {
@@ -303,7 +329,7 @@ function OrderConfirmation() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="m-6 p-6 bg-white min-h-screen"
+      className=" m-6 p-6 bg-white min-h-screen"
     >
       <h1 className="text-center text-3xl font-bold text-gray-800 mb-6">
         Xác nhận đơn hàng
@@ -337,7 +363,7 @@ function OrderConfirmation() {
           ...pagination,
           showSizeChanger: false, // This removes the page size selector
         }}
-        loading={loading}
+        // loading={loading}
         onChange={handleTableChange}
         rowKey="id"
       />

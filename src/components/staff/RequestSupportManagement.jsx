@@ -1,5 +1,16 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Modal, Card, Typography, Space, Tag } from "antd";
+import {
+  Table,
+  Button,
+  Modal,
+  Card,
+  Typography,
+  Space,
+  Tag,
+  Input,
+  Select,
+  Tooltip,
+} from "antd";
 import { motion } from "framer-motion";
 import {
   PlusOutlined,
@@ -7,11 +18,16 @@ import {
   UserOutlined,
   PhoneOutlined,
   MailOutlined,
+  SearchOutlined,
+  SortAscendingOutlined,
+  SortDescendingOutlined,
 } from "@ant-design/icons";
 import api from "../../config/axios";
 import { toast } from "react-toastify";
 
 const { Title, Text } = Typography;
+const { Search } = Input;
+const { Option } = Select;
 
 function RequestSupportManagement() {
   const [labSupports, setLabSupports] = useState([]);
@@ -21,22 +37,31 @@ function RequestSupportManagement() {
     pageSize: 20,
     total: 0,
   });
+  const [searchLabSupportId, setSearchLabSupportId] = useState("");
+  const [searchCustomerEmail, setSearchCustomerEmail] = useState("");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   useEffect(() => {
     fetchLabSupports();
-  }, []);
+  }, [searchLabSupportId, searchCustomerEmail, sortOrder]);
 
   const fetchLabSupports = async (page = 1) => {
     try {
-      const response = await api.get(
-        `labsupports?page=${page - 1}&supported=false`
-      );
+      const queryParams = new URLSearchParams({
+        page: page - 1,
+        supported: false,
+        "lab-support-id": searchLabSupportId,
+        "customer-email": searchCustomerEmail,
+        "order-by-createat-desc": sortOrder === "desc",
+      });
+
+      const response = await api.get(`labsupports?${queryParams}`);
       if (response.data.status === "success") {
-        setLabSupports(response.data.detail.data["lab-supports"]);
+        setLabSupports(response.data.details.data["lab-supports"]);
         setPagination({
           ...pagination,
           current: page,
-          total: response.data.detail.data["total-pages"],
+          total: response.data.details.data["total-pages"],
         });
       } else {
         toast.error("Không thể tải danh sách hỗ trợ");
@@ -95,7 +120,7 @@ function RequestSupportManagement() {
     try {
       const response = await api.get(`labsupports/${labSupportId}`);
       if (response.data.status === "success") {
-        return response.data.detail.data["lab-support"];
+        return response.data.details.data["lab-support"];
       }
     } catch (error) {
       console.error("Error fetching lab support details:", error);
@@ -194,9 +219,30 @@ function RequestSupportManagement() {
       ),
     },
     {
-      title: "Ngày tạo",
+      title: (
+        <Space>
+          Ngày tạo
+          <Tooltip title={sortOrder !== "desc" ? "Mới Nhất" : "Cũ Nhất"}>
+            <Button
+              type="text"
+              icon={
+                sortOrder === "desc" ? (
+                  <SortDescendingOutlined />
+                ) : (
+                  <SortAscendingOutlined />
+                )
+              }
+              onClick={() =>
+                setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+              }
+              size="small"
+            />
+          </Tooltip>
+        </Space>
+      ),
       dataIndex: "created-at",
       key: "created-at",
+
       render: (createdAt) => {
         const date = new Date(createdAt);
         return (
@@ -233,12 +279,16 @@ function RequestSupportManagement() {
     },
   ];
 
+  const handleSearch = () => {
+    fetchLabSupports(1);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="p-6  min-h-screen "
+      className="p-6 min-h-screen"
     >
       <Card className="shadow-lg rounded-lg overflow-hidden">
         <Space direction="vertical" size="large" className="w-full">
@@ -248,6 +298,26 @@ function RequestSupportManagement() {
           >
             Quản lý Yêu cầu Hỗ trợ
           </Title>
+
+          <Space className="w-full justify-between">
+            <Space>
+              <Search
+                placeholder="Mã hỗ trợ"
+                value={searchLabSupportId}
+                onChange={(e) => setSearchLabSupportId(e.target.value)}
+                onSearch={handleSearch}
+                style={{ width: 200 }}
+              />
+              <Search
+                placeholder="Email khách hàng"
+                value={searchCustomerEmail}
+                onChange={(e) => setSearchCustomerEmail(e.target.value)}
+                onSearch={handleSearch}
+                style={{ width: 200 }}
+              />
+            </Space>
+          </Space>
+
           <Table
             columns={columns}
             dataSource={labSupports}
@@ -257,6 +327,7 @@ function RequestSupportManagement() {
             pagination={pagination}
             className="shadow-sm"
             rowClassName="hover:bg-gray-50 transition-colors duration-200"
+            onChange={(pagination) => fetchLabSupports(pagination.current)}
           />
         </Space>
       </Card>

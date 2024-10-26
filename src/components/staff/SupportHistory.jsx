@@ -1,43 +1,82 @@
 import { useState, useEffect } from "react";
 import api from "../../config/axios";
-import { Table, Tag, Space, Typography, Spin, Alert, Card } from "antd";
-import { StarFilled, PhoneOutlined, MailOutlined } from "@ant-design/icons";
+import {
+  Table,
+  Tag,
+  Space,
+  Typography,
+  Alert,
+  Card,
+  Input,
+  Button,
+  Tooltip,
+} from "antd";
+import {
+  StarFilled,
+  PhoneOutlined,
+  MailOutlined,
+  SortAscendingOutlined,
+  SortDescendingOutlined,
+} from "@ant-design/icons";
 import { motion } from "framer-motion";
 
+const { Search } = Input;
 const { Title, Text } = Typography;
 
 function SupportHistory() {
   const [supportHistory, setSupportHistory] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
     total: 0,
   });
+  const [searchLabSupportId, setSearchLabSupportId] = useState("");
+  const [searchCustomerEmail, setSearchCustomerEmail] = useState("");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   useEffect(() => {
-    const fetchSupportHistory = async (page = 1) => {
-      try {
-        const response = await api.get(
-          `labsupports?page=${page - 1}&supported=true`
-        );
-        setSupportHistory(response.data.detail.data["lab-supports"]);
-        setPagination({
-          ...pagination,
-          current: page,
-          total: response.data.detail.data["total-pages"],
-        });
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Lỗi khi tải dữ liệu:", error);
-        setError(`Có lỗi xảy ra khi tải dữ liệu: ${error.message}`);
-        setIsLoading(false);
-      }
-    };
-
     fetchSupportHistory();
-  }, []);
+  }, [pagination.current, searchLabSupportId, searchCustomerEmail, sortOrder]);
+
+  const fetchSupportHistory = async () => {
+    try {
+      const params = new URLSearchParams({
+        page: pagination.current - 1,
+        supported: true,
+        "order-by-createat-desc": sortOrder === "desc",
+      });
+
+      if (searchLabSupportId) {
+        params.append("lab-support-id", searchLabSupportId);
+      }
+      if (searchCustomerEmail) {
+        params.append("customer-email", searchCustomerEmail);
+      }
+
+      const response = await api.get(`labsupports?${params.toString()}`);
+      setSupportHistory(response.data.details.data["lab-supports"]);
+      setPagination({
+        ...pagination,
+        total: response.data.details.data["total-pages"],
+      });
+    } catch (error) {
+      console.error("Lỗi khi tải dữ liệu:", error);
+      setError(`Có lỗi xảy ra khi tải dữ liệu: ${error.message}`);
+    }
+  };
+
+  const handleSearch = () => {
+    setPagination({ ...pagination, current: 1 });
+    fetchSupportHistory();
+  };
+
+  const handleTableChange = (pagination, filters, sorter) => {
+    setPagination(pagination);
+    if (sorter.field === "created-at") {
+      setSortOrder(sorter.order === "descend" ? "desc" : "asc");
+    }
+  };
 
   const columns = [
     {
@@ -132,9 +171,30 @@ function SupportHistory() {
       ),
     },
     {
-      title: "Ngày tạo",
+      title: (
+        <Space>
+          Ngày tạo
+          <Tooltip title={sortOrder !== "desc" ? "Mới Nhất" : "Cũ Nhất"}>
+            <Button
+              type="text"
+              icon={
+                sortOrder === "desc" ? (
+                  <SortDescendingOutlined />
+                ) : (
+                  <SortAscendingOutlined />
+                )
+              }
+              onClick={() =>
+                setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+              }
+              size="small"
+            />
+          </Tooltip>
+        </Space>
+      ),
       dataIndex: "created-at",
       key: "created-at",
+
       render: (createdAt) => {
         const date = new Date(createdAt);
         return (
@@ -165,37 +225,51 @@ function SupportHistory() {
     },
   ];
 
-  if (isLoading)
-    return (
-      <Spin
-        size="large"
-        className="flex justify-center items-center h-screen"
-      />
-    );
-  if (error) return <Alert message={error} type="error" className="m-4" />;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="p-6  min-h-screen "
+      className="p-6 min-h-screen"
     >
       <Card className="shadow-lg rounded-lg overflow-hidden">
-        <Title
-          level={2}
-          className="mb-6 text-center text-2xl font-bold text-gray-800"
-        >
-          Lịch sử hỗ trợ
-        </Title>
-        <Table
-          columns={columns}
-          dataSource={supportHistory}
-          rowKey="id"
-          pagination={pagination}
-          className="shadow-sm"
-          rowClassName="hover:bg-gray-50 transition-colors duration-200"
-        />
+        <Space direction="vertical" size="large" className="w-full">
+          <Title
+            level={2}
+            className="mb-6 text-center text-2xl font-bold text-gray-800"
+          >
+            Lịch sử hỗ trợ
+          </Title>
+          <Space className="mb-4">
+            <Search
+              placeholder="Mã hỗ trợ"
+              value={searchLabSupportId}
+              onChange={(e) => setSearchLabSupportId(e.target.value)}
+              onSearch={handleSearch}
+              style={{ width: 200 }}
+            />
+            <Search
+              placeholder="Email khách hàng"
+              value={searchCustomerEmail}
+              onChange={(e) => setSearchCustomerEmail(e.target.value)}
+              onSearch={handleSearch}
+              style={{ width: 200 }}
+            />
+          </Space>
+          {error ? (
+            <Alert message={error} type="error" className="mb-4" />
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={supportHistory}
+              rowKey="id"
+              pagination={pagination}
+              onChange={handleTableChange}
+              className="shadow-sm"
+              rowClassName="hover:bg-gray-50 transition-colors duration-200"
+            />
+          )}
+        </Space>
       </Card>
     </motion.div>
   );
