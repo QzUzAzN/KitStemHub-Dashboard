@@ -1,25 +1,61 @@
+import { useState, useEffect } from "react";
+import { Form, Avatar, Card, Typography, Spin, Row, Col } from "antd";
 import {
-  Form,
-  Input,
-  Select,
-  Avatar,
-  Card,
-  Typography,
-  DatePicker,
-} from "antd";
-import dayjs from "dayjs"; // Import dayjs
+  UserOutlined,
+  ManOutlined,
+  WomanOutlined,
+  CalendarOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  HomeOutlined,
+} from "@ant-design/icons";
+import dayjs from "dayjs";
+import api from "../../config/axios";
 
 const { Title, Text } = Typography;
 
 function StaffProfile() {
-  // Giả định dữ liệu profile được lấy từ API hoặc state
-  const profileData = {
-    firstName: "Alexa",
-    lastName: "Rawles",
-    gender: "Female",
-    birthDate: dayjs("1990-01-01"), // Convert to dayjs object
-    address: "123 Main St, City, Country",
-    email: "alexarawles@gmail.com",
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get("/users/profile");
+        const userData = response.data.details.data["user-profile-dto"];
+        setProfileData({
+          userName: userData["user-name"],
+          firstName: userData["first-name"],
+          lastName: userData["last-name"],
+          phoneNumber: userData["phone-number"],
+          address: userData.address,
+          gender: userData.gender,
+          birthDate: dayjs(userData["birth-date"]),
+        });
+        setLoading(false);
+      } catch (error) {
+        console.error("Lỗi khi tải thông tin cá nhân:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  const getGenderIcon = (gender) => {
+    return gender.toLowerCase() === "male" ? (
+      <ManOutlined className="text-blue-500" />
+    ) : (
+      <WomanOutlined className="text-pink-500" />
+    );
   };
 
   return (
@@ -28,7 +64,7 @@ function StaffProfile() {
         <header className="flex justify-between items-center mb-8">
           <div>
             <Title level={2} className="mb-0">
-              Staff Profile
+              Hồ Sơ Nhân Viên
             </Title>
             <Text type="secondary">
               {new Date().toLocaleString("vi-VN", {
@@ -44,44 +80,102 @@ function StaffProfile() {
         <Card className="mb-8 bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
           <div className="flex items-center">
             <div className="relative">
-              <Avatar size={64} src="/avatar.jpg" className="mr-4" />
+              <Avatar
+                size={64}
+                src="/avatar.jpg"
+                icon={<UserOutlined />}
+                className="mr-4"
+              />
             </div>
             <div>
               <Title level={3} className="mb-0">
                 {`${profileData.firstName} ${profileData.lastName}`}
               </Title>
-              <Text type="secondary">{profileData.email}</Text>
+              <Text type="secondary">{profileData.userName}</Text>
             </div>
           </div>
         </Card>
 
-        <Form
-          layout="vertical"
-          className="bg-white p-6 rounded-lg shadow"
-          initialValues={profileData}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Form.Item label="First Name" name="firstName">
-              <Input readOnly />
+        <Row gutter={[24, 16]} className="bg-white p-6 rounded-lg shadow-inner">
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="firstName"
+              className="mb-4"
+              label={<span className="text-gray-800 font-bold">Họ</span>}
+            >
+              <Text strong className="text-normal text-gray-500">
+                {profileData.firstName}
+              </Text>
             </Form.Item>
-            <Form.Item label="Last Name" name="lastName">
-              <Input readOnly />
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="lastName"
+              className="mb-4"
+              l
+              label={<span className="text-gray-800 font-bold">Tên</span>}
+            >
+              <Text strong className="text-normal text-gray-500">
+                {profileData.lastName}
+              </Text>
             </Form.Item>
-            <Form.Item label="Gender" name="gender">
-              <Select disabled>
-                <Select.Option value="male">Male</Select.Option>
-                <Select.Option value="female">Female</Select.Option>
-                <Select.Option value="other">Other</Select.Option>
-              </Select>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              label={<span className="text-gray-800 font-bold">Giới Tính</span>}
+              name="gender"
+              className="mb-4"
+            >
+              <Text strong className="text-normal text-gray-500">
+                {profileData.gender}
+              </Text>
             </Form.Item>
-            <Form.Item label="Birth Date" name="birthDate">
-              <DatePicker className="w-full" disabled format="YYYY-MM-DD" />
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              label={<CalendarOutlined className="text-green-500" />}
+              name="birthDate"
+              className="mb-4"
+            >
+              <Text strong className="text-normal text-gray-500">
+                {profileData.birthDate.format("DD/MM/YYYY")}
+              </Text>
             </Form.Item>
-            <Form.Item label="Address" name="address" className="col-span-2">
-              <Input.TextArea rows={3} readOnly />
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              label={<PhoneOutlined className="text-indigo-500" />}
+              name="phoneNumber"
+              className="mb-4"
+            >
+              <Text strong className="text-normal text-gray-500">
+                {profileData.phoneNumber}
+              </Text>
             </Form.Item>
-          </div>
-        </Form>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              label={<MailOutlined className="text-red-500" />}
+              name="userName"
+              className="mb-4"
+            >
+              <Text strong className="text-normal text-gray-500">
+                {profileData.userName}
+              </Text>
+            </Form.Item>
+          </Col>
+          <Col span={24}>
+            <Form.Item
+              label={<HomeOutlined className="text-yellow-500" />}
+              name="address"
+              className="mb-0"
+            >
+              <Text strong className="text-normal text-gray-500">
+                {profileData.address}
+              </Text>
+            </Form.Item>
+          </Col>
+        </Row>
       </Card>
     </div>
   );
