@@ -22,13 +22,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    // console.log(originalRequest);
-    // console.log("hello" + error.config);
-    // console.log("Error Config:", error.config);
-    // console.log("Error Response Status:", error.response.status);
-    // console.log("Error Message:", error.message);
-    // If the error status is 401 and there is no originalRequest._retry flag,
-    // it means the token has expired and we need to refresh it
+
     //Cờ _retry để đảm bảo rằng không thực hiện lại việc gọi API quá nhiều lần nếu lỗi 401
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
