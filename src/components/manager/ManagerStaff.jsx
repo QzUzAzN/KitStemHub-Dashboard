@@ -57,9 +57,10 @@ function ManagerStaff() {
         pageSize: pageSize,
       };
       console.log("params: ", params);
-      const response = await api.get("users", {
+      const response = await api.get("/users", {
         params,
       });
+      console.log(response.data.details.data.users); // Kiểm tra dữ liệu trả về từ API
 
       if (response.data?.details?.data?.users) {
         const staffData = response.data.details.data.users.map((user) => ({
@@ -73,6 +74,7 @@ function ManagerStaff() {
               ? 0
               : undefined,
         }));
+        console.log(staffData);
         const totalPages = response.data.details.data["total-pages"] || 0;
         const currentPage = response.data.details.data["current-page"] || 0;
 
@@ -127,7 +129,8 @@ function ManagerStaff() {
         "birth-date": values["birth-date"].format("YYYY-MM-DD"),
       };
       console.log("Create payload:", payload);
-      await api.post("/users/register/staff", payload);
+      const response = await api.post("/users/register/staff", payload);
+      console.log("Create response:", response.data); // Kiểm tra dữ liệu trả về sau khi tạo
       notification.success({
         message: "Thành công",
         description: "Nhân viên đã được thêm thành công!",
@@ -309,18 +312,6 @@ function ManagerStaff() {
       dataIndex: "last-name",
       key: "last-name",
       width: 150,
-      render: (genderCode) => {
-        switch (genderCode) {
-          case 1:
-            return "Nam";
-          case 2:
-            return "Nữ";
-          case 0:
-            return "Khác";
-          default:
-            return "Không xác định";
-        }
-      },
     },
     {
       title: "Giới tính",
@@ -409,7 +400,7 @@ function ManagerStaff() {
       ),
     },
   ];
-
+  console.log(dataSource); // Kiểm tra dataSource trước khi render bảng
   return (
     <Form form={form} component={false} onFinish={handleFilterSubmit}>
       <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
