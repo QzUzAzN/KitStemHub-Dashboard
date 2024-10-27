@@ -2,14 +2,17 @@ import { useEffect, useState } from "react";
 import api from "../../config/axios";
 import {
   Button,
+  DatePicker,
   Form,
   Input,
+  Modal,
   notification,
   Popconfirm,
   Select,
   Table,
 } from "antd";
-import { DeleteOutlined, UndoOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, UndoOutlined } from "@ant-design/icons";
+import moment from "moment";
 
 const { Option } = Select;
 
@@ -17,7 +20,8 @@ function ManagerStaff() {
   const [form] = Form.useForm();
   const [dataSource, setDataSource] = useState([]);
   const [loading, setLoading] = useState(true);
-  // const [editingRecord, setEditingRecord] = useState(null);
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
@@ -104,6 +108,82 @@ function ManagerStaff() {
     }
   };
 
+  const createStaff = async (values) => {
+    try {
+      setIsSubmitting(true);
+      const payload = {
+        email: values.email,
+        password: values.password,
+        "first-name": values["first-name"],
+        "last-name": values["last-name"],
+        "phone-number": values["phone-number"],
+        address: values.address,
+        "gender-code": values["gender-code"],
+        "birth-date": values["birth-date"].format("YYYY-MM-DD"),
+      };
+      await api.post("/users/register/staff", payload);
+      notification.success({
+        message: "Thành công",
+        description: "Nhân viên đã được thêm thành công!",
+      });
+      await fetchStaff(); // Refresh the list
+      setIsModalVisible(false); // Close modal after success
+    } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi thêm nhân viên!",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const updateStaff = async (staffUserName, values) => {
+    try {
+      setIsSubmitting(true);
+      const payload = {
+        "first-name": values["first-name"],
+        "last-name": values["last-name"],
+        "phone-number": values["phone-number"],
+        address: values.address,
+        "gender-code": values["gender-code"],
+        "birth-date": values["birth-date"].format("YYYY-MM-DD"),
+      };
+
+      await api.put(
+        `/users/profile/staff/${encodeURIComponent(staffUserName)}`,
+        payload
+      );
+      notification.success({
+        message: "Thành công",
+        description: "Thông tin nhân viên đã được cập nhật thành công!",
+      });
+      await fetchStaff(); // Refresh danh sách nhân viên
+      setIsModalVisible(false); // Đóng modal sau khi cập nhật thành công
+    } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi cập nhật thông tin nhân viên!",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (record) => {
+    setEditingRecord(record);
+    form.setFieldsValue({
+      email: record["user-name"],
+      "first-name": record["first-name"],
+      "last-name": record["last-name"],
+      "phone-number": record["phone-number"],
+      address: record.address,
+      "gender-code": record["gender"],
+      "birth-date": moment(record["birth-date"]),
+    });
+    setIsModalVisible(true);
+  };
+
   const deleteStaff = async (userName) => {
     try {
       setIsSubmitting(true);
@@ -178,6 +258,24 @@ function ManagerStaff() {
     fetchStaff(1, pagination.pageSize);
   };
 
+  // Hàm mở modal và reset lại form
+  const handleAddStaff = () => {
+    form.resetFields(); // Reset tất cả các trường của form
+    setIsModalVisible(true);
+  };
+
+  // Đóng modal và đảm bảo rằng form được reset mỗi khi modal đóng
+  const handleCancel = () => {
+    form.resetFields(); // Reset lại form khi đóng modal
+    setIsModalVisible(false);
+  };
+
+  const handleSave = (values) => {
+    if (editingRecord) {
+      updateStaff(editingRecord["user-name"], values);
+    }
+  };
+
   useEffect(() => {
     fetchStaff();
   }, []);
@@ -200,6 +298,20 @@ function ManagerStaff() {
       dataIndex: "last-name",
       key: "last-name",
       width: 150,
+    },
+    {
+      title: "Giới tính",
+      dataIndex: "gender",
+      key: "gender",
+      width: 100,
+    },
+    {
+      title: "Ngày sinh",
+      dataIndex: "birth-date",
+      key: "birth-date",
+      width: 150,
+      render: (birthDate) =>
+        birthDate ? moment(birthDate).format("DD-MM-YYYY") : "Không có",
     },
     {
       title: "Số điện thoại",
@@ -234,6 +346,11 @@ function ManagerStaff() {
       key: "action",
       render: (_, record) => (
         <div className="flex gap-5 text-xl">
+          <EditOutlined
+            onClick={() => handleEdit(record)}
+            className="cursor-pointer"
+          />
+
           {record.status ? (
             <Popconfirm
               title="Bạn có chắc chắn muốn xóa?"
@@ -291,7 +408,9 @@ function ManagerStaff() {
           <Button onClick={resetFilters}>Đặt lại</Button>
         </Form>
       </div>
-
+      <Button type="primary" onClick={handleAddStaff}>
+        Thêm Nhân Viên
+      </Button>
       <Table
         bordered
         dataSource={dataSource}
@@ -305,6 +424,70 @@ function ManagerStaff() {
           onChange: (page) => fetchStaff(page),
         }}
       />
+
+      <Modal
+        title={editingRecord ? "Chỉnh sửa Nhân Viên" : "Thêm Nhân Viên"}
+        visible={isModalVisible}
+        onCancel={handleCancel}
+        onOk={() => form.submit()}
+        confirmLoading={isSubmitting}
+      >
+        <Form form={form} onFinish={handleSave} layout="vertical">
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[{ required: true, message: "Vui lòng nhập email!" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            label="Mật khẩu"
+            rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+          >
+            <Input.Password autoComplete="new-password" />
+            {/* Dùng "new-password" cho trường hợp đăng ký */}
+          </Form.Item>
+          <Form.Item
+            name="first-name"
+            label="Tên"
+            rules={[{ required: true, message: "Vui lòng nhập tên!" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="last-name"
+            label="Họ"
+            rules={[{ required: true, message: "Vui lòng nhập họ!" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item name="phone-number" label="Số điện thoại">
+            <Input />
+          </Form.Item>
+          <Form.Item name="address" label="Địa chỉ">
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="gender-code"
+            label="Giới tính"
+            rules={[{ required: true, message: "Vui lòng chọn giới tính!" }]}
+          >
+            <Select>
+              <Option value={1}>Nam</Option>
+              <Option value={2}>Nữ</Option>
+              <Option value={0}>Khác</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="birth-date"
+            label="Ngày sinh"
+            rules={[{ required: true, message: "Vui lòng chọn ngày sinh!" }]}
+          >
+            <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Form>
   );
 }
