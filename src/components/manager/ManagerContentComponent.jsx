@@ -3,6 +3,7 @@ import {
   UndoOutlined,
   EditOutlined,
   PlusCircleOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import {
   Table,
@@ -13,6 +14,7 @@ import {
   Modal,
   Input,
   InputNumber,
+  Button,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
@@ -24,6 +26,7 @@ function ManagerContentComponent() {
   const [isOpen, setOpen] = useState(false); // Để mở/đóng modal
   const [editingRecord, setEditingRecord] = useState(null); // Để lưu record hiện tại nếu chỉnh sửa
   const [form] = Form.useForm(); // Khởi tạo form của Ant Design
+  const [searchName, setSearchName] = useState(""); // State để lưu tên linh kiện cần tìm kiếm
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
@@ -34,19 +37,16 @@ function ManagerContentComponent() {
   const fetchComponents = async (
     page = 1,
     pageSize = 20,
+    name = "",
     showNotification = true
   ) => {
     try {
       setLoading(true);
-      const params = { page: page - 1, pageSize };
+      const params = { page: page - 1, pageSize, name };
       const response = await api.get("/components", {
         params,
       }); // API để lấy danh sách components
-      if (
-        response.data &&
-        response.data.details &&
-        response.data.details.data.components
-      ) {
+      if (response.data?.details?.data?.components) {
         const componentsData = response.data.details.data.components;
         const totalPages = response.data.details.data["total-pages"] || 0;
         setDataSource(componentsData);
@@ -256,6 +256,10 @@ function ManagerContentComponent() {
     }));
     fetchComponents(page, pageSize);
   };
+
+  const handleSearch = () => {
+    fetchComponents(1, pagination.pageSize, searchName);
+  };
   useEffect(() => {
     fetchComponents(pagination.current, pagination.pageSize); // Fetch danh sách components khi component được mount
   }, []);
@@ -322,7 +326,23 @@ function ManagerContentComponent() {
   return (
     <div>
       <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
-        <div className="text-3xl font-semibold text-gray-700">Quản lý Kit</div>
+        <div className="text-3xl font-semibold text-gray-700">
+          Quản lý thành phần Kit
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Tìm kiếm theo tên"
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+          />
+          <Button
+            icon={<SearchOutlined />}
+            onClick={handleSearch}
+            type="primary"
+          >
+            Tìm kiếm
+          </Button>
+        </div>
       </div>
       <div className="flex justify-end ml-5 mb-3">
         <button
