@@ -39,7 +39,7 @@ function ManagerContentComponent() {
     try {
       setLoading(true);
       const params = { page: page - 1, pageSize };
-      const response = await api.get("components", {
+      const response = await api.get("/components", {
         params,
       }); // API để lấy danh sách components
       if (
@@ -48,9 +48,13 @@ function ManagerContentComponent() {
         response.data.details.data.components
       ) {
         const componentsData = response.data.details.data.components;
-        const totalItems = response.data.details.data.total || 0;
+        const totalPages = response.data.details.data["total-pages"] || 0;
         setDataSource(componentsData);
-        setPagination({ current: page, pageSize, total: totalItems });
+        setPagination({
+          total: totalPages * pageSize,
+          current: page,
+          pageSize,
+        });
       } else {
         setDataSource([]);
       }
@@ -245,9 +249,13 @@ function ManagerContentComponent() {
   };
 
   const handleTableChange = (page, pageSize) => {
-    fetchComponents(page, pageSize); // Fetch dữ liệu khi phân trang thay đổi
+    setPagination((prev) => ({
+      ...prev,
+      current: page,
+      pageSize: pageSize,
+    }));
+    fetchComponents(page, pageSize);
   };
-
   useEffect(() => {
     fetchComponents(pagination.current, pagination.pageSize); // Fetch danh sách components khi component được mount
   }, []);

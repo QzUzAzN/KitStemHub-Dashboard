@@ -36,9 +36,17 @@ function ManagerContentKits() {
   const [currentImages, setCurrentImages] = useState([]); // Mảng lưu trữ ảnh hiện tại để xem
   const [viewComponentsModalVisible, setViewComponentsModalVisible] =
     useState(false); // Modal hiển thị thành phần
+  const [addComponentModalVisible, setAddComponentModalVisible] =
+    useState(false);
   const [componentsData, setComponentsData] = useState([]); // State để lưu các thành phần của kit hiện tại
+  const [selectedComponents, setSelectedComponents] = useState([]);
   const [isFetchingComponents, setIsFetchingComponents] = useState(false); // Trạng thái loading khi fetch component
   const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 20,
+    total: 0,
+  });
+  const [componentPagination, setComponentPagination] = useState({
     current: 1,
     pageSize: 20,
     total: 0,
@@ -138,10 +146,10 @@ function ManagerContentKits() {
       formData.append("PurchaseCost", newKit.purchaseCost || 0);
       // Append the status as a boolean, assuming the backend expects true/false
       formData.append("Status", newKit.status ? true : false);
-      // Thêm ComponentId và ComponentQuantity
+      // Kiểm tra lại các thành phần đã chọn
       newKit.components.forEach((component, index) => {
-        formData.append(`ComponentId[${index}]`, component.componentId);
-        formData.append(`ComponentQuantity[${index}]`, component.quantity); // Add quantity here
+        formData.append(`ComponentId[${index}]`, component.id);
+        formData.append(`ComponentQuantity[${index}]`, component.quantity);
       });
 
       // Thêm file ảnh vào FormData
@@ -149,6 +157,11 @@ function ManagerContentKits() {
         imageFiles.forEach((file) => {
           formData.append("KitImagesList", file); // Sử dụng KitImagesList để thêm ảnh
         });
+      }
+
+      // Log toàn bộ nội dung của FormData để kiểm tra
+      for (const [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
       }
 
       const response = await api.post("kits", formData, {
@@ -194,10 +207,10 @@ function ManagerContentKits() {
       formData.append("Brief", updatedKit.brief);
       formData.append("Description", updatedKit.description || ""); // Thêm Description
       formData.append("PurchaseCost", updatedKit.purchaseCost || 0);
-      // Thêm ComponentId và ComponentQuantity
+      // Add selected components
       updatedKit.components.forEach((component, index) => {
-        formData.append(`ComponentId[${index}]`, component.componentId);
-        formData.append(`ComponentQuantity[${index}]`, component.quantity); // Add quantity here
+        formData.append(`ComponentId[${index}]`, component.id);
+        formData.append(`ComponentQuantity[${index}]`, component.quantity);
       });
 
       // Thêm trường Status (giả sử API cần)
@@ -212,6 +225,11 @@ function ManagerContentKits() {
         updatedKit.existingImages.forEach((image) => {
           formData.append("existingImages[]", image.url);
         });
+      }
+
+      // Log FormData for debugging
+      for (const [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
       }
 
       const response = await api.put(`kits`, formData, {
@@ -371,20 +389,170 @@ function ManagerContentKits() {
     }
   };
 
-  const fetchComponents = async () => {
+  const fetchComponents = async (page = 1, pageSize = 20) => {
     try {
-      const response = await api.get("/components"); // Đường dẫn tới API lấy components
-      if (
-        response.data &&
-        response.data.details &&
-        response.data.details.data
-      ) {
-        setComponentsData(response.data.details.data["component-models"]); // Đổ dữ liệu vào componentsData
+      const params = { page: page - 1, pageSize };
+      const response = await api.get("/components", { params }); // Đường dẫn tới API lấy components
+      if (response.data?.details?.data?.components) {
+        const componentsData = response.data.details.data.components;
+        const totalPages = response.data.details.data["total-pages"] || 0;
+        // const currentPage = response.data.details.data["current-page"] || 0;
+
+        setComponentsData(componentsData);
+        setComponentPagination({
+          total: totalPages * pageSize,
+          current: page,
+          pageSize,
+        });
       }
     } catch (error) {
       console.error("Lỗi khi lấy thành phần:", error);
+      notification.destroy();
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi lấy danh sách thành phần!",
+        duration: 3,
+      });
     }
   };
+
+  const handleAddComponents = () => {
+    setAddComponentModalVisible(true);
+    fetchComponents(componentPagination.current, componentPagination.pageSize);
+  };
+
+  // Cập nhật rowSelection để giữ lại các lựa chọn
+  const rowSelection = {
+    selectedRowKeys: selectedComponents.map((item) => item.id),
+    onChange: (selectedRowKeys) => {
+      const updatedSelections = selectedRowKeys
+        .map((id) => {
+          const component = componentsData.find((item) => item.id === id);
+          return component
+            ? {
+                id: component.id,
+                name: component.name,
+                quantity:
+                  selectedComponents.find((item) => item.id === id)?.quantity ||
+                  1,
+              }
+            : null;
+        })
+        .filter((item) => item !== null);
+
+      // Cập nhật selectedComponents với thông tin mới
+      setSelectedComponents((prevSelectedComponents) => {
+        const combinedSelections = [
+          ...prevSelectedComponents,
+          ...updatedSelections,
+        ].reduce((acc, item) => {
+          if (!acc.find((i) => i.id === item.id)) acc.push(item);
+          return acc;
+        }, []);
+
+        return combinedSelections;
+      });
+    },
+  };
+
+  // Cập nhật số lượng trong `selectedComponents` khi người dùng thay đổi
+  const handleQuantityChange = (id, value) => {
+    setSelectedComponents((prevSelectedComponents) =>
+      prevSelectedComponents.map((component) =>
+        component.id === id ? { ...component, quantity: value } : component
+      )
+    );
+  };
+
+  const handleComponentTableChange = (page, pageSize) => {
+    console.log("Changing to page:", page, "with pageSize:", pageSize); // Log kiểm tra
+    fetchComponents(page, pageSize); // Fetch dữ liệu với trang hiện tại và số phần tử trên trang
+    setComponentPagination({ ...componentPagination, current: page, pageSize });
+  };
+
+  // Khi bấm "OK", lấy tất cả các lựa chọn từ selectedComponents
+  const handleConfirmAddComponents = () => {
+    console.log("Selected Components:", selectedComponents);
+
+    // Lấy danh sách các thành phần hiện tại trong form
+    const existingComponents = form.getFieldValue("components") || [];
+
+    // Tạo danh sách cập nhật bằng cách duyệt qua `selectedComponents`
+    const updatedComponents = selectedComponents.map((newComp) => {
+      const existingComponent = existingComponents.find(
+        (comp) => comp.id === newComp.id
+      );
+
+      if (existingComponent) {
+        // Nếu thành phần đã tồn tại, cập nhật số lượng
+        return { ...existingComponent, quantity: newComp.quantity };
+      }
+      // Nếu không tồn tại, thêm mới
+      return newComp;
+    });
+
+    // Kết hợp các thành phần chưa có trong `selectedComponents`
+    const combinedComponents = [
+      ...existingComponents.filter(
+        (existingComp) =>
+          !selectedComponents.some((newComp) => newComp.id === existingComp.id)
+      ),
+      ...updatedComponents,
+    ];
+
+    // Cập nhật giá trị mới vào form
+    form.setFieldsValue({ components: combinedComponents });
+
+    console.log("Updated Components in form:", combinedComponents);
+
+    // Đặt lại selectedComponents sau khi form đã cập nhật
+    setSelectedComponents([]);
+    setAddComponentModalVisible(false);
+  };
+
+  useEffect(() => {
+    if (selectedComponents.length > 0) {
+      const existingComponents = form.getFieldValue("components") || [];
+      const updatedComponents = [
+        ...existingComponents,
+        ...selectedComponents.filter(
+          (newComp) =>
+            !existingComponents.some(
+              (existingComp) => existingComp.id === newComp.id
+            )
+        ),
+      ];
+      form.setFieldsValue({ components: updatedComponents });
+    }
+  }, [selectedComponents]);
+
+  const componentsColumns = [
+    {
+      title: "ID Thành phần",
+      dataIndex: "id",
+      key: "id",
+    },
+    {
+      title: "Tên Thành phần",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
+      render: (_, record) => (
+        <InputNumber
+          min={1}
+          value={
+            selectedComponents.find((item) => item.id === record.id)
+              ?.quantity || 1
+          }
+          onChange={(value) => handleQuantityChange(record.id, value)}
+        />
+      ),
+    },
+  ];
 
   useEffect(() => {
     fetchKits(); // Lần đầu tải trang
@@ -518,8 +686,9 @@ function ManagerContentKits() {
       console.log("Kit data: ", kitData);
       // Map the existing components to set them in the form
       const components = kitData.components.map((component) => ({
-        componentId: component["component-id"], // Mapping correct field names
-        quantity: component["component-quantity"], // Mapping correct field names
+        id: component["component-id"],
+        name: component["component-name"],
+        quantity: component["component-quantity"],
       }));
 
       // If there are current images, show the old images
@@ -537,7 +706,7 @@ function ManagerContentKits() {
         categoryId: kitData["category-id"], // Use category-id
         status: kitData.status,
       });
-
+      setEditingRecord(record);
       setOpen(true); // Open the form modal
     } catch (error) {
       console.error("Failed to fetch kit details:", error);
@@ -728,75 +897,31 @@ function ManagerContentKits() {
               <Input.TextArea rows={3} />
             </Form.Item>
 
-            {/* Form List để chọn component và số lượng */}
-            <Form.List name="components">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map(({ key, name, fieldKey, ...restField }) => (
-                    <div key={key} style={{ display: "flex", gap: "10px" }}>
-                      <Form.Item
-                        {...restField}
-                        name={[name, "componentId"]}
-                        fieldKey={[fieldKey, "componentId"]}
-                        label="Chọn thành phần"
-                        rules={[
-                          {
-                            required: true,
-                            message: "Vui lòng chọn thành phần!",
-                          },
-                        ]}
-                        style={{ flex: 1 }}
-                      >
-                        <Select placeholder="Chọn thành phần">
-                          {componentsData.map((component) => (
-                            <Select.Option
-                              key={component.id}
-                              value={component.id}
-                            >
-                              {component.name}
-                            </Select.Option>
-                          ))}
-                        </Select>
-                      </Form.Item>
+            <Form.Item
+              label="Thêm thành phần"
+              name="components"
+              valuePropName="components"
+            >
+              <Button
+                type="dashed"
+                onClick={handleAddComponents}
+                icon={<PlusCircleOutlined />}
+              >
+                Thêm thành phần
+              </Button>
+            </Form.Item>
 
-                      <Form.Item
-                        {...restField}
-                        name={[name, "quantity"]}
-                        fieldKey={[fieldKey, "quantity"]}
-                        label="Số lượng"
-                        rules={[
-                          {
-                            required: true,
-                            message: "Vui lòng nhập số lượng!",
-                          },
-                        ]}
-                        style={{ flex: 1 }}
-                      >
-                        <InputNumber
-                          min={1}
-                          placeholder="Số lượng"
-                          style={{ width: "100%" }}
-                        />
-                      </Form.Item>
-
-                      <Button onClick={() => remove(name)} type="danger">
-                        Xóa
-                      </Button>
-                    </div>
-                  ))}
-                  <Form.Item>
-                    <Button
-                      type="dashed"
-                      onClick={() => add()}
-                      block
-                      icon={<PlusCircleOutlined />}
-                    >
-                      Thêm thành phần
-                    </Button>
-                  </Form.Item>
-                </>
-              )}
-            </Form.List>
+            {/* Display selected components */}
+            <Table
+              dataSource={form.getFieldValue("components") || []}
+              columns={[
+                { title: "ID", dataIndex: "id", key: "id" },
+                { title: "Tên", dataIndex: "name", key: "name" },
+                { title: "Số lượng", dataIndex: "quantity", key: "quantity" },
+              ]}
+              rowKey="id"
+              pagination={false}
+            />
 
             <Form.Item
               label="Giá"
@@ -893,6 +1018,31 @@ function ManagerContentKits() {
           </Form>
         </Spin>{" "}
         {/* Kết thúc Spin */}
+      </Modal>
+      {/* Add Component Modal */}
+      <Modal
+        title="Thêm thành phần vào Kit"
+        visible={addComponentModalVisible}
+        onCancel={() => {
+          setAddComponentModalVisible(false);
+          setSelectedComponents([]); // Reset selectedComponents khi modal đóng
+        }}
+        onOk={handleConfirmAddComponents}
+      >
+        <Table
+          dataSource={componentsData}
+          columns={componentsColumns}
+          rowSelection={rowSelection}
+          rowKey="id"
+          pagination={{
+            total: componentPagination.total,
+            current: componentPagination.current,
+            pageSize: componentPagination.pageSize,
+            showSizeChanger: false,
+            onChange: (page, pageSize) =>
+              handleComponentTableChange(page, pageSize),
+          }}
+        />
       </Modal>
     </Form>
   );
