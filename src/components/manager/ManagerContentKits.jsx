@@ -3,6 +3,7 @@ import {
   EditOutlined,
   EyeOutlined,
   PlusCircleOutlined,
+  SearchOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
 import {
@@ -51,6 +52,7 @@ function ManagerContentKits() {
     pageSize: 20,
     total: 0,
   });
+  const [componentSearchName, setComponentSearchName] = useState("");
   // const [isFirstLoad, setIsFirstLoad] = useState(true); // Biến trạng thái để theo dõi lần tải đầu tiên
   const [isSubmitting, setIsSubmitting] = useState(false); // Trạng thái loading cho create và update
   const [filters, setFilters] = useState({
@@ -389,9 +391,9 @@ function ManagerContentKits() {
     }
   };
 
-  const fetchComponents = async (page = 1, pageSize = 20) => {
+  const fetchComponents = async (page = 1, pageSize = 20, name = "") => {
     try {
-      const params = { page: page - 1, pageSize };
+      const params = { page: page - 1, pageSize, name };
       const response = await api.get("/components", { params }); // Đường dẫn tới API lấy components
       if (response.data?.details?.data?.components) {
         const componentsData = response.data.details.data.components;
@@ -419,6 +421,10 @@ function ManagerContentKits() {
   const handleAddComponents = () => {
     setAddComponentModalVisible(true);
     fetchComponents(componentPagination.current, componentPagination.pageSize);
+  };
+
+  const handleSearchComponents = () => {
+    fetchComponents(1, componentPagination.pageSize, componentSearchName);
   };
 
   // Cập nhật rowSelection để giữ lại các lựa chọn
@@ -1029,6 +1035,21 @@ function ManagerContentKits() {
         }}
         onOk={handleConfirmAddComponents}
       >
+        <div className="flex items-center mb-3">
+          <Input
+            placeholder="Tìm kiếm thành phần"
+            value={componentSearchName}
+            onChange={(e) => setComponentSearchName(e.target.value)}
+          />
+          <Button
+            icon={<SearchOutlined />}
+            onClick={handleSearchComponents}
+            type="primary"
+            className="ml-2"
+          >
+            Tìm kiếm
+          </Button>
+        </div>
         <Table
           dataSource={componentsData}
           columns={componentsColumns}

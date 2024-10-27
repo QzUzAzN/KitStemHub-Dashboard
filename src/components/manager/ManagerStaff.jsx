@@ -61,13 +61,18 @@ function ManagerStaff() {
         params,
       });
 
-      if (
-        response.data &&
-        response.data.details &&
-        response.data.details.data &&
-        response.data.details.data.users
-      ) {
-        const staffData = response.data.details.data.users;
+      if (response.data?.details?.data?.users) {
+        const staffData = response.data.details.data.users.map((user) => ({
+          ...user,
+          "gender-code":
+            user.gender === "Male"
+              ? 1
+              : user.gender === "Female"
+              ? 2
+              : user.gender === "Other"
+              ? 0
+              : undefined,
+        }));
         const totalPages = response.data.details.data["total-pages"] || 0;
         const currentPage = response.data.details.data["current-page"] || 0;
 
@@ -121,6 +126,7 @@ function ManagerStaff() {
         "gender-code": values["gender-code"],
         "birth-date": values["birth-date"].format("YYYY-MM-DD"),
       };
+      console.log("Create payload:", payload);
       await api.post("/users/register/staff", payload);
       notification.success({
         message: "Thành công",
@@ -142,12 +148,14 @@ function ManagerStaff() {
     try {
       setIsSubmitting(true);
       const payload = {
-        "first-name": values["first-name"],
-        "last-name": values["last-name"],
-        "phone-number": values["phone-number"],
-        address: values.address,
-        "gender-code": values["gender-code"],
-        "birth-date": values["birth-date"].format("YYYY-MM-DD"),
+        "first-name": values["first-name"] || editingRecord["first-name"],
+        "last-name": values["last-name"] || editingRecord["last-name"],
+        "phone-number": values["phone-number"] || editingRecord["phone-number"],
+        address: values.address || editingRecord.address,
+        "gender-code": values["gender-code"] ?? editingRecord["gender"],
+        "birth-date": values["birth-date"]
+          ? values["birth-date"].format("YYYY-MM-DD")
+          : editingRecord["birth-date"],
       };
 
       await api.put(
@@ -178,7 +186,7 @@ function ManagerStaff() {
       "last-name": record["last-name"],
       "phone-number": record["phone-number"],
       address: record.address,
-      "gender-code": record["gender"],
+      "gender-code": record["gender-code"],
       "birth-date": moment(record["birth-date"]),
     });
     setIsModalVisible(true);
@@ -260,6 +268,7 @@ function ManagerStaff() {
 
   // Hàm mở modal và reset lại form
   const handleAddStaff = () => {
+    setEditingRecord(null); // Đảm bảo không có bản ghi đang chỉnh sửa
     form.resetFields(); // Reset tất cả các trường của form
     setIsModalVisible(true);
   };
@@ -273,6 +282,8 @@ function ManagerStaff() {
   const handleSave = (values) => {
     if (editingRecord) {
       updateStaff(editingRecord["user-name"], values);
+    } else {
+      createStaff(values);
     }
   };
 
@@ -298,12 +309,36 @@ function ManagerStaff() {
       dataIndex: "last-name",
       key: "last-name",
       width: 150,
+      render: (genderCode) => {
+        switch (genderCode) {
+          case 1:
+            return "Nam";
+          case 2:
+            return "Nữ";
+          case 0:
+            return "Khác";
+          default:
+            return "Không xác định";
+        }
+      },
     },
     {
       title: "Giới tính",
-      dataIndex: "gender",
-      key: "gender",
+      dataIndex: "gender-code",
+      key: "gender-code",
       width: 100,
+      render: (genderCode) => {
+        switch (genderCode) {
+          case 1:
+            return "Nam";
+          case 2:
+            return "Nữ";
+          case 0:
+            return "Khác";
+          default:
+            return "Không xác định";
+        }
+      },
     },
     {
       title: "Ngày sinh",
@@ -438,14 +473,19 @@ function ManagerStaff() {
             label="Email"
             rules={[{ required: true, message: "Vui lòng nhập email!" }]}
           >
-            <Input />
+            <Input disabled={!!editingRecord} />
           </Form.Item>
           <Form.Item
             name="password"
             label="Mật khẩu"
-            rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+            rules={[
+              { required: !editingRecord, message: "Vui lòng nhập mật khẩu!" },
+            ]}
           >
-            <Input.Password autoComplete="new-password" />
+            <Input.Password
+              autoComplete="new-password"
+              disabled={!!editingRecord}
+            />
             {/* Dùng "new-password" cho trường hợp đăng ký */}
           </Form.Item>
           <Form.Item
