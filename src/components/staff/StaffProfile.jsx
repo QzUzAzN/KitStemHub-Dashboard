@@ -98,23 +98,36 @@ function StaffProfile() {
 
         <Row gutter={[24, 16]} className="bg-white p-6 rounded-lg shadow-inner">
           <Col xs={24} sm={12}>
-            <Form.Item name="firstName" className="mb-4" label="Họ">
-              <Text strong className="text-lg">
+            <Form.Item
+              name="firstName"
+              className="mb-4"
+              label={<span className="text-gray-800 font-bold">Họ</span>}
+            >
+              <Text strong className="text-normal text-gray-500">
                 {profileData.firstName}
               </Text>
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item name="lastName" className="mb-4" label="Tên">
-              <Text strong className="text-lg">
+            <Form.Item
+              name="lastName"
+              className="mb-4"
+              l
+              label={<span className="text-gray-800 font-bold">Tên</span>}
+            >
+              <Text strong className="text-normal text-gray-500">
                 {profileData.lastName}
               </Text>
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item label={"Giới Tính"} name="gender" className="mb-4">
-              <Text strong className="text-lg">
-                {profileData.gender === "Male" ? "Nam" : "Nữ"}
+            <Form.Item
+              label={<span className="text-gray-800 font-bold">Giới Tính</span>}
+              name="gender"
+              className="mb-4"
+            >
+              <Text strong className="text-normal text-gray-500">
+                {profileData.gender}
               </Text>
             </Form.Item>
           </Col>
@@ -124,7 +137,7 @@ function StaffProfile() {
               name="birthDate"
               className="mb-4"
             >
-              <Text strong className="text-lg">
+              <Text strong className="text-normal text-gray-500">
                 {profileData.birthDate.format("DD/MM/YYYY")}
               </Text>
             </Form.Item>
@@ -135,7 +148,7 @@ function StaffProfile() {
               name="phoneNumber"
               className="mb-4"
             >
-              <Text strong className="text-lg">
+              <Text strong className="text-normal text-gray-500">
                 {profileData.phoneNumber}
               </Text>
             </Form.Item>
@@ -146,7 +159,7 @@ function StaffProfile() {
               name="userName"
               className="mb-4"
             >
-              <Text strong className="text-lg">
+              <Text strong className="text-normal text-gray-500">
                 {profileData.userName}
               </Text>
             </Form.Item>
@@ -157,7 +170,7 @@ function StaffProfile() {
               name="address"
               className="mb-0"
             >
-              <Text strong className="text-lg">
+              <Text strong className="text-normal text-gray-500">
                 {profileData.address}
               </Text>
             </Form.Item>
