@@ -1,83 +1,135 @@
+import { useState } from "react";
+import { Button, Layout, Menu } from "antd";
 import {
   DropboxOutlined,
   FilePdfOutlined,
   RobotOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from "@ant-design/icons";
-import { Layout, Menu } from "antd";
-import Sider from "antd/es/layout/Sider";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { NavLink } from "react-router-dom";
+
+const { Sider } = Layout;
 
 function ManagerSidebar() {
-  const navigate = useNavigate();
-
-  const handleNavigate = (path) => () => {
-    navigate(path);
-  };
-  const items = [
-    {
-      icon: <RobotOutlined />,
-      label: <p className="font-medium">Quản lí Kits</p>,
-      onClick: handleNavigate("/manager/kits"),
-    },
-    {
-      icon: <RobotOutlined />,
-      label: <p className="font-medium">Quản lí Components</p>,
-      onClick: handleNavigate("/manager/components"),
-    },
-    {
-      icon: <FilePdfOutlined />,
-      label: <p className="font-medium">Quản lí Labs</p>,
-      onClick: handleNavigate("/manager/labs"),
-    },
-    {
-      icon: <DropboxOutlined />,
-      label: <p className="font-medium">Quản lí Package</p>,
-      onClick: handleNavigate("/manager/packages"),
-    },
-    {
-      icon: <DropboxOutlined />,
-      label: <p className="font-medium">Quản lí người dùng</p>,
-      onClick: handleNavigate("/manager/user"),
-    },
-    {
-      icon: <DropboxOutlined />,
-      label: <p className="font-medium">Quản lí nhân vien</p>,
-      onClick: handleNavigate("/manager/staff"),
-    },
-  ];
-
   const [collapsed, setCollapsed] = useState(false);
 
-  return (
-    <Layout className="h-screen overflow-hidden">
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
-        className="h-full fixed left-0 top-0 z-10"
-        width={200}
-      >
-        <div className="h-16 flex text-xl items-center justify-center bg-gray-900 text-white">
-          {collapsed ? "M" : "Manager"}
-        </div>
-        <Menu theme="dark" mode="inline" items={items} className="mt-5" />
-      </Sider>
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
+  };
 
-      {/* Main content layout */}
-      <Layout
-        className={`ml-${
-          collapsed ? "20" : "64"
-        } transition-all duration-300 bg-gray-100`}
-        style={{ marginLeft: collapsed ? 80 : 200 }} // Adjust according to sidebar width
+  return (
+    <Sider
+      collapsible
+      collapsed={collapsed}
+      onCollapse={toggleCollapsed}
+      className="bg-blue-50 shadow-lg min-h-screen sicky left-0"
+      width={240}
+      theme="light"
+      trigger={null}
+    >
+      <Button
+        type="text"
+        icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        onClick={() => setCollapsed(!collapsed)}
+        className="bg-blue-200"
+        style={{
+          fontSize: "16px",
+          width: "60px",
+          height: "50px",
+          position: "fixed",
+          bottom: "10px",
+          left: "10px",
+        }}
+      />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="text-gray-800 text-2xl p-4 text-center font-bold"
       >
-        <div className="p-6">
-          {/* Content Area */}
-          <h1 className="text-2xl font-bold">Dashboard Content</h1>
-          <p>Here goes the main content of the page.</p>
-        </div>
-      </Layout>
-    </Layout>
+        {collapsed ? "M" : "Manager Panel"}
+      </motion.div>
+      <Menu
+        mode="inline"
+        defaultSelectedKeys={["1"]}
+        className="bg-transparent border-r-0"
+      >
+        <Menu.Item key="1" icon={<RobotOutlined />} className="text-blue-600">
+          <NavLink
+            to="/manager/kits"
+            className={({ isActive }) =>
+              isActive
+                ? "font-bold text-blue-600"
+                : "text-gray-700 hover:text-blue-600"
+            }
+          >
+            Quản lí Kits
+          </NavLink>
+        </Menu.Item>
+        <Menu.Item key="2" icon={<RobotOutlined />}>
+          <NavLink
+            to="/manager/components"
+            className={({ isActive }) =>
+              isActive
+                ? "font-bold text-blue-600"
+                : "text-gray-700 hover:text-blue-600"
+            }
+          >
+            Quản lí Components
+          </NavLink>
+        </Menu.Item>
+        <Menu.Item key="3" icon={<FilePdfOutlined />}>
+          <NavLink
+            to="/manager/labs"
+            className={({ isActive }) =>
+              isActive
+                ? "font-bold text-blue-600"
+                : "text-gray-700 hover:text-blue-600"
+            }
+          >
+            Quản lí Labs
+          </NavLink>
+        </Menu.Item>
+        <Menu.Item key="4" icon={<DropboxOutlined />}>
+          <NavLink
+            to="/manager/packages"
+            className={({ isActive }) =>
+              isActive
+                ? "font-bold text-blue-600"
+                : "text-gray-700 hover:text-blue-600"
+            }
+          >
+            Quản lí Package
+          </NavLink>
+        </Menu.Item>
+        <Menu.Item key="5" icon={<DropboxOutlined />}>
+          <NavLink
+            to="/manager/user"
+            className={({ isActive }) =>
+              isActive
+                ? "font-bold text-blue-600"
+                : "text-gray-700 hover:text-blue-600"
+            }
+          >
+            Quản lí người dùng
+          </NavLink>
+        </Menu.Item>
+        <Menu.Item key="6" icon={<DropboxOutlined />}>
+          <NavLink
+            to="/manager/staff"
+            className={({ isActive }) =>
+              isActive
+                ? "font-bold text-blue-600"
+                : "text-gray-700 hover:text-blue-600"
+            }
+          >
+            Quản lí nhân viên
+          </NavLink>
+        </Menu.Item>
+      </Menu>
+    </Sider>
   );
 }
 
