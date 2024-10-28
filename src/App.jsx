@@ -20,6 +20,7 @@ import ManagerUser from "./components/manager/ManagerUser";
 import ManagerStaff from "./components/manager/ManagerStaff";
 import ManagerContentComponent from "./components/manager/ManagerContentComponent";
 import StaffProfile from "./components/staff/StaffProfile";
+import Dashboard from "./components/manager/Dashboard";
 
 function App() {
   return (
@@ -61,13 +62,14 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<ManagerContentKits />} />
+            <Route index element={<Dashboard />} />
             <Route path="kits" element={<ManagerContentKits />} />
             <Route path="components" element={<ManagerContentComponent />} />
             <Route path="labs" element={<ManagerContentLabs />} />
             <Route path="packages" element={<ManagerContentPackage />} />
             <Route path="user" element={<ManagerUser />} />
             <Route path="staff" element={<ManagerStaff />} />
+            <Route path="dashboard" element={<Dashboard />} />
           </Route>
           <Route path="/" element={<LoginRegisterPage />} />
 
