@@ -758,6 +758,21 @@ function ManagerContentKits() {
       console.error("Failed to save or update kit:", error);
     }
   };
+  // Function to handle deletion of a component
+  const handleDeleteComponent = (id) => {
+    // Get the current components from the form
+    const currentComponents = form.getFieldValue("components") || [];
+
+    // Filter out the component to be deleted
+    const updatedComponents = currentComponents.filter(
+      (component) => component.id !== id
+    );
+    console.log(updatedComponents);
+
+    // Update the form with the new components list
+    form.setFieldsValue({ components: updatedComponents });
+    setSelectedComponents(updatedComponents);
+  };
 
   return (
     <Form form={form} component={false}>
@@ -924,6 +939,16 @@ function ManagerContentKits() {
                 { title: "ID", dataIndex: "id", key: "id" },
                 { title: "Tên", dataIndex: "name", key: "name" },
                 { title: "Số lượng", dataIndex: "quantity", key: "quantity" },
+                {
+                  title: "Hành động", // Title for the delete action
+                  key: "action",
+                  render: (_, record) => (
+                    <DeleteOutlined
+                      style={{ color: "red", cursor: "pointer" }} // Style the icon
+                      onClick={() => handleDeleteComponent(record.id)} // Call delete function on click
+                    />
+                  ),
+                },
               ]}
               rowKey="id"
               pagination={false}

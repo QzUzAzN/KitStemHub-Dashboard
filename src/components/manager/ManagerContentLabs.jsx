@@ -331,6 +331,21 @@ function ManagerContentLabs() {
     fetchLabs(1, pagination.pageSize); // Fetch lại mà không có filter
   };
 
+  const viewLabFile = async (labId) => {
+    try {
+      const response = await api.get(`labs/${labId}/url`);
+      const signedUrl = response.data.details["signed-url"];
+      window.open(signedUrl, "_blank"); // Mở URL trong tab mới
+    } catch (error) {
+      notification.error({
+        message: "Lỗi",
+        description: "Có lỗi xảy ra khi mở file bài lab!",
+        duration: 3,
+      });
+      console.error("Error fetching signed URL:", error);
+    }
+  };
+
   const columns = [
     {
       title: "STT", // Cột Số Thứ Tự
@@ -352,6 +367,15 @@ function ManagerContentLabs() {
       key: "name",
     },
     {
+      title: "Chi tiết",
+      key: "view",
+      render: (_, record) => (
+        <Button type="link" onClick={() => viewLabFile(record.id)}>
+          Xem
+        </Button>
+      ),
+    },
+    {
       title: "Giá",
       dataIndex: "price",
       key: "price",
@@ -361,6 +385,7 @@ function ManagerContentLabs() {
       title: "Số lần hỗ trợ tối đa",
       dataIndex: "max-support-times",
       key: "maxSupportTimes",
+      width: 100,
     },
     {
       title: "Tác giả",
