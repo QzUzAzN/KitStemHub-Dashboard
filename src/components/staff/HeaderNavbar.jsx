@@ -60,7 +60,8 @@ const HeaderNavbar = () => {
             <div className="flex items-center cursor-pointer text-gray-700 hover:text-blue-600 transition duration-300">
               <Avatar
                 size={40}
-                src="/avatar.jpg"
+                // src="/avatar.jpg"
+                icon={<UserOutlined />}
                 className="mr-3 border-2 border-white shadow-sm"
               />
               <div className="flex flex-col">

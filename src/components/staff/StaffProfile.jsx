@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
-import { Form, Avatar, Card, Typography, Spin, Row, Col } from "antd";
-import {
-  UserOutlined,
-  ManOutlined,
-  WomanOutlined,
-  CalendarOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  HomeOutlined,
-} from "@ant-design/icons";
+import { Form, Avatar, Card, Typography, Spin, Row, Col, Input } from "antd";
+import { UserOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import api from "../../config/axios";
 
@@ -18,6 +10,12 @@ function StaffProfile() {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Thêm hàm capitalize
+  const capitalize = (str) => {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -25,8 +23,8 @@ function StaffProfile() {
         const userData = response.data.details.data["user-profile-dto"];
         setProfileData({
           userName: userData["user-name"],
-          firstName: userData["first-name"],
-          lastName: userData["last-name"],
+          firstName: capitalize(userData["first-name"]),
+          lastName: capitalize(userData["last-name"]),
           phoneNumber: userData["phone-number"],
           address: userData.address,
           gender: userData.gender,
@@ -50,14 +48,6 @@ function StaffProfile() {
     );
   }
 
-  const getGenderIcon = (gender) => {
-    return gender.toLowerCase() === "male" ? (
-      <ManOutlined className="text-blue-500" />
-    ) : (
-      <WomanOutlined className="text-pink-500" />
-    );
-  };
-
   return (
     <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 min-h-screen p-8">
       <Card className="max-w-5xl mx-auto shadow-lg">
@@ -66,9 +56,9 @@ function StaffProfile() {
             <Title level={2} className="mb-0">
               Hồ Sơ Nhân Viên
             </Title>
-            <Text type="secondary">
+            <Text type="secondary" className="text-sm">
               {new Date().toLocaleString("vi-VN", {
-                weekday: "short",
+                weekday: "long",
                 day: "2-digit",
                 month: "long",
                 year: "numeric",
@@ -82,97 +72,162 @@ function StaffProfile() {
             <div className="relative">
               <Avatar
                 size={64}
-                src="/avatar.jpg"
+                // src="/avatar.jpg"
                 icon={<UserOutlined />}
                 className="mr-4"
               />
             </div>
             <div>
-              <Title level={3} className="mb-0">
+              <Title level={3} className="mb-1 text-gray-800">
                 {`${profileData.firstName} ${profileData.lastName}`}
               </Title>
-              <Text type="secondary">{profileData.userName}</Text>
+              <Text className="text-gray-500 text-base">
+                {profileData.userName}
+              </Text>
             </div>
           </div>
         </Card>
 
-        <Row gutter={[24, 16]} className="bg-white p-6 rounded-lg shadow-inner">
+        <Row gutter={[24, 24]} className="bg-white rounded-lg">
           <Col xs={24} sm={12}>
             <Form.Item
               name="firstName"
+              label={
+                <span className="sm:text-left lg:text-right text-gray-700 font-medium text-base w-32 inline-block">
+                  Họ <span className="sm:hidden lg:inline-block">:</span>
+                </span>
+              }
+              colon={false}
               className="mb-4"
-              label={<span className="text-gray-800 font-bold">Họ</span>}
             >
-              <Text strong className="text-normal text-gray-500">
-                {profileData.firstName}
-              </Text>
+              <Input
+                defaultValue={capitalize(profileData.firstName)}
+                readOnly
+                size="large"
+                className="hover:border-blue-400 focus:shadow-sm transition-all w-full capitalize"
+                style={{ backgroundColor: "#f8fafc" }}
+              />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item
               name="lastName"
+              label={
+                <span className="sm:text-left lg:text-right text-gray-700 font-medium text-base w-32 inline-block">
+                  Tên <span className="sm:hidden lg:inline-block">:</span>
+                </span>
+              }
+              colon={false}
               className="mb-4"
-              l
-              label={<span className="text-gray-800 font-bold">Tên</span>}
             >
-              <Text strong className="text-normal text-gray-500">
-                {profileData.lastName}
-              </Text>
+              <Input
+                defaultValue={capitalize(profileData.lastName)}
+                readOnly
+                size="large"
+                className="hover:border-blue-400 focus:shadow-sm transition-all w-full capitalize"
+                style={{ backgroundColor: "#f8fafc" }}
+              />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item
-              label={<span className="text-gray-800 font-bold">Giới Tính</span>}
+              label={
+                <span className="sm:text-left lg:text-right text-gray-700 font-medium text-base w-32 inline-block">
+                  Giới Tính <span className="sm:hidden lg:inline-block">:</span>
+                </span>
+              }
+              colon={false}
               name="gender"
               className="mb-4"
             >
-              <Text strong className="text-normal text-gray-500">
-                {profileData.gender}
-              </Text>
+              <Input
+                defaultValue={profileData.gender}
+                readOnly
+                size="large"
+                className="hover:border-blue-400 focus:shadow-sm transition-all w-full"
+                style={{ backgroundColor: "#f8fafc" }}
+              />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item
-              label={<CalendarOutlined className="text-green-500" />}
+              label={
+                <span className="sm:text-left lg:text-right text-gray-700 font-medium text-base w-32 inline-block">
+                  Ngày Sinh <span className="sm:hidden lg:inline-block">:</span>
+                </span>
+              }
+              colon={false}
               name="birthDate"
               className="mb-4"
             >
-              <Text strong className="text-normal text-gray-500">
-                {profileData.birthDate.format("DD/MM/YYYY")}
-              </Text>
+              <Input
+                defaultValue={profileData.birthDate.format("DD/MM/YYYY")}
+                readOnly
+                size="large"
+                className="hover:border-blue-400 focus:shadow-sm transition-all w-full"
+                style={{ backgroundColor: "#f8fafc" }}
+              />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item
-              label={<PhoneOutlined className="text-indigo-500" />}
+              label={
+                <span className="sm:text-left lg:text-right text-gray-700 font-medium text-base w-32 inline-block">
+                  Số Điện Thoại{" "}
+                  <span className="sm:hidden lg:inline-block">:</span>
+                </span>
+              }
+              colon={false}
               name="phoneNumber"
               className="mb-4"
             >
-              <Text strong className="text-normal text-gray-500">
-                {profileData.phoneNumber}
-              </Text>
+              <Input
+                defaultValue={profileData.phoneNumber}
+                readOnly
+                size="large"
+                className="hover:border-blue-400 focus:shadow-sm transition-all w-full"
+                style={{ backgroundColor: "#f8fafc" }}
+              />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item
-              label={<MailOutlined className="text-red-500" />}
+              label={
+                <span className="sm:text-left lg:text-right text-gray-700 font-medium text-base w-32 inline-block">
+                  Email <span className="sm:hidden lg:inline-block">:</span>
+                </span>
+              }
+              colon={false}
               name="userName"
               className="mb-4"
             >
-              <Text strong className="text-normal text-gray-500">
-                {profileData.userName}
-              </Text>
+              <Input
+                defaultValue={profileData.userName}
+                readOnly
+                size="large"
+                className="hover:border-blue-400 focus:shadow-sm transition-all w-full"
+                style={{ backgroundColor: "#f8fafc" }}
+              />
             </Form.Item>
           </Col>
-          <Col span={24}>
+          <Col xs={24}>
             <Form.Item
-              label={<HomeOutlined className="text-yellow-500" />}
+              label={
+                <span className="sm:text-left md:text-right text-gray-700 font-medium text-base w-32 inline-block">
+                  Địa Chỉ <span className="inline-block">:</span>
+                </span>
+              }
               name="address"
-              className="mb-0"
+              className="mb-4"
+              colon={false}
             >
-              <Text strong className="text-normal text-gray-500">
-                {profileData.address}
-              </Text>
+              <Input
+                defaultValue={profileData.address}
+                readOnly
+                size="large"
+                className="hover:border-blue-400 focus:shadow-sm transition-all w-full"
+                style={{ backgroundColor: "#f8fafc" }}
+              />
             </Form.Item>
           </Col>
         </Row>
