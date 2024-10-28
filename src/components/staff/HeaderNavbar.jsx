@@ -29,7 +29,7 @@ const HeaderNavbar = () => {
   };
 
   const menuItems = (
-    <Menu className="bg-white rounded-md shadow-lg">
+    <Menu className="bg-white rounded-md shadow-lg ">
       <Menu.Item key="1" icon={<UserOutlined />}>
         <Link to="profile" className="text-gray-700 hover:text-blue-600">
           Profile
@@ -43,7 +43,7 @@ const HeaderNavbar = () => {
 
   return (
     <>
-      <Header className="bg-blue-50 p-4 flex justify-between items-center shadow-md transition duration-500 ease-in-out">
+      <Header className="bg-blue-50 p-4 flex justify-between items-center shadow-md transition duration-500 ease-in-out ">
         <div className="flex items-center space-x-6">
           <div className="text-gray-800 text-xl font-bold flex items-center">
             <DashboardOutlined className="mr-2 text-blue-600" />
@@ -66,7 +66,7 @@ const HeaderNavbar = () => {
               />
               <div className="flex flex-col">
                 <Text className="text-gray-800 font-semibold">
-                  {user?.name || "Alexa Rawles"}
+                  {user?.name}
                 </Text>
                 <Text className="text-blue-600 text-xs">Staff</Text>
               </div>

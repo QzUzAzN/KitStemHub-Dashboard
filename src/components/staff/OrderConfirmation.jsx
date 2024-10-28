@@ -236,7 +236,7 @@ function OrderConfirmation() {
       render: (_, record) => (
         <Select
           defaultValue={record["shipping-status"]}
-          style={{ width: 200 }}
+          style={{ width: 160 }}
           onChange={(value) => handleStatusChange(record.id, value)}
         >
           <Option value="ĐÃ XÁC NHẬN">Đã xác nhận</Option>
@@ -366,6 +366,18 @@ function OrderConfirmation() {
         // loading={loading}
         onChange={handleTableChange}
         rowKey="id"
+        scroll={{
+          x: 1500, // Cho phép scroll ngang
+          y: "calc(100vh - 300px)", // Chiều cao động dựa theo viewport
+        }}
+        sticky={{
+          offsetHeader: 0,
+          offsetScroll: 0,
+        }}
+        style={{
+          maxWidth: "100%",
+          overflow: "auto",
+        }}
       />
 
       <Modal

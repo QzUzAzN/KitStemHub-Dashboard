@@ -17,8 +17,10 @@ import {
   MailOutlined,
   SortAscendingOutlined,
   SortDescendingOutlined,
+  FileSearchOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 
 const { Search } = Input;
 const { Title, Text } = Typography;
@@ -75,6 +77,17 @@ function SupportHistory() {
     setPagination(pagination);
     if (sorter.field === "created-at") {
       setSortOrder(sorter.order === "descend" ? "desc" : "asc");
+    }
+  };
+
+  const handleViewLab = async (labId) => {
+    try {
+      const response = await api.get(`labs/${labId}/url`);
+      const signedUrl = response.data.details["signed-url"];
+      window.open(signedUrl, "_blank");
+    } catch (error) {
+      console.error("Lỗi khi tải bài lab:", error);
+      toast.error("Không thể tải bài lab. Vui lòng thử lại sau.");
     }
   };
 
@@ -211,6 +224,20 @@ function SupportHistory() {
       },
     },
     {
+      title: "Xem bài Lab",
+      key: "viewLab",
+      render: (_, record) => (
+        <Button
+          type="primary"
+          icon={<FileSearchOutlined />}
+          onClick={() => handleViewLab(record.lab.id)}
+          className="bg-blue-500 hover:bg-blue-600"
+        >
+          Xem Lab
+        </Button>
+      ),
+    },
+    {
       title: "Trạng thái",
       key: "is-finished",
       dataIndex: "is-finished",
@@ -267,6 +294,18 @@ function SupportHistory() {
               onChange={handleTableChange}
               className="shadow-sm"
               rowClassName="hover:bg-gray-50 transition-colors duration-200"
+              scroll={{
+                x: 1500, // Cho phép scroll ngang
+                y: "calc(100vh - 300px)", // Chiều cao động dựa theo viewport
+              }}
+              sticky={{
+                offsetHeader: 0,
+                offsetScroll: 0,
+              }}
+              style={{
+                maxWidth: "100%",
+                overflow: "auto",
+              }}
             />
           )}
         </Space>
