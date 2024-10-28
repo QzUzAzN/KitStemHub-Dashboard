@@ -21,6 +21,7 @@ import {
   SearchOutlined,
   SortAscendingOutlined,
   SortDescendingOutlined,
+  FileSearchOutlined,
 } from "@ant-design/icons";
 import api from "../../config/axios";
 import { toast } from "react-toastify";
@@ -128,7 +129,19 @@ function RequestSupportManagement() {
     }
     return null;
   };
-
+  const handleViewLab = async (labId) => {
+    try {
+      // console.log(labId);
+      const response = await api.get(`labs/${labId}/url`);
+      console.log(response.data);
+      const signedUrl = response.data.details["signed-url"];
+      console.log(signedUrl);
+      window.open(signedUrl, "_blank");
+    } catch (error) {
+      console.error("Lỗi khi tải bài lab:", error);
+      toast.error("Không thể tải bài lab. Vui lòng thử lại sau.");
+    }
+  };
   const columns = [
     {
       title: "Nhân viên hỗ trợ",
@@ -259,6 +272,20 @@ function RequestSupportManagement() {
       },
     },
     {
+      title: "Xem bài Lab",
+      key: "viewLab",
+      render: (_, record) => (
+        <Button
+          type="primary"
+          icon={<FileSearchOutlined />}
+          onClick={() => handleViewLab(record.lab.id)}
+          className="bg-blue-500 hover:bg-blue-600"
+        >
+          Xem Lab
+        </Button>
+      ),
+    },
+    {
       title: "Xác nhận đã hỗ trợ",
       key: "action",
       render: (_, record) => (
@@ -328,6 +355,18 @@ function RequestSupportManagement() {
             className="shadow-sm"
             rowClassName="hover:bg-gray-50 transition-colors duration-200"
             onChange={(pagination) => fetchLabSupports(pagination.current)}
+            scroll={{
+              x: 1500, // Cho phép scroll ngang
+              y: "calc(100vh - 300px)", // Chiều cao động dựa theo viewport
+            }}
+            sticky={{
+              offsetHeader: 0,
+              offsetScroll: 0,
+            }}
+            style={{
+              maxWidth: "100%",
+              overflow: "auto",
+            }}
           />
         </Space>
       </Card>
