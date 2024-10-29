@@ -19,6 +19,8 @@ import {
   Upload,
   Button,
   notification,
+  Switch,
+  Spin,
 } from "antd";
 import { useEffect, useState } from "react";
 import { Option } from "antd/es/mentions";
@@ -26,14 +28,14 @@ import api from "../../config/axios";
 
 function ManagerContentLabs() {
   const [form] = Form.useForm();
-
   const [dataSource, setDataSource] = useState([]); // Sử dụng dữ liệu labs từ props
   const [isOpen, setOpen] = useState(false);
   const [levels, setLevels] = useState([]);
   const [kits, setKits] = useState([]);
   const [file, setFile] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null); // Trạng thái để biết là thêm mới hay chỉnh sửa
-  const [loading, setLoading] = useState(true); // Thêm state để hiển thị trạng thái loading
+  const [loading, setLoading] = useState(false); // Thêm state để hiển thị trạng thái loading
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1, // Bắt đầu từ trang 0
     total: 0, // Tổng số items
@@ -158,7 +160,10 @@ function ManagerContentLabs() {
 
   // Hàm tạo Kit mới với multipart/form-data
   const createLab = async (newLab) => {
+    setIsSubmitting(true);
     try {
+      console.log("New Lab data before FormData:", newLab); // Log the incoming data
+      console.log("Status value before FormData:", newLab.status);
       const formData = new FormData();
 
       formData.append("LevelId", newLab.levelId);
@@ -167,8 +172,13 @@ function ManagerContentLabs() {
       formData.append("Price", newLab.price || 0);
       formData.append("MaxSupportTimes", newLab.maxSupportTimes);
       formData.append("Author", newLab.author);
-      formData.append("Status", newLab.status ? "true" : "false");
+      formData.append("Status", newLab.status ? true : false);
       // Kiểm tra file trước khi thêm vào formData
+
+      // Log each entry in FormData to confirm data being sent
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+      }
       if (!file) {
         alert("Vui lòng tải lên một tệp trước khi gửi.");
         return; // Ngừng nếu không có file
@@ -200,10 +210,12 @@ function ManagerContentLabs() {
         error.response?.data?.details?.errors || error.message
       );
     }
+    setIsSubmitting(false);
   };
 
   // Hàm cập nhật Lab với multipart/form-data và cấu trúc request mới
   const updateLab = async (id, updatedLab) => {
+    setIsSubmitting(true);
     try {
       const formData = new FormData();
 
@@ -248,6 +260,7 @@ function ManagerContentLabs() {
       );
       console.log("Chi tiết lỗi từ server:", error.response?.data?.details);
     }
+    setIsSubmitting(false);
   };
 
   // Hàm xóa Kit dựa trên ID
@@ -473,6 +486,7 @@ function ManagerContentLabs() {
         price: values.price || 0,
         maxSupportTimes: values.maxSupportTimes,
         author: values.author,
+        status: values.status,
         file: file || editingRecord?.file, // Kiểm tra nếu đã có file trước đó
       };
 
@@ -512,7 +526,12 @@ function ManagerContentLabs() {
           <Form.Item name="kitName">
             <Input placeholder="Tên Kit" />
           </Form.Item>
-          <Button type="primary" htmlType="submit">
+          <Button
+            icon={<SearchOutlined />}
+            type="primary"
+            htmlType="submit"
+            className="mr-2"
+          >
             Tìm kiếm
           </Button>
           <Button onClick={resetFilters}>Đặt lại</Button>
@@ -564,140 +583,133 @@ function ManagerContentLabs() {
         onCancel={() => setOpen(false)} // Đóng modal
         onOk={() => form.submit()} // Gọi hàm submit khi bấm OK
       >
-        <Form
-          form={form}
-          labelCol={{
-            span: 24,
-          }}
-          onFinish={handleSaveOrUpdate} // Gọi hàm lưu hoặc cập nhật khi form submit
-        >
-          {/* Name */}
-          <Form.Item
-            label="Tên"
-            name="name"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng nhập tên!",
-              },
-            ]}
+        <Spin spinning={isSubmitting}>
+          <Form
+            form={form}
+            labelCol={{
+              span: 24,
+            }}
+            onFinish={handleSaveOrUpdate} // Gọi hàm lưu hoặc cập nhật khi form submit
           >
-            <Input />
-          </Form.Item>
-
-          {/* Price */}
-          <Form.Item
-            label="Price"
-            name="price"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng nhập giá!",
-              },
-              {
-                type: "number",
-                min: 0,
-                message: "Giá phải lớn hơn 0",
-              },
-            ]}
-          >
-            <InputNumber min={0} />
-          </Form.Item>
-
-          {/* Max Support Times */}
-          <Form.Item
-            label="Số lần hỗ trợ tối đa"
-            name="maxSupportTimes"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng nhập số lần hỗ trợ tối đa!",
-              },
-              {
-                type: "number",
-                min: 0,
-                message: "Số lần hỗ trợ tối đa phải là số dương",
-              },
-            ]}
-          >
-            <InputNumber min={0} />
-          </Form.Item>
-
-          {/* Author */}
-          <Form.Item
-            label="Tác giả"
-            name="author"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng nhập tác giả!",
-              },
-            ]}
-          >
-            <Input />
-          </Form.Item>
-
-          {/* Status
-          <Form.Item
-            label="Status"
-            name="status"
-            valuePropName="checked"
-            rules={[
-              {
-                required: true,
-                message: "Please set the status!",
-              },
-            ]}
-          >
-            <Switch
-              checkedChildren="Available"
-              unCheckedChildren="Unavailable"
-            />
-          </Form.Item> */}
-
-          <Form.Item
-            label="Kit"
-            name="kit"
-            rules={[{ required: true, message: "Vui lòng chọn kit!" }]}
-          >
-            <Select placeholder="Select Kit">
-              {kits.map((kit) => (
-                <Option key={kit.id} value={kit.id}>
-                  {console.log(kit.id)}
-                  {kit.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="Cấp độ"
-            name="level"
-            rules={[{ required: true, message: "Vui lòng chọn cấp độ!" }]}
-          >
-            <Select placeholder="Select Level">
-              {levels.map((level) => (
-                <Option key={level.id} value={level.id}>
-                  {level.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="Tệp"
-            name="file"
-            rules={[{ required: false, message: "Vui lòng tải lên một tệp!" }]}
-          >
-            <Upload
-              beforeUpload={() => false}
-              onChange={handleFileChange}
-              maxCount={1}
+            {/* Name */}
+            <Form.Item
+              label="Tên"
+              name="name"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng nhập tên!",
+                },
+              ]}
             >
-              <Button icon={<UploadOutlined />}>Tải tệp lên</Button>
-            </Upload>
-          </Form.Item>
-        </Form>
+              <Input />
+            </Form.Item>
+            {/* Price */}
+            <Form.Item
+              label="Price"
+              name="price"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng nhập giá!",
+                },
+                {
+                  type: "number",
+                  min: 0,
+                  message: "Giá phải lớn hơn 0",
+                },
+              ]}
+            >
+              <InputNumber min={0} />
+            </Form.Item>
+            {/* Max Support Times */}
+            <Form.Item
+              label="Số lần hỗ trợ tối đa"
+              name="maxSupportTimes"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng nhập số lần hỗ trợ tối đa!",
+                },
+                {
+                  type: "number",
+                  min: 0,
+                  message: "Số lần hỗ trợ tối đa phải là số dương",
+                },
+              ]}
+            >
+              <InputNumber min={0} />
+            </Form.Item>
+            {/* Author */}
+            <Form.Item
+              label="Tác giả"
+              name="author"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng nhập tác giả!",
+                },
+              ]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              label="Kit"
+              name="kit"
+              rules={[{ required: true, message: "Vui lòng chọn kit!" }]}
+            >
+              <Select placeholder="Select Kit">
+                {kits.map((kit) => (
+                  <Option key={kit.id} value={kit.id}>
+                    {console.log(kit.id)}
+                    {kit.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item
+              label="Cấp độ"
+              name="level"
+              rules={[{ required: true, message: "Vui lòng chọn cấp độ!" }]}
+            >
+              <Select placeholder="Select Level">
+                {levels.map((level) => (
+                  <Option key={level.id} value={level.id}>
+                    {level.name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item
+              label="Tệp"
+              name="file"
+              rules={[
+                { required: false, message: "Vui lòng tải lên một tệp!" },
+              ]}
+            >
+              <Upload
+                beforeUpload={() => false}
+                onChange={handleFileChange}
+                maxCount={1}
+              >
+                <Button icon={<UploadOutlined />}>Tải tệp lên</Button>
+              </Upload>
+            </Form.Item>
+            {/* Status */}
+            {!editingRecord && (
+              <Form.Item
+                label="Trạng thái"
+                name="status"
+                valuePropName="checked"
+              >
+                <Switch
+                  checkedChildren="Có sẵn"
+                  unCheckedChildren="Không có sẵn"
+                />
+              </Form.Item>
+            )}
+          </Form>
+        </Spin>
       </Modal>
     </Form>
   );

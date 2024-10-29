@@ -6,6 +6,9 @@ import {
   RobotOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  ControlOutlined,
+  UsergroupAddOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { NavLink } from "react-router-dom";
@@ -68,7 +71,7 @@ function ManagerSidebar() {
             Quản lí Kits
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="2" icon={<RobotOutlined />}>
+        <Menu.Item key="2" icon={<ControlOutlined />}>
           <NavLink
             to="/manager/components"
             className={({ isActive }) =>
@@ -104,7 +107,7 @@ function ManagerSidebar() {
             Quản lí Package
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="5" icon={<DropboxOutlined />}>
+        <Menu.Item key="5" icon={<TeamOutlined />}>
           <NavLink
             to="/manager/user"
             className={({ isActive }) =>
@@ -116,7 +119,7 @@ function ManagerSidebar() {
             Quản lí người dùng
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="6" icon={<DropboxOutlined />}>
+        <Menu.Item key="6" icon={<UsergroupAddOutlined />}>
           <NavLink
             to="/manager/staff"
             className={({ isActive }) =>

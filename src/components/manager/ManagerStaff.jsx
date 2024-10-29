@@ -11,7 +11,13 @@ import {
   Select,
   Table,
 } from "antd";
-import { DeleteOutlined, EditOutlined, UndoOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusCircleOutlined,
+  SearchOutlined,
+  UndoOutlined,
+} from "@ant-design/icons";
 import moment from "moment";
 
 const { Option } = Select;
@@ -363,7 +369,7 @@ function ManagerStaff() {
       key: "status",
       render: (status) => (
         <span style={{ color: status ? "green" : "red" }}>
-          {status ? "Available" : "Unavailable"}
+          {status ? "Có sẵn" : "Không có sẵn"}
         </span>
       ),
     },
@@ -428,15 +434,28 @@ function ManagerStaff() {
               <Option value={false}>Không</Option>
             </Select>
           </Form.Item>
-          <Button type="primary" htmlType="submit">
+          <Button
+            icon={<SearchOutlined />}
+            type="primary"
+            htmlType="submit"
+            className="mr-2"
+          >
             Tìm kiếm
           </Button>
           <Button onClick={resetFilters}>Đặt lại</Button>
         </Form>
       </div>
-      <Button type="primary" onClick={handleAddStaff}>
-        Thêm Nhân Viên
-      </Button>
+      <div className="flex justify-end ml-5 mb-3">
+        <button
+          onClick={handleAddStaff}
+          className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+        >
+          <div>
+            <PlusCircleOutlined />
+          </div>
+          Thêm
+        </button>
+      </div>
       <Table
         bordered
         dataSource={dataSource}
