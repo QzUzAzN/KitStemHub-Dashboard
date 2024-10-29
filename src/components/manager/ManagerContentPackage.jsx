@@ -3,6 +3,7 @@ import {
   EditOutlined,
   EyeOutlined,
   PlusCircleOutlined,
+  SearchOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
 import {
@@ -49,6 +50,7 @@ function ManagerContentPackage() {
   const [labDetails, setLabDetails] = useState([]);
   const [isLabModalOpen, setIsLabModalOpen] = useState(false); // Modal to view lab
   const [availableLabs, setAvailableLabs] = useState([]); // State to store related Labs
+  const [selectedKitPrice, setSelectedKitPrice] = useState(null); // Giá Kit được chọn
 
   const fetchPackages = async (
     page = 1,
@@ -288,9 +290,12 @@ function ManagerContentPackage() {
   const handleKitChange = async (kitId) => {
     form.setFieldsValue({ labIds: [] }); // Reset labs when a new kit is selected
     try {
+      const selectedKit = kits.find((kit) => kit.id === kitId);
+      setSelectedKitPrice(selectedKit ? selectedKit.price : null); // Lưu giá Kit được chọn
+
       const response = await api.get(`kits/${kitId}/lab`);
       const labs = response.data.details.data.labs || [];
-      setAvailableLabs(labs); // Update state with the related Labs list
+      setAvailableLabs(labs); // Cập nhật danh sách Labs
     } catch (error) {
       console.error("Error fetching labs:", error);
       notification.error({
@@ -539,6 +544,7 @@ function ManagerContentPackage() {
           <div className="w-full flex gap-4 justify-end">
             {/* Nút Search */}
             <Button
+              icon={<SearchOutlined />}
               type="primary"
               onClick={() => fetchPackages(1, pagination.pageSize, filters)}
             >
@@ -614,11 +620,17 @@ function ManagerContentPackage() {
                   <Select onChange={handleKitChange} placeholder="Chọn Kit">
                     {kits.map((kit) => (
                       <Option key={kit.id} value={kit.id}>
-                        {kit.name}
+                        {kit.name} , <strong>Giá</strong> :{" "}
+                        {kit["purchase-cost"].toLocaleString()} VND
                       </Option>
                     ))}
                   </Select>
                 </Form.Item>
+                {selectedKitPrice && (
+                  <p>
+                    Giá Kit đã chọn: {selectedKitPrice.toLocaleString()} VND
+                  </p>
+                )}
                 <Form.Item
                   name="labIds"
                   label="Chọn Labs"
@@ -629,7 +641,8 @@ function ManagerContentPackage() {
                   <Select mode="multiple" placeholder="Chọn bài Lab">
                     {availableLabs.map((lab) => (
                       <Select.Option key={lab.id} value={lab.id}>
-                        {lab.name}
+                        {lab.name} , <strong>Giá</strong> :{" "}
+                        {lab.price.toLocaleString()} VND
                       </Select.Option>
                     ))}
                   </Select>
@@ -680,8 +693,8 @@ function ManagerContentPackage() {
           <ul>
             {labDetails.map((lab) => (
               <li key={lab.id}>
-                <strong>{lab.name}</strong> - Giá: {lab.price} VND, Tác giả:{" "}
-                {lab.author}
+                <strong>{lab.name}</strong> , <strong>Giá</strong> : {lab.price}{" "}
+                VND , <strong>Tác giả</strong> : {lab.author}
               </li>
             ))}
           </ul>

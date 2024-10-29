@@ -9,7 +9,11 @@ import {
   Select,
   Table,
 } from "antd";
-import { DeleteOutlined, UndoOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  SearchOutlined,
+  UndoOutlined,
+} from "@ant-design/icons";
 import { Option } from "antd/es/mentions";
 
 function ManagerUser() {
@@ -217,7 +221,7 @@ function ManagerUser() {
       key: "status",
       render: (status) => (
         <span style={{ color: status ? "green" : "red" }}>
-          {status ? "Available" : "Unavailable"}
+          {status ? "Có sẵn" : "Không có sẵn"}
         </span>
       ),
     },
@@ -278,7 +282,12 @@ function ManagerUser() {
               <Option value={false}>Không</Option>
             </Select>
           </Form.Item>
-          <Button type="primary" htmlType="submit">
+          <Button
+            icon={<SearchOutlined />}
+            type="primary"
+            htmlType="submit"
+            className="mr-2"
+          >
             Tìm kiếm
           </Button>
           <Button onClick={resetFilters}>Đặt lại</Button>

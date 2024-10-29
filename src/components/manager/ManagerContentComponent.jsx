@@ -278,7 +278,7 @@ function ManagerContentComponent() {
       width: 500,
     },
     {
-      title: "Type ID", // Cột mới để hiển thị Type ID
+      title: "ID loại thành phần", // Cột mới để hiển thị Type ID
       dataIndex: "type-id",
       key: "type-id",
       width: 200,
@@ -289,7 +289,7 @@ function ManagerContentComponent() {
       key: "status",
       render: (status) => (
         <span style={{ color: status ? "green" : "red" }}>
-          {status ? "Available" : "Unavailable"}
+          {status ? "Có sẵn" : "Không có sẵn"}
         </span>
       ),
     },

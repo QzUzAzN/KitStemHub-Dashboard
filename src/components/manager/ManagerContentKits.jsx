@@ -602,7 +602,7 @@ function ManagerContentKits() {
           icon={<EyeOutlined />}
           onClick={() => handleViewComponents(record.id)}
         >
-          View Components
+          Xem thành phần
         </Button>
       ),
     },
@@ -616,7 +616,7 @@ function ManagerContentKits() {
           onClick={() => showImagesModal(images)}
           disabled={!images || images.length === 0}
         >
-          View Images
+          Xem ảnh
         </Button>
       ),
     },
@@ -632,7 +632,7 @@ function ManagerContentKits() {
       key: "status",
       render: (status) => (
         <span style={{ color: status ? "green" : "red" }}>
-          {status ? "Available" : "Unavailable"}
+          {status ? "Có sẵn" : "Không có sẵn"}
         </span>
       ),
     },
@@ -788,7 +788,12 @@ function ManagerContentKits() {
             <Form.Item name="categoryName">
               <Input placeholder="Tên loại Kit" />
             </Form.Item>
-            <Button type="primary" htmlType="submit">
+            <Button
+              icon={<SearchOutlined />}
+              type="primary"
+              htmlType="submit"
+              className="mr-2"
+            >
               Tìm Kiếm
             </Button>
             <Button onClick={resetFilters}>Đặt Lại</Button>
@@ -1035,15 +1040,10 @@ function ManagerContentKits() {
             </Form.Item>
 
             {/* Thêm trường Trạng thái */}
-            <Form.Item
-              name="status"
-              label="Trạng thái"
-              valuePropName="checked"
-              rules={[{ required: true, message: "Vui lòng chọn trạng thái!" }]}
-            >
+            <Form.Item name="status" label="Trạng thái" valuePropName="checked">
               <Switch
-                checkedChildren="Available"
-                unCheckedChildren="Unavailable"
+                checkedChildren="Có sẵn"
+                unCheckedChildren="Không có sẵn"
               />
             </Form.Item>
           </Form>
