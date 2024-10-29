@@ -1,20 +1,22 @@
 import { Outlet } from "react-router-dom";
 import ManagerHeader from "../components/manager/ManagerHeader";
 import ManagerSidebar from "../components/manager/ManagerSidebar";
-
+import { Layout } from "antd";
+const { Content } = Layout;
 function ManagerPage() {
   return (
-    <div>
+    <>
       <ManagerHeader />
       <div className="flex">
-        <div>
-          <ManagerSidebar />
-        </div>
-        <div className="w-full">
+        <ManagerSidebar />
+        <div className="ml-[4px] mt-2 w-full">
+          {" "}
+          {/* margin-left tương ứng với width của Sidebar */}
+          {/* Nội dung trang */}
           <Outlet />
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
