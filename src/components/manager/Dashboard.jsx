@@ -1,4 +1,4 @@
-import { Card, Row, Col, Select } from "antd";
+import { Card, Row, Col, Select, Spin, Button } from "antd";
 import { Line, Bar } from "react-chartjs-2";
 import api from "../../config/axios";
 import {
@@ -6,6 +6,7 @@ import {
   ShoppingCartOutlined,
   DollarOutlined,
   FieldTimeOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import {
   Chart as ChartJS,
@@ -46,8 +47,17 @@ const formatCurrency = (value) => {
 
 // Add this function at the top level, after the ChartJS.register
 const getDaysInMonth = (year, month) => {
-  return new Date(year, month, 0).getDate();
+  return new Date(year, month, 0).getDate(); //30/31/28/29
 };
+
+// Add this array near the top of the file, after the imports
+const chartColors = [
+  "rgba(59, 130, 246, 0.8)", // Blue
+  "rgba(16, 185, 129, 0.8)", // Green
+  "rgba(245, 158, 11, 0.8)", // Yellow
+  "rgba(239, 68, 68, 0.8)", // Red
+  "rgba(139, 92, 246, 0.8)", // Purple
+];
 
 function Dashboard() {
   const [topSellerData, setTopSellerData] = useState({
@@ -65,49 +75,84 @@ function Dashboard() {
 
   const [selectedYear, setSelectedYear] = useState("2024");
 
-  // Thêm state mới để lưu dữ liệu doanh thu
+  // Thay đổi state revenueData
   const [revenueData, setRevenueData] = useState({
-    revenues: Array(12).fill(0),
-    profits: Array(12).fill(0),
+    revenues: [],
+    profits: [],
+    labels: [],
   });
-
+  const [monthlyTotals, setMonthlyTotals] = useState({
+    revenue: 0,
+    profit: 0,
+  });
   // Thêm hàm để fetch dữ liệu doanh thu
   const fetchRevenueData = async (year) => {
     try {
-      const revenues = [];
-      const profits = [];
+      const [revenueResponse, profitResponse] = await Promise.all([
+        api.get(`analytics/revenues/${year}`),
+        api.get(`analytics/profits/${year}`),
+      ]);
 
-      // Fetch dữ liệu cho từng tháng
-      for (let month = 1; month <= 12; month++) {
-        const monthStr = month.toString().padStart(2, "0");
-        const daysInMonth = getDaysInMonth(year, month);
+      if (
+        revenueResponse.data.status === "success" &&
+        profitResponse.data.status === "success"
+      ) {
+        const revenueMonthlyData =
+          revenueResponse.data.details.data["year-dto"];
+        const profitMonthlyData = profitResponse.data.details.data["year-dto"];
 
-        const fromDate = `${year}-${monthStr}-01`;
-        const toDate = `${year}-${monthStr}-${daysInMonth}`;
+        // Get current date info
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth(); // 0-11
 
-        // Fetch revenue data
-        const revenueResponse = await api.get(
-          `analytics/revenues?from-date=${fromDate}&to-date=${toDate}`
+        // Determine how many months to show
+        const monthsToShow = year < currentYear ? 12 : currentMonth + 1;
+
+        // Create arrays with monthly data
+        const monthNames = [
+          "january",
+          "february",
+          "march",
+          "april",
+          "may",
+          "june",
+          "july",
+          "august",
+          "september",
+          "october",
+          "november",
+          "december",
+        ];
+
+        const revenues = monthNames
+          .slice(0, monthsToShow)
+          .map((month) => revenueMonthlyData[month]);
+
+        const profits = monthNames
+          .slice(0, monthsToShow)
+          .map((month) => profitMonthlyData[month]);
+
+        // Create labels only for shown months
+        const labels = Array.from(
+          { length: monthsToShow },
+          (_, i) => `Tháng ${i + 1}`
         );
 
-        // Fetch profit data
-        const profitResponse = await api.get(
-          `analytics/profits?from-date=${fromDate}&to-date=${toDate}`
-        );
+        setRevenueData({
+          revenues,
+          profits,
+          labels,
+        });
 
-        if (revenueResponse.data.status === "success") {
-          revenues.push(revenueResponse.data.details.data);
-        }
-
-        if (profitResponse.data.status === "success") {
-          profits.push(profitResponse.data.details.data.profit);
-        }
+        // Calculate monthly totals for the selected month
+        const monthIndex = selectedMonth - 1;
+        // console.log(monthIndex);
+        setMonthlyTotals({
+          revenue: revenues[monthIndex] || 0,
+          profit: profits[monthIndex] || 0,
+        });
       }
-
-      setRevenueData({
-        revenues,
-        profits,
-      });
     } catch (error) {
       console.error("Error fetching revenue/profit data:", error);
     }
@@ -118,22 +163,9 @@ function Dashboard() {
     fetchRevenueData(selectedYear);
   }, [selectedYear]);
 
-  // Cập nhật chartData để sử dụng dữ liệu thực từ API
+  // Cập nhật chartData để sử dụng labels động
   const chartData = {
-    labels: [
-      "Tháng 1",
-      "Tháng 2",
-      "Tháng 3",
-      "Tháng 4",
-      "Tháng 5",
-      "Tháng 6",
-      "Tháng 7",
-      "Tháng 8",
-      "Tháng 9",
-      "Tháng 10",
-      "Tháng 11",
-      "Tháng 12",
-    ],
+    labels: revenueData.labels,
     datasets: [
       {
         label: "Tổng doanh thu",
@@ -262,7 +294,7 @@ function Dashboard() {
       const response = await api.get(
         `analytics/orders?from-date=${fromStr}&to-date=${toStr}`
       );
-      console.log(" + " + response.data);
+      // console.log(" + ", response.data);
 
       if (response.data.status === "success") {
         setTotalOrders(response.data.details.data["number-of-orders"]);
@@ -278,49 +310,35 @@ function Dashboard() {
     {
       title: "Tổng Khách Hàng",
       value: "40,689",
-      change: "+8.5%",
-      isIncrease: true,
+
       icon: <UserOutlined className="text-blue-500" />,
     },
     {
       title: "Tổng Đơn Hàng",
       value: (totalOrders || 0).toLocaleString("vi-VN"),
-      change: "+1.3%",
-      isIncrease: true,
+
       icon: <ShoppingCartOutlined className="text-yellow-500" />,
     },
     {
       title: "Tổng Lợi Nhuận",
-      value:
-        (
-          revenueData.profits.reduce((a, b) => a + (b || 0), 0) || 0
-        ).toLocaleString("vi-VN") + " đ",
-      change: "-4.3%",
-      isIncrease: false,
+      value: monthlyTotals.profit.toLocaleString("vi-VN") + " đ",
       icon: <DollarOutlined className="text-green-500" />,
     },
     {
       title: "Tổng Doanh Thu",
-      value:
-        (
-          revenueData.revenues.reduce((a, b) => a + (b || 0), 0) || 0
-        ).toLocaleString("vi-VN") + " đ",
-      change: "-4.3%",
-      isIncrease: false,
+      value: monthlyTotals.revenue.toLocaleString("vi-VN") + " đ",
       icon: <DollarOutlined className="text-green-500" />,
     },
     {
       title: "Tổng Sản Phẩm",
       value: "2040",
-      change: "+1.8%",
-      isIncrease: true,
+
       icon: <FieldTimeOutlined className="text-red-300" />,
     },
     {
-      title: "Tổng Phản Hồi",
+      title: "Tổng Số Lần Hỗ Trợ",
       value: "2040",
-      change: "+1.8%",
-      isIncrease: true,
+
       icon: <FieldTimeOutlined className="text-red-300" />,
     },
   ];
@@ -328,7 +346,7 @@ function Dashboard() {
   // Add fetch function
   const fetchTopPackages = async (year) => {
     try {
-      const response = await api.get(`analytics/packages/top/5/year${year}`);
+      const response = await api.get(`analytics/packages/top/5/year/${year}`);
       console.log(response.data);
 
       if (response.data.status === "success") {
@@ -337,7 +355,9 @@ function Dashboard() {
         // Ensure we always have exactly 5 items
         while (topPackages.length < 5) {
           topPackages.push({
+            "package-id": null,
             "package-name": "N/A",
+            "kit-id": null,
             "kit-name": "",
             "sold-quantity": 0,
           });
@@ -357,8 +377,8 @@ function Dashboard() {
             {
               label: "Số package đã bán",
               data: topPackages.map((pkg) => pkg["sold-quantity"]),
-              backgroundColor: "rgba(59, 130, 246, 0.8)",
-              borderColor: "rgb(59, 130, 246)",
+              backgroundColor: chartColors,
+              borderColor: chartColors,
               borderWidth: 1,
             },
           ],
@@ -374,8 +394,8 @@ function Dashboard() {
           {
             label: "Số package đã bán",
             data: Array(5).fill(0),
-            backgroundColor: "rgba(59, 130, 246, 0.8)",
-            borderColor: "rgb(59, 130, 246)",
+            backgroundColor: chartColors,
+            borderColor: chartColors,
             borderWidth: 1,
           },
         ],
@@ -438,8 +458,8 @@ function Dashboard() {
             {
               label: "Doanh thu",
               data: packages.map((pkg) => pkg["total-package-price"]),
-              backgroundColor: "rgba(34, 197, 94, 0.8)",
-              borderColor: "rgb(34, 197, 94)",
+              backgroundColor: chartColors,
+              borderColor: chartColors,
               borderWidth: 1,
             },
           ],
@@ -453,8 +473,8 @@ function Dashboard() {
           {
             label: "Doanh thu",
             data: Array(5).fill(0),
-            backgroundColor: "rgba(34, 197, 94, 0.8)",
-            borderColor: "rgb(34, 197, 94)",
+            backgroundColor: chartColors,
+            borderColor: chartColors,
             borderWidth: 1,
           },
         ],
@@ -465,16 +485,38 @@ function Dashboard() {
   // Add state for selected month
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
-  // Update useEffect to use year and month
+  // Thêm state loading
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Cập nhật hàm fetchAllData
+  const fetchAllData = async (year, month) => {
+    try {
+      setIsLoading(true); // Bắt đầu loading
+      await Promise.all([
+        fetchRevenueData(year),
+        fetchTopPackages(year),
+        fetchTopRevenuePackages(year, month),
+        fetchTotalOrders(year, month),
+      ]);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setIsLoading(false); // Kết thúc loading
+    }
+  };
+
+  // Cập nhật useEffect để sử dụng fetchAllData
   useEffect(() => {
-    fetchTopPackages(selectedYear);
-    fetchTopRevenuePackages(selectedYear, selectedMonth);
-    fetchTotalOrders(selectedYear, selectedMonth);
+    fetchAllData(selectedYear, selectedMonth);
   }, [selectedYear, selectedMonth]);
 
-  // Update the year selection handler
+  // Cập nhật các hàm xử lý onChange
   const handleYearChange = (value) => {
     setSelectedYear(value);
+  };
+
+  const handleMonthChange = (value) => {
+    setSelectedMonth(value);
   };
 
   const topSellerOptions = {
@@ -498,9 +540,10 @@ function Dashboard() {
     scales: {
       x: {
         beginAtZero: true,
+        max: 3, // Giới hạn tối đa là 3
         ticks: {
-          stepSize: 5, // Đặt bước nhảy là 5
-          maxTicksLimit: 10, // Giới hạn số lượng điểm đánh dấu để tránh quá đông
+          stepSize: 1, // Mỗi bước nhảy là 1
+          precision: 0, // Chỉ hiển thị số nguyên
         },
         grid: {
           display: true,
@@ -574,25 +617,80 @@ function Dashboard() {
     },
   };
 
-  // Cập nhật handler cho Select của Sales Details
-  const handleSalesYearChange = (value) => {
-    setSelectedYear(value);
+  // Thêm state mới để lưu trữ danh sách các năm có dữ liệu
+  const [availableYears, setAvailableYears] = useState([]);
+
+  // Sửa lại hàm kiểm tra năm có doanh thu
+  const checkYearHasRevenue = async (year) => {
+    try {
+      const response = await api.get(`analytics/revenues/${year}`);
+
+      if (response.data.status === "success") {
+        const monthlyData = response.data.details.data["year-dto"];
+        // Check if any month has revenue
+        return Object.values(monthlyData).some((value) => value > 0);
+      }
+      return false;
+    } catch (error) {
+      console.error(`Error checking revenue for year ${year}:`, error);
+      return false;
+    }
+  };
+
+  // Thêm hàm để lấy danh sách các năm có doanh thu
+  const fetchAvailableYears = async () => {
+    try {
+      const currentYear = new Date().getFullYear();
+      const years = [];
+
+      // Kiểm tra 5 năm gần nhất
+      for (let year = currentYear; year >= currentYear - 4; year--) {
+        const hasRevenue = await checkYearHasRevenue(year);
+        if (hasRevenue) {
+          years.push(year);
+        }
+      }
+
+      if (years.length > 0) {
+        setAvailableYears(years);
+        setSelectedYear(years[0].toString());
+      } else {
+        // Nếu không có năm nào có doanh thu, mặc định hiển thị năm hiện tại
+        setAvailableYears([currentYear]);
+        setSelectedYear(currentYear.toString());
+      }
+    } catch (error) {
+      console.error("Error fetching available years:", error);
+      const currentYear = new Date().getFullYear();
+      setAvailableYears([currentYear]);
+      setSelectedYear(currentYear.toString());
+    }
+  };
+
+  // Thêm useEffect để fetch danh sách năm khi component mount
+  useEffect(() => {
+    fetchAvailableYears();
+  }, []);
+
+  const handleDownloadReport = () => {
+    console.log("Downloading report...");
   };
 
   return (
     <div className="p-6 bg-blue-50">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           <Select
             value={selectedYear}
             className="w-32"
-            options={[
-              { value: "2024", label: "2024" },
-              { value: "2023", label: "2023" },
-              { value: "2022", label: "2022" },
-            ]}
-            onChange={(value) => setSelectedYear(value)}
+            options={availableYears.map((year) => ({
+              value: year.toString(),
+              label: year.toString(),
+            }))}
+            onChange={handleYearChange}
+            loading={isLoading}
+            disabled={isLoading}
           />
           <Select
             value={selectedMonth}
@@ -611,142 +709,112 @@ function Dashboard() {
               { value: 11, label: "Tháng 11" },
               { value: 12, label: "Tháng 12" },
             ]}
-            onChange={(value) => setSelectedMonth(value)}
+            onChange={handleMonthChange}
+            loading={isLoading}
+            disabled={isLoading}
           />
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleDownloadReport}
+            className="bg-blue-500 hover:bg-blue-600 flex items-center"
+            loading={isLoading}
+          >
+            Tải Báo Cáo
+          </Button>
         </div>
       </div>
 
-      <Row gutter={[16, 16]}>
-        {stats.map((stat, index) => (
-          <Col xs={24} sm={12} lg={8} key={index}>
-            <Card className="hover:shadow-lg transition-shadow duration-300 border-0 rounded-xl">
-              <div className="flex justify-between items-start">
-                <div className="space-y-3">
-                  <p className="text-gray-500 font-medium">{stat.title}</p>
-                  <h2 className="text-3xl font-bold text-gray-800">
-                    {stat.value}
-                  </h2>
-                  <p
-                    className={`flex items-center text-sm font-medium ${
-                      stat.isIncrease ? "text-emerald-500" : "text-rose-500"
+      {/* Thêm Spin bao quanh nội dung chính */}
+      <Spin spinning={isLoading} tip="Đang tải...">
+        <Row gutter={[16, 16]}>
+          {stats.map((stat, index) => (
+            <Col xs={24} sm={12} lg={8} key={index}>
+              <Card className="hover:shadow-lg transition-shadow duration-300 border-0 rounded-xl">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-3">
+                    <p className="text-gray-500 font-medium">{stat.title}</p>
+                    <h2 className="text-3xl font-bold text-gray-800">
+                      {stat.value}
+                    </h2>
+                    <p
+                      className={`flex items-center text-sm font-medium ${
+                        stat.isIncrease ? "text-emerald-500" : "text-rose-500"
+                      }`}
+                    ></p>
+                  </div>
+                  <div
+                    className={`p-4 rounded-full bg-opacity-10 ${
+                      index === 0
+                        ? "bg-blue-500/10"
+                        : index === 1
+                        ? "bg-yellow-500/10"
+                        : index === 2
+                        ? "bg-emerald-500/10"
+                        : index === 3
+                        ? "bg-emerald-500/10"
+                        : "bg-rose-500/10"
                     }`}
                   >
-                    {stat.change}
-                    <span className="text-gray-500 ml-1.5">
-                      {stat.isIncrease ? "Up" : "Down"} from yesterday
-                    </span>
+                    {stat.icon}
+                  </div>
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+
+        <Card className="mt-8 border-0 rounded-xl hover:shadow-lg transition-shadow duration-300">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Sales Details</h2>
+              <p className="text-gray-500 text-sm mt-1">
+                Doanh thu và lợi nhuận năm {selectedYear}
+              </p>
+            </div>
+          </div>
+          <div className="w-full h-[400px]">
+            <Line data={chartData} options={options} />
+          </div>
+        </Card>
+
+        <Row gutter={[16, 16]} className="mt-8">
+          <Col xs={24} lg={12}>
+            <Card className="border-0 rounded-xl hover:shadow-lg transition-shadow duration-300">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Top 5 Best-seller
+                  </h2>
+                  <p className="text-gray-500 text-sm mt-1">
+                    Package được bán nhiều nhất
                   </p>
                 </div>
-                <div
-                  className={`p-4 rounded-full bg-opacity-10 ${
-                    index === 0
-                      ? "bg-blue-500/10"
-                      : index === 1
-                      ? "bg-yellow-500/10"
-                      : index === 2
-                      ? "bg-emerald-500/10"
-                      : index === 3
-                      ? "bg-emerald-500/10"
-                      : "bg-rose-500/10"
-                  }`}
-                >
-                  {stat.icon}
-                </div>
+              </div>
+              <div className="w-full h-[400px]">
+                <Bar data={topSellerData} options={topSellerOptions} />
               </div>
             </Card>
           </Col>
-        ))}
-      </Row>
-
-      <Card className="mt-8 border-0 rounded-xl hover:shadow-lg transition-shadow duration-300">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-gray-800">Sales Details</h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Doanh thu và lợi nhuận năm 2024
-            </p>
-          </div>
-          <Select
-            value={selectedYear}
-            onChange={handleSalesYearChange}
-            className="w-32"
-            options={[
-              { value: "2024", label: "2024" },
-              { value: "2023", label: "2023" },
-              { value: "2022", label: "2022" },
-            ]}
-          />
-        </div>
-        <div className="w-full h-[400px]">
-          <Line data={chartData} options={options} />
-        </div>
-      </Card>
-
-      <Row gutter={[16, 16]} className="mt-8">
-        <Col xs={24} lg={12}>
-          <Card className="border-0 rounded-xl hover:shadow-lg transition-shadow duration-300">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  Top 5 Best-seller
-                </h2>
-                <p className="text-gray-500 text-sm mt-1">
-                  Package được bán nhiều nhất
-                </p>
+          <Col xs={24} lg={12}>
+            <Card className="border-0 rounded-xl hover:shadow-lg transition-shadow duration-300">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Top 5 Doanh Thu
+                  </h2>
+                  <p className="text-gray-500 text-sm mt-1">
+                    Package có doanh thu cao nhất
+                  </p>
+                </div>
               </div>
-              <Select
-                value={selectedYear}
-                onChange={handleYearChange}
-                className="w-32"
-                options={[
-                  { value: "2024", label: "2024" },
-                  { value: "2023", label: "2023" },
-                  { value: "2022", label: "2022" },
-                ]}
-              />
-            </div>
-            <div className="w-full h-[400px]">
-              <Bar data={topSellerData} options={topSellerOptions} />
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card className="border-0 rounded-xl hover:shadow-lg transition-shadow duration-300">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  Top 5 Doanh Thu
-                </h2>
-                <p className="text-gray-500 text-sm mt-1">
-                  Package có doanh thu cao nhất
-                </p>
+              <div className="w-full h-[400px]">
+                <Bar data={topRevenueChartData} options={topRevenueOptions} />
               </div>
-              <Select
-                defaultValue={selectedMonth}
-                className="w-32"
-                onChange={(value) => setSelectedMonth(value)}
-                options={[
-                  { value: 1, label: "Tháng 1" },
-                  { value: 2, label: "Tháng 2" },
-                  { value: 3, label: "Tháng 3" },
-                  { value: 4, label: "Tháng 4" },
-                  { value: 5, label: "Tháng 5" },
-                  { value: 6, label: "Tháng 6" },
-                  { value: 7, label: "Tháng 7" },
-                  { value: 8, label: "Tháng 8" },
-                  { value: 9, label: "Tháng 9" },
-                  { value: 10, label: "Tháng 10" },
-                  { value: 11, label: "Tháng 11" },
-                  { value: 12, label: "Tháng 12" },
-                ]}
-              />
-            </div>
-            <div className="w-full h-[400px]">
-              <Bar data={topRevenueChartData} options={topRevenueOptions} />
-            </div>
-          </Card>
-        </Col>
-      </Row>
+            </Card>
+          </Col>
+        </Row>
+      </Spin>
     </div>
   );
 }

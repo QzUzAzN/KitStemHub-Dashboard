@@ -6,7 +6,9 @@ import {
   RobotOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  ControlOutlined,
+  SnippetsOutlined,
+  LineChartOutlined,
+   ControlOutlined,
   UsergroupAddOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
@@ -59,6 +61,22 @@ function ManagerSidebar() {
         defaultSelectedKeys={["1"]}
         className="bg-transparent border-r-0"
       >
+        <Menu.Item
+          key="0"
+          icon={<LineChartOutlined />}
+          className="text-blue-600"
+        >
+          <NavLink
+            to="/manager/dashboard"
+            className={({ isActive }) =>
+              isActive
+                ? "font-bold text-blue-600"
+                : "text-gray-700 hover:text-blue-600"
+            }
+          >
+            Bảng Điều Khiển
+          </NavLink>
+        </Menu.Item>
         <Menu.Item key="1" icon={<RobotOutlined />} className="text-blue-600">
           <NavLink
             to="/manager/kits"
