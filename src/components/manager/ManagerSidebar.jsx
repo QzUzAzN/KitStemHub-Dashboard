@@ -6,9 +6,8 @@ import {
   RobotOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  ControlOutlined,
-  UsergroupAddOutlined,
-  TeamOutlined,
+  SnippetsOutlined,
+  LineChartOutlined,
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { NavLink } from "react-router-dom";
@@ -59,6 +58,22 @@ function ManagerSidebar() {
         defaultSelectedKeys={["1"]}
         className="bg-transparent border-r-0"
       >
+        <Menu.Item
+          key="0"
+          icon={<LineChartOutlined />}
+          className="text-blue-600"
+        >
+          <NavLink
+            to="/manager/dashboard"
+            className={({ isActive }) =>
+              isActive
+                ? "font-bold text-blue-600"
+                : "text-gray-700 hover:text-blue-600"
+            }
+          >
+            Bảng Điều Khiển
+          </NavLink>
+        </Menu.Item>
         <Menu.Item key="1" icon={<RobotOutlined />} className="text-blue-600">
           <NavLink
             to="/manager/kits"
@@ -71,7 +86,7 @@ function ManagerSidebar() {
             Quản lí Kits
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="2" icon={<ControlOutlined />}>
+        <Menu.Item key="2" icon={<RobotOutlined />}>
           <NavLink
             to="/manager/components"
             className={({ isActive }) =>
@@ -107,7 +122,7 @@ function ManagerSidebar() {
             Quản lí Package
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="5" icon={<TeamOutlined />}>
+        <Menu.Item key="5" icon={<DropboxOutlined />}>
           <NavLink
             to="/manager/user"
             className={({ isActive }) =>
@@ -119,7 +134,7 @@ function ManagerSidebar() {
             Quản lí người dùng
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="6" icon={<UsergroupAddOutlined />}>
+        <Menu.Item key="6" icon={<DropboxOutlined />}>
           <NavLink
             to="/manager/staff"
             className={({ isActive }) =>
