@@ -8,6 +8,7 @@ import {
   Popconfirm,
   Select,
   Table,
+  Tag,
 } from "antd";
 import {
   DeleteOutlined,
@@ -220,9 +221,9 @@ function ManagerUser() {
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <span style={{ color: status ? "green" : "red" }}>
-          {status ? "Có sẵn" : "Không có sẵn"}
-        </span>
+        <Tag color={status ? "green" : "red"}>
+          {status ? "Hoạt động" : "Vô hiệu hóa"}
+        </Tag>
       ),
     },
     {
@@ -277,9 +278,15 @@ function ManagerUser() {
           </Form.Item>
           <Form.Item name="status">
             <Select placeholder="Trạng thái" style={{ width: 120 }}>
-              <Option value={undefined}>Tất cả</Option>
-              <Option value={true}>Có</Option>
-              <Option value={false}>Không</Option>
+              <Option value={undefined}>
+                <Tag color="grey">Tất cả</Tag>
+              </Option>
+              <Option value={true}>
+                <Tag color="green">Hoạt động</Tag>
+              </Option>
+              <Option value={false}>
+                <Tag color="red">Vô hiệu hóa</Tag>
+              </Option>
             </Select>
           </Form.Item>
           <Button

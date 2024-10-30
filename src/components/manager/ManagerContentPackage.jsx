@@ -18,6 +18,7 @@ import {
   Button,
   Switch,
   Spin,
+  Tag,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
@@ -409,9 +410,9 @@ function ManagerContentPackage() {
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <span style={{ color: status ? "green" : "red" }}>
-          {status ? "Available" : "Unavailable"}
-        </span>
+        <Tag color={status ? "green" : "red"}>
+          {status ? "Có sẵn" : "Không có sẵn"}
+        </Tag>
       ),
     },
     { title: "Cấp độ", dataIndex: ["level", "name"], key: "level-name" },
@@ -509,7 +510,7 @@ function ManagerContentPackage() {
               onChange={(e) =>
                 setFilters({ ...filters, kitName: e.target.value })
               }
-              style={{ width: "250px" }} // Giảm kích thước của "Kit Name"
+              style={{ width: "300px" }} // Giảm kích thước của "Kit Name"
             />
             <Input
               placeholder="Tên loại Kit"
@@ -517,7 +518,7 @@ function ManagerContentPackage() {
               onChange={(e) =>
                 setFilters({ ...filters, categoryName: e.target.value })
               }
-              style={{ width: "250px" }} // Giảm kích thước của "Category Name"
+              style={{ width: "300px" }} // Giảm kích thước của "Category Name"
             />
             <Select
               placeholder="Trạng thái"
@@ -525,10 +526,14 @@ function ManagerContentPackage() {
               onChange={(value) => setFilters({ ...filters, status: value })}
               style={{ width: "200px" }} // Đặt kích thước cho "Status"
             >
-              <Option value={true}>Available</Option>
-              <Option value={false}>Unavailable</Option>
+              <Option value={true}>
+                <Tag color="green">Có sẵn</Tag>
+              </Option>
+              <Option value={false}>
+                <Tag color="red">Không có sẵn</Tag>
+              </Option>
             </Select>
-            <Select
+            {/* <Select
               placeholder="Bao gồm những bài lab"
               value={filters.includeLabs}
               onChange={(value) =>
@@ -539,7 +544,7 @@ function ManagerContentPackage() {
               <Option value={undefined}>Tất Cả</Option>
               <Option value={true}>Có</Option>
               <Option value={false}>Không</Option>
-            </Select>
+            </Select> */}
           </div>
           <div className="w-full flex gap-4 justify-end">
             {/* Nút Search */}
@@ -674,8 +679,8 @@ function ManagerContentPackage() {
 
             <Form.Item name="status" label="Trạng thái" valuePropName="checked">
               <Switch
-                checkedChildren="Available"
-                unCheckedChildren="Unavailable"
+                checkedChildren="Có sẵn"
+                unCheckedChildren="Không có sẵn"
               />
             </Form.Item>
           </Form>
