@@ -19,11 +19,14 @@ import {
   Spin,
   Switch,
   Tag,
+  Typography,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
 import { Option } from "antd/es/mentions";
 // import Search from "antd/es/input/Search";
+
+const { Text } = Typography;
 
 function ManagerContentKits() {
   const [form] = Form.useForm();
@@ -586,6 +589,9 @@ function ManagerContentKits() {
       dataIndex: "name",
       key: "name",
       width: 300,
+      render: (name) => (
+        <Text className="font-semibold text-orange-400">{name}</Text>
+      ),
     },
     {
       title: "Tóm tắt",
@@ -600,8 +606,10 @@ function ManagerContentKits() {
       width: 200, // Đặt chiều rộng cho cột
       render: (_, record) => (
         <Button
+          type="primary"
           icon={<EyeOutlined />}
           onClick={() => handleViewDescription(record.description)}
+          className="bg-blue-500 hover:bg-blue-600"
         >
           Xem mô tả
         </Button>
@@ -612,8 +620,10 @@ function ManagerContentKits() {
       key: "components",
       render: (record) => (
         <Button
+          type="primary"
           icon={<EyeOutlined />}
           onClick={() => handleViewComponents(record.id)}
+          className="bg-blue-500 hover:bg-blue-600"
         >
           Xem thành phần
         </Button>
@@ -625,9 +635,11 @@ function ManagerContentKits() {
       key: "image",
       render: (images) => (
         <Button
+          type="primary"
           icon={<EyeOutlined />}
           onClick={() => showImagesModal(images)}
           disabled={!images || images.length === 0}
+          className="bg-blue-500 hover:bg-blue-600"
         >
           Xem ảnh
         </Button>
@@ -638,14 +650,18 @@ function ManagerContentKits() {
       dataIndex: "purchase-cost",
       key: "purchaseCost",
       width: 200,
-      render: (cost) => <span>{cost ? cost.toLocaleString() : "0"} VND</span>,
+      render: (cost) => (
+        <Text className="font-semibold text-gray-700">
+          {cost ? cost.toLocaleString() : "0"} VND
+        </Text>
+      ),
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <Tag color={status ? "green" : "red"}>
+        <Tag color={status ? "green" : "red"} className="font-semibold">
           {status ? "Có sẵn" : "Không có sẵn"}
         </Tag>
       ),
@@ -654,7 +670,11 @@ function ManagerContentKits() {
       title: "Thể Loại",
       dataIndex: ["kits-category", "name"],
       key: "kits-category",
-      render: (categoryName) => <span>{categoryName}</span>,
+      render: (categoryName) => (
+        <Tag color="blue" className="font-semibold">
+          {categoryName}
+        </Tag>
+      ),
     },
     {
       title: "Hành động",

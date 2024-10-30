@@ -19,10 +19,13 @@ import {
   Switch,
   Spin,
   Tag,
+  Typography,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
 import { Option } from "antd/es/mentions";
+
+const { Text } = Typography;
 
 function ManagerContentPackage() {
   const [form] = Form.useForm();
@@ -397,38 +400,76 @@ function ManagerContentPackage() {
   };
 
   const columns = [
-    { title: "ID", dataIndex: "id", key: "id" },
-    { title: "Tên gói", dataIndex: "name", key: "name" },
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+    },
+    {
+      title: "Tên gói",
+      dataIndex: "name",
+      key: "name",
+      render: (name) => (
+        <Text className="font-semibold text-red-600">{name}</Text>
+      ),
+    },
     {
       title: "Giá",
       dataIndex: "price",
       key: "price",
-      render: (price) => `${price.toLocaleString()} VND`,
+      render: (price) => (
+        <Text className="font-semibold text-grey-700">
+          {price.toLocaleString()} VND
+        </Text>
+      ),
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <Tag color={status ? "green" : "red"}>
+        <Tag color={status ? "green" : "red"} className="font-semibold">
           {status ? "Có sẵn" : "Không có sẵn"}
         </Tag>
       ),
     },
-    { title: "Cấp độ", dataIndex: ["level", "name"], key: "level-name" },
-    { title: "Kit", dataIndex: ["kit", "name"], key: "kit-name" },
+    {
+      title: "Cấp độ",
+      dataIndex: ["level", "name"],
+      key: "level-name",
+      render: (level) => (
+        <Tag color="purple" className="font-semibold">
+          {level}
+        </Tag>
+      ),
+    },
+    {
+      title: "Kit",
+      dataIndex: ["kit", "name"],
+      key: "kit-name",
+      render: (kitName) => (
+        <Text className="font-semibold text-orange-400">{kitName}</Text>
+      ),
+    },
     {
       title: "Loại Kit",
       dataIndex: ["kit", "category", "name"],
       key: "category-name",
+      render: (level) => (
+        <Tag color="blue" className="font-semibold">
+          {level}
+        </Tag>
+      ),
     },
     {
       title: "Labs",
       key: "labs",
       render: (_, record) => (
         <Button
+          type="primary"
           onClick={() => handleViewLabDetails(record.id)}
           icon={<EyeOutlined />}
+          className="bg-blue-500 hover:bg-blue-600"
         >
           Xem Labs
         </Button>

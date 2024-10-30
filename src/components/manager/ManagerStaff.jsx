@@ -11,10 +11,12 @@ import {
   Select,
   Table,
   Tag,
+  Typography,
 } from "antd";
 import {
   DeleteOutlined,
   EditOutlined,
+  MailOutlined,
   PlusCircleOutlined,
   SearchOutlined,
   UndoOutlined,
@@ -22,6 +24,7 @@ import {
 import moment from "moment";
 
 const { Option } = Select;
+const { Text } = Typography;
 
 function ManagerStaff() {
   const [form] = Form.useForm();
@@ -306,19 +309,26 @@ function ManagerStaff() {
       title: "Email",
       dataIndex: "user-name",
       key: "user-name",
-      width: 200,
+      width: 300,
+      render: (userName) => (
+        <Text className="font-semibold text-blue-500">
+          <MailOutlined className="text-gray-500 pr-2" /> {userName}
+        </Text>
+      ),
     },
     {
       title: "Tên",
       dataIndex: "first-name",
       key: "first-name",
       width: 150,
+      render: (firstName) => <Text className="font-semibold">{firstName}</Text>,
     },
     {
       title: "Họ",
       dataIndex: "last-name",
       key: "last-name",
       width: 150,
+      render: (lastName) => <Text className="font-semibold">{lastName}</Text>,
     },
     {
       title: "Giới tính",
@@ -351,25 +361,29 @@ function ManagerStaff() {
       dataIndex: "phone-number",
       key: "phone-number",
       width: 150,
+      render: (phoneNumber) => (
+        <Text className="font-semibold">{phoneNumber}</Text>
+      ),
     },
     {
       title: "Địa chỉ",
       dataIndex: "address",
       key: "address",
       width: 300,
+      render: (address) => <Text className="font-semibold">{address}</Text>,
     },
     {
       title: "Điểm",
       dataIndex: "points",
       key: "points",
-      render: (points) => <span>{points || 0}</span>,
+      render: (points) => <Text className="font-semibold">{points || 0}</Text>,
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <Tag color={status ? "green" : "red"}>
+        <Tag color={status ? "green" : "red"} className="font-semibold">
           {status ? "Hoạt động" : "Vô hiệu hóa"}
         </Tag>
       ),
