@@ -21,6 +21,7 @@ import {
   notification,
   Switch,
   Spin,
+  Tag,
 } from "antd";
 import { useEffect, useState } from "react";
 import { Option } from "antd/es/mentions";
@@ -392,6 +393,7 @@ function ManagerContentLabs() {
       title: "Giá",
       dataIndex: "price",
       key: "price",
+      width: 150,
       render: (price) => <span>{price.toLocaleString()} VND</span>, // Hiển thị số tiền
     },
     {
@@ -410,9 +412,9 @@ function ManagerContentLabs() {
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <span style={{ color: status ? "green" : "red" }}>
+        <Tag color={status ? "green" : "red"}>
           {status ? "Có sẵn" : "Không có sẵn"}
-        </span>
+        </Tag>
       ),
     },
     {

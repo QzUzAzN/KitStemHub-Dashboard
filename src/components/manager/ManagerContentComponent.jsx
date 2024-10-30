@@ -15,6 +15,7 @@ import {
   Input,
   InputNumber,
   Button,
+  Tag,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
@@ -288,9 +289,9 @@ function ManagerContentComponent() {
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <span style={{ color: status ? "green" : "red" }}>
+        <Tag color={status ? "green" : "red"}>
           {status ? "Có sẵn" : "Không có sẵn"}
-        </span>
+        </Tag>
       ),
     },
     {

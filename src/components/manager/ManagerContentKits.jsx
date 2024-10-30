@@ -18,6 +18,7 @@ import {
   Button,
   Spin,
   Switch,
+  Tag,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
@@ -40,6 +41,8 @@ function ManagerContentKits() {
   const [addComponentModalVisible, setAddComponentModalVisible] =
     useState(false);
   const [componentsData, setComponentsData] = useState([]); // State để lưu các thành phần của kit hiện tại
+  const [descriptionModalVisible, setDescriptionModalVisible] = useState(false);
+  const [currentDescription, setCurrentDescription] = useState("");
   const [selectedComponents, setSelectedComponents] = useState([]);
   const [isFetchingComponents, setIsFetchingComponents] = useState(false); // Trạng thái loading khi fetch component
   const [pagination, setPagination] = useState({
@@ -361,6 +364,11 @@ function ManagerContentKits() {
     fetchKits(1, pagination.pageSize); // Fetch lại mà không có filter
   };
 
+  const handleViewDescription = (description) => {
+    setCurrentDescription(description);
+    setDescriptionModalVisible(true);
+  };
+
   // Hàm để gọi API và hiển thị components trong modal
   const handleViewComponents = async (kitId) => {
     setIsFetchingComponents(true);
@@ -589,9 +597,14 @@ function ManagerContentKits() {
       title: "Mô tả", // Thêm cột Description
       dataIndex: "description",
       key: "description",
-      width: 500, // Đặt chiều rộng cho cột
-      render: (description) => (
-        <span>{description ? description : "No description available"}</span>
+      width: 200, // Đặt chiều rộng cho cột
+      render: (_, record) => (
+        <Button
+          icon={<EyeOutlined />}
+          onClick={() => handleViewDescription(record.description)}
+        >
+          Xem mô tả
+        </Button>
       ),
     },
     {
@@ -624,6 +637,7 @@ function ManagerContentKits() {
       title: "Giá",
       dataIndex: "purchase-cost",
       key: "purchaseCost",
+      width: 200,
       render: (cost) => <span>{cost ? cost.toLocaleString() : "0"} VND</span>,
     },
     {
@@ -631,9 +645,9 @@ function ManagerContentKits() {
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <span style={{ color: status ? "green" : "red" }}>
+        <Tag color={status ? "green" : "red"}>
           {status ? "Có sẵn" : "Không có sẵn"}
-        </span>
+        </Tag>
       ),
     },
     {
@@ -833,6 +847,23 @@ function ManagerContentKits() {
           showSizeChanger: false, // Bỏ dropdown chọn số bản ghi mỗi trang
         }}
       />
+
+      <Modal
+        title="Mô tả chi tiết"
+        visible={descriptionModalVisible}
+        onCancel={() => setDescriptionModalVisible(false)}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => setDescriptionModalVisible(false)}
+          >
+            Đóng
+          </Button>,
+        ]}
+      >
+        <p>{currentDescription || "Không có mô tả"}</p>
+      </Modal>
 
       {/* Modal hiển thị danh sách thành phần */}
       <Modal
