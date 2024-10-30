@@ -3,6 +3,7 @@
 import {
   DeleteOutlined,
   EditOutlined,
+  FileSearchOutlined,
   PlusCircleOutlined,
   SearchOutlined,
   UndoOutlined,
@@ -22,10 +23,13 @@ import {
   Switch,
   Spin,
   Tag,
+  Typography,
 } from "antd";
 import { useEffect, useState } from "react";
 import { Option } from "antd/es/mentions";
 import api from "../../config/axios";
+
+const { Text } = Typography;
 
 function ManagerContentLabs() {
   const [form] = Form.useForm();
@@ -374,18 +378,30 @@ function ManagerContentLabs() {
       title: "ID",
       dataIndex: "id",
       key: "id",
+      render: (id) => <Text className="font-semibold text-gray-700">{id}</Text>,
     },
     {
       title: "Tên",
       dataIndex: "name",
       key: "name",
+      render: (name) => (
+        <Text strong className="text-purple-600">
+          {name}
+        </Text>
+      ),
     },
     {
       title: "Chi tiết",
       key: "view",
+      width: 150,
       render: (_, record) => (
-        <Button type="link" onClick={() => viewLabFile(record.id)}>
-          Xem
+        <Button
+          type="primary"
+          icon={<FileSearchOutlined />}
+          onClick={() => viewLabFile(record.id)}
+          className="bg-blue-500 hover:bg-blue-600"
+        >
+          Xem lab
         </Button>
       ),
     },
@@ -394,25 +410,36 @@ function ManagerContentLabs() {
       dataIndex: "price",
       key: "price",
       width: 150,
-      render: (price) => <span>{price.toLocaleString()} VND</span>, // Hiển thị số tiền
+      render: (price) => (
+        <Text className="font-semibold text-gray-700">
+          {price.toLocaleString()} VND
+        </Text>
+      ), // Hiển thị số tiền
     },
     {
       title: "Số lần hỗ trợ tối đa",
       dataIndex: "max-support-times",
       key: "maxSupportTimes",
       width: 100,
+      render: (maxSupportTimes) => (
+        <Text className="font-semibold text-gray-700">{maxSupportTimes}</Text>
+      ),
     },
     {
       title: "Tác giả",
       dataIndex: "author",
       key: "author",
+      width: 130,
+      render: (author) => (
+        <Text className="font-semibold text-gray-700">{author}</Text>
+      ),
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <Tag color={status ? "green" : "red"}>
+        <Tag color={status ? "green" : "red"} className="font-semibold">
           {status ? "Có sẵn" : "Không có sẵn"}
         </Tag>
       ),
@@ -421,13 +448,19 @@ function ManagerContentLabs() {
       title: "Kit",
       dataIndex: ["kit", "name"], // Lấy tên từ kit.name
       key: "kit",
-      render: (kitName) => <span>{kitName}</span>,
+      render: (kitName) => (
+        <Text className="font-semibold text-orange-400">{kitName}</Text>
+      ),
     },
     {
       title: "Cấp độ",
       dataIndex: ["level", "name"], // Lấy tên từ level.name
       key: "level",
-      render: (levelName) => <span>{levelName}</span>,
+      render: (level) => (
+        <Tag color="purple" className="font-semibold">
+          {level}
+        </Tag>
+      ),
     },
     {
       title: "Hành động",

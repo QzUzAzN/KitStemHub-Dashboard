@@ -16,9 +16,12 @@ import {
   InputNumber,
   Button,
   Tag,
+  Typography,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
+
+const { Text } = Typography;
 
 function ManagerContentComponent() {
   const [dataSource, setDataSource] = useState([]);
@@ -293,19 +296,25 @@ function ManagerContentComponent() {
       dataIndex: "name",
       key: "name",
       width: 500,
+      render: (name) => (
+        <Text className="font-semibold text-pink-500">{name}</Text>
+      ),
     },
     {
       title: "ID loại thành phần", // Cột mới để hiển thị Type ID
       dataIndex: "type-id",
       key: "type-id",
       width: 200,
+      render: (typeId) => (
+        <Text className="font-semibold text-grey-700">{typeId}</Text>
+      ),
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
-        <Tag color={status ? "green" : "red"}>
+        <Tag color={status ? "green" : "red"} className="font-semibold">
           {status ? "Có sẵn" : "Không có sẵn"}
         </Tag>
       ),
