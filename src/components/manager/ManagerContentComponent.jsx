@@ -101,7 +101,11 @@ function ManagerContentComponent() {
           duration: 3,
         });
       }
-      await fetchComponents(pagination.current, pagination.pageSize, false); // Làm mới danh sách components sau khi ẩn
+      await fetchComponents(
+        pagination.current,
+        pagination.pageSize,
+        searchName
+      ); // Làm mới danh sách components sau khi ẩn
     } catch (error) {
       notification.error({
         message: "Lỗi",
@@ -137,7 +141,11 @@ function ManagerContentComponent() {
           duration: 3,
         });
       }
-      await fetchComponents(pagination.current, pagination.pageSize, false); // Làm mới danh sách components sau khi phục hồi
+      await fetchComponents(
+        pagination.current,
+        pagination.pageSize,
+        searchName
+      ); // Làm mới danh sách components sau khi phục hồi
     } catch (error) {
       if (error.response) {
         console.error(
@@ -180,7 +188,11 @@ function ManagerContentComponent() {
           duration: 3,
         });
       }
-      await fetchComponents(false); // Làm mới danh sách sau khi tạo
+      await fetchComponents(
+        pagination.current,
+        pagination.pageSize,
+        searchName
+      ); // Làm mới danh sách sau khi tạo
       setOpen(false); // Đóng modal
     } catch (error) {
       notification.error({
@@ -215,7 +227,11 @@ function ManagerContentComponent() {
           duration: 3,
         });
       }
-      await fetchComponents(pagination.current, pagination.pageSize, false); // Làm mới danh sách sau khi cập nhật
+      await fetchComponents(
+        pagination.current,
+        pagination.pageSize,
+        searchName
+      ); // Làm mới danh sách sau khi cập nhật
       setOpen(false); // Đóng modal
     } catch (error) {
       notification.error({
