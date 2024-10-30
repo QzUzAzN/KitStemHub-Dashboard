@@ -40,6 +40,11 @@ function ManagerContentPackage() {
     pageSize: 20,
     total: 0,
   });
+  const [kitPagination, setKitPagination] = useState({
+    current: 1,
+    pageSize: 20,
+    total: 0,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filters, setFilters] = useState({
     name: "",
@@ -55,6 +60,8 @@ function ManagerContentPackage() {
   const [isLabModalOpen, setIsLabModalOpen] = useState(false); // Modal to view lab
   const [availableLabs, setAvailableLabs] = useState([]); // State to store related Labs
   const [selectedKitPrice, setSelectedKitPrice] = useState(null); // Giá Kit được chọn
+  const [selectedKit, setSelectedKit] = useState(null); // State to hold selected Kit
+  const [kitModalVisible, setKitModalVisible] = useState(false); // State to control Kit Modal
 
   const fetchPackages = async (
     page = 1,
@@ -128,6 +135,23 @@ function ManagerContentPackage() {
         message: "Lỗi",
         description: "Đã xảy ra lỗi khi lấy danh sách package!",
       });
+    }
+  };
+
+  const fetchKits = async (page = 1, pageSize = 20) => {
+    try {
+      setLoading(true);
+      const params = { page: page - 1, pageSize };
+      const response = await api.get("kits", { params });
+      const kitsData = response.data.details.data.kits;
+      const totalKits = response.data.details.data["total-pages"] * pageSize;
+
+      setKits(kitsData);
+      setKitPagination({ current: page, pageSize, total: totalKits });
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching kits:", error);
+      setLoading(false);
     }
   };
 
@@ -292,6 +316,7 @@ function ManagerContentPackage() {
   };
 
   const handleKitChange = async (kitId) => {
+    setKitModalVisible(false); // Close kit modal
     form.setFieldsValue({ labIds: [] }); // Reset labs when a new kit is selected
     try {
       const selectedKit = kits.find((kit) => kit.id === kitId);
@@ -307,6 +332,14 @@ function ManagerContentPackage() {
         description: "Không thể lấy danh sách labs liên quan đến kit đã chọn!",
       });
     }
+  };
+
+  const handleKitSelect = (kit) => {
+    setSelectedKit(kit);
+    setSelectedKitPrice(kit.price);
+    form.setFieldsValue({ kitId: kit.id });
+    setKitModalVisible(false);
+    handleKitChange(kit.id);
   };
 
   const handleEdit = (record) => {
@@ -663,14 +696,18 @@ function ManagerContentPackage() {
                   label="Chọn Kit"
                   rules={[{ required: true, message: "Vui lòng chọn Kit!" }]}
                 >
-                  <Select onChange={handleKitChange} placeholder="Chọn Kit">
-                    {kits.map((kit) => (
-                      <Option key={kit.id} value={kit.id}>
-                        {kit.name} , <strong>Giá</strong> :{" "}
-                        {kit["purchase-cost"].toLocaleString()} VND
-                      </Option>
-                    ))}
-                  </Select>
+                  <Button
+                    onClick={() => {
+                      setKitModalVisible(true);
+                      fetchKits();
+                    }}
+                  >
+                    {selectedKit
+                      ? `${selectedKit.name} - ${selectedKit[
+                          "purchase-cost"
+                        ].toLocaleString()} VND`
+                      : "Chọn Kit"}
+                  </Button>
                 </Form.Item>
                 {selectedKitPrice && (
                   <p>
@@ -726,6 +763,43 @@ function ManagerContentPackage() {
             </Form.Item>
           </Form>
         </Spin>
+      </Modal>
+
+      {/* Modal for selecting kits */}
+      <Modal
+        title="Chọn Kit"
+        visible={kitModalVisible}
+        onCancel={() => setKitModalVisible(false)}
+        footer={null}
+      >
+        <Table
+          dataSource={kits}
+          columns={[
+            { title: "Tên Kit", dataIndex: "name", key: "name" },
+            {
+              title: "Giá",
+              dataIndex: "purchase-cost",
+              key: "purchase-cost",
+              render: (cost) => `${cost.toLocaleString()} VND`,
+            },
+            {
+              title: "Thao tác",
+              key: "action",
+              render: (_, record) => (
+                <Button type="primary" onClick={() => handleKitSelect(record)}>
+                  Chọn
+                </Button>
+              ),
+            },
+          ]}
+          rowKey="id"
+          pagination={{
+            total: kitPagination.total,
+            current: kitPagination.current,
+            pageSize: kitPagination.pageSize,
+            onChange: (page, pageSize) => fetchKits(page, pageSize),
+          }}
+        />
       </Modal>
 
       {/* Modal for lab details */}

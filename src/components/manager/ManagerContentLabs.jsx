@@ -46,10 +46,18 @@ function ManagerContentLabs() {
     total: 0, // Tổng số items
     pageSize: 20, // Số mục trên mỗi trang (cố định là 20)
   });
+  const [kitPagination, setKitPagination] = useState({
+    current: 1,
+    pageSize: 20,
+    total: 0,
+  });
   const [filters, setFilters] = useState({
     labName: "",
     kitName: "",
   }); // Bộ lọc cho lab name và kit name
+  const [selectedKit, setSelectedKit] = useState(null);
+  const [kitModalVisible, setKitModalVisible] = useState(false);
+
   // Hàm xử lý khi chọn file từ Upload component
   const handleFileChange = (info) => {
     if (info.file.status === "removed") {
@@ -148,6 +156,28 @@ function ManagerContentLabs() {
       console.error("Error fetching labs:", error);
       setLoading(false); // Tắt loading nếu có lỗi
     }
+  };
+
+  const fetchKits = async (page = 1, pageSize = 20) => {
+    try {
+      const response = await api.get("kits", {
+        params: { page: page - 1, pageSize },
+      });
+      setKits(response.data.details.data.kits);
+      setKitPagination({
+        total: response.data.details.data["total-pages"] * pageSize,
+        current: response.data.details.data["current-page"],
+        pageSize,
+      });
+    } catch (error) {
+      console.error("Error fetching kits:", error);
+    }
+  };
+
+  const handleKitSelect = (kit) => {
+    setSelectedKit(kit);
+    setKitModalVisible(false);
+    form.setFieldsValue({ kit: kit.id });
   };
 
   // Hàm lấy Levels và Kits từ API
@@ -491,8 +521,35 @@ function ManagerContentLabs() {
     },
   ];
 
+  const kitModalColumns = [
+    { title: "Tên Kit", dataIndex: "name", key: "name" },
+    {
+      title: "Giá",
+      dataIndex: "purchase-cost",
+      key: "purchase-cost",
+      render: (cost) => `${cost.toLocaleString()} VND`,
+    },
+    {
+      title: "Thao tác",
+      key: "action",
+      render: (_, record) => (
+        <Button type="primary" onClick={() => handleKitSelect(record)}>
+          Chọn
+        </Button>
+      ),
+    },
+  ];
+
   const handleEdit = (record) => {
     setEditingRecord(record);
+
+    // Fetch thông tin Kit cho Lab hiện tại
+    const selectedKitData = kits.find((kit) => kit.id === record.kit.id);
+    if (selectedKitData) {
+      setSelectedKit(selectedKitData);
+    } else {
+      setSelectedKit(null); // Nếu không tìm thấy Kit, đặt lại selectedKit về null
+    }
     form.setFieldsValue({
       ...record,
       kit: record.kit.id,
@@ -515,7 +572,7 @@ function ManagerContentLabs() {
 
       const labData = {
         //id: editingRecord ? editingRecord.id : null, // Đảm bảo có ID nếu đang chỉnh sửa
-        kitId: values.kit,
+        kitId: selectedKit?.id || values.kit,
         levelId: values.level,
         name: values.name,
         price: values.price || 0,
@@ -693,14 +750,18 @@ function ManagerContentLabs() {
               name="kit"
               rules={[{ required: true, message: "Vui lòng chọn kit!" }]}
             >
-              <Select placeholder="Select Kit">
-                {kits.map((kit) => (
-                  <Option key={kit.id} value={kit.id}>
-                    {console.log(kit.id)}
-                    {kit.name}
-                  </Option>
-                ))}
-              </Select>
+              <Button
+                onClick={() => {
+                  setKitModalVisible(true);
+                  fetchKits();
+                }}
+              >
+                {selectedKit
+                  ? `${selectedKit.name} - ${selectedKit[
+                      "purchase-cost"
+                    ].toLocaleString()} VND`
+                  : "Chọn Kit"}
+              </Button>
             </Form.Item>
             <Form.Item
               label="Cấp độ"
@@ -745,6 +806,25 @@ function ManagerContentLabs() {
             )}
           </Form>
         </Spin>
+      </Modal>
+
+      {/* Modal chọn Kit */}
+      <Modal
+        title="Chọn Kit"
+        open={kitModalVisible}
+        onCancel={() => setKitModalVisible(false)}
+        footer={null}
+      >
+        <Table
+          dataSource={kits}
+          columns={kitModalColumns}
+          pagination={{
+            total: kitPagination.total,
+            current: kitPagination.current,
+            pageSize: kitPagination.pageSize,
+            onChange: (page) => fetchKits(page, kitPagination.pageSize),
+          }}
+        />
       </Modal>
     </Form>
   );
