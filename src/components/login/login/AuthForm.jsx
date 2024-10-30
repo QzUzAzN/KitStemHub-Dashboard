@@ -31,12 +31,12 @@ function LoginInput() {
           ];
 
         if (role === "customer") {
-          toast.error("Customers are not allowed to access this area!");
+          toast.error("Khách hàng không được phép truy cập khu vực này!");
           return;
         }
 
         login(accessToken);
-        toast.success("User logged in Successfully!");
+        toast.success("Đăng nhập thành công!");
 
         // Điều hướng dựa trên vai trò
         setTimeout(() => {
@@ -61,15 +61,14 @@ function LoginInput() {
     } catch (error) {
       // console.log("Error message:", error.message);
       if (error.response.status !== 401)
-        toast.error("An error occurred. Please try again later.");
+        toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau!");
     }
 
     // setIsSubmitting(false);
   };
 
-  const onFinishFailed = (errorInfo) => {
-    // console.log("Failed:", errorInfo);
-    toast.error("Please fill in all required fields correctly.");
+  const onFinishFailed = () => {
+    toast.error("Vui lòng điền đầy đủ các trường bắt buộc!");
   };
 
   return (
@@ -82,7 +81,7 @@ function LoginInput() {
 
       <div className="relative z-10 w-full max-w-md p-8 space-y-8 bg-white bg-opacity-30 backdrop-blur-sm rounded-lg shadow-lg">
         <h2 className="text-3xl font-extrabold text-center text-white">
-          Hello, welcome!
+          Hello, Welcome!
         </h2>
         <Form
           name="login"
@@ -97,11 +96,11 @@ function LoginInput() {
             rules={[
               {
                 required: true,
-                message: "Please input your email!",
+                message: "Vui lòng nhập email!",
               },
               {
                 type: "email",
-                message: "Please enter a valid email address!",
+                message: "Vui lòng nhập địa chỉ email hợp lệ!",
               },
             ]}
           >
@@ -116,13 +115,13 @@ function LoginInput() {
             rules={[
               {
                 required: true,
-                message: "Please input your password!",
+                message: "Vui lòng nhập mật khẩu!",
               },
             ]}
           >
             <Input.Password
               prefix={<LockOutlined className="text-gray-400" />}
-              placeholder="Password"
+              placeholder="Mật khẩu"
               className="rounded-md"
             />
           </Form.Item>
@@ -132,7 +131,7 @@ function LoginInput() {
               htmlType="submit"
               className="w-full bg-blue-500 hover:bg-blue-600 rounded-md transition duration-300 ease-in-out transform hover:scale-105"
             >
-              Login
+              Đăng nhập
             </Button>
           </Form.Item>
         </Form>

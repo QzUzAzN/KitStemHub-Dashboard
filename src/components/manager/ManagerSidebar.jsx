@@ -8,7 +8,7 @@ import {
   MenuUnfoldOutlined,
   SnippetsOutlined,
   LineChartOutlined,
-   ControlOutlined,
+  ControlOutlined,
   UsergroupAddOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
@@ -62,7 +62,7 @@ function ManagerSidebar() {
         className="bg-transparent border-r-0"
       >
         <Menu.Item
-          key="0"
+          key="1"
           icon={<LineChartOutlined />}
           className="text-blue-600"
         >
@@ -77,7 +77,7 @@ function ManagerSidebar() {
             Bảng Điều Khiển
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="1" icon={<RobotOutlined />} className="text-blue-600">
+        <Menu.Item key="2" icon={<RobotOutlined />} className="text-blue-600">
           <NavLink
             to="/manager/kits"
             className={({ isActive }) =>
@@ -89,7 +89,7 @@ function ManagerSidebar() {
             Quản lí Kits
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="2" icon={<ControlOutlined />}>
+        <Menu.Item key="3" icon={<ControlOutlined />}>
           <NavLink
             to="/manager/components"
             className={({ isActive }) =>
@@ -101,7 +101,7 @@ function ManagerSidebar() {
             Quản lí Components
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="3" icon={<FilePdfOutlined />}>
+        <Menu.Item key="4" icon={<FilePdfOutlined />}>
           <NavLink
             to="/manager/labs"
             className={({ isActive }) =>
@@ -113,7 +113,7 @@ function ManagerSidebar() {
             Quản lí Labs
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="4" icon={<DropboxOutlined />}>
+        <Menu.Item key="5" icon={<DropboxOutlined />}>
           <NavLink
             to="/manager/packages"
             className={({ isActive }) =>
@@ -125,7 +125,7 @@ function ManagerSidebar() {
             Quản lí Package
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="5" icon={<TeamOutlined />}>
+        <Menu.Item key="6" icon={<TeamOutlined />}>
           <NavLink
             to="/manager/user"
             className={({ isActive }) =>
@@ -137,7 +137,7 @@ function ManagerSidebar() {
             Quản lí người dùng
           </NavLink>
         </Menu.Item>
-        <Menu.Item key="6" icon={<UsergroupAddOutlined />}>
+        <Menu.Item key="7" icon={<UsergroupAddOutlined />}>
           <NavLink
             to="/manager/staff"
             className={({ isActive }) =>
