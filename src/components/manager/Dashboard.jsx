@@ -425,14 +425,10 @@ function Dashboard() {
   };
 
   // Update the fetch function for top revenue packages
-  const fetchTopRevenuePackages = async (year, month) => {
+  const fetchTopRevenuePackages = async (year) => {
     try {
-      // Format month to ensure it's two digits
-      const monthStr = month.toString().padStart(2, "0");
-      const lastDay = getLastDayOfMonth(year, month);
-
-      const fromDate = `${year}-${monthStr}-01`;
-      const toDate = `${year}-${monthStr}-${lastDay}`;
+      const fromDate = `${year}-01-01`;
+      const toDate = `${year}-12-31`;
 
       const response = await api.get(
         `analytics/package/sale?from-date=${fromDate}&to-date=${toDate}`
@@ -495,7 +491,7 @@ function Dashboard() {
       await Promise.all([
         fetchRevenueData(year),
         fetchTopPackages(year),
-        fetchTopRevenuePackages(year, month),
+        fetchTopRevenuePackages(year),
         fetchTotalOrders(year, month),
       ]);
     } catch (error) {
@@ -540,18 +536,29 @@ function Dashboard() {
     scales: {
       x: {
         beginAtZero: true,
-        max: 3, // Giới hạn tối đa là 3
+        // max: 3, // Giới hạn tối đa là 3
         ticks: {
           stepSize: 1, // Mỗi bước nhảy là 1
           precision: 0, // Chỉ hiển thị số nguyên
         },
         grid: {
-          display: true,
+          color: "rgba(0, 0, 0, 0.05)",
+          drawBorder: false,
         },
       },
       y: {
         grid: {
-          display: true,
+          display: false,
+          drawBorder: false,
+        },
+        border: {
+          display: false,
+        },
+        ticks: {
+          padding: 8,
+          font: {
+            weight: 500,
+          },
         },
       },
     },
