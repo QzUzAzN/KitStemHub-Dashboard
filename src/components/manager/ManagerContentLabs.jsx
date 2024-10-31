@@ -54,6 +54,7 @@ function ManagerContentLabs() {
   const [filters, setFilters] = useState({
     labName: "",
     kitName: "",
+    status: "",
   }); // Bộ lọc cho lab name và kit name
   const [selectedKit, setSelectedKit] = useState(null);
   const [kitModalVisible, setKitModalVisible] = useState(false);
@@ -100,6 +101,10 @@ function ManagerContentLabs() {
         "lab-name": searchFilters.labName || filters.labName, // Lọc theo lab name
         "kit-name": searchFilters.kitName || filters.kitName, // Lọc theo kit name
       };
+
+      if (searchFilters.status) {
+        params.status = searchFilters.status;
+      }
 
       // Gọi API với tham số page và kiểm tra tham số
       console.log("Fetching labs with params:", params);
@@ -375,8 +380,9 @@ function ManagerContentLabs() {
     setFilters({
       labName: "",
       kitName: "",
+      status: "",
     });
-    fetchLabs(1, pagination.pageSize); // Fetch lại mà không có filter
+    fetchLabs(1, pagination.pageSize, { labName: "", kitName: "", status: "" }); // Fetch lại mà không có filter
   };
 
   const viewLabFile = async (labId) => {
@@ -605,228 +611,244 @@ function ManagerContentLabs() {
   }, []);
 
   return (
-    <Form form={form} component={false}>
-      {/* Header */}
-      <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
-        <div className="text-3xl font-semibold text-gray-700">Quản lý Lab</div>
-
-        {/* Input search */}
-        <Form layout="inline" onFinish={handleFilterSubmit}>
-          <Form.Item name="labName">
-            <Input placeholder="Tên Lab" />
-          </Form.Item>
-          <Form.Item name="kitName">
-            <Input placeholder="Tên Kit" />
-          </Form.Item>
-          <Button
-            icon={<SearchOutlined />}
-            type="primary"
-            htmlType="submit"
-            className="mr-2"
-          >
-            Tìm kiếm
-          </Button>
-          <Button onClick={resetFilters}>Đặt lại</Button>
-        </Form>
-      </div>
-      {/* Nút Thêm */}
-      <div className="flex justify-end ml-5 mb-3">
-        <button
-          onClick={() => {
-            form.resetFields(); // Đặt lại các trường form khi thêm mới
-            setEditingRecord(null); // Đặt lại record để chuyển sang trạng thái thêm mới
-            setOpen(true); // Mở Modal để thêm mới
-          }}
-          className="flex mr-10 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
-        >
-          <div>
-            <PlusCircleOutlined />
+    <>
+      <Form form={form} onFinish={handleFilterSubmit}>
+        <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
+          <div className="text-3xl font-semibold text-gray-700">
+            Quản lý Lab
           </div>
-          Thêm
-        </button>
-      </div>
-      {/* Table hiển thị danh sách labs */}
-      <Table
-        bordered
-        dataSource={dataSource}
-        columns={columns}
-        loading={loading}
-        rowClassName={(record) =>
-          record.status ? "" : "bg-gray-200 opacity-50 cursor-not-allowed"
-        }
-        rowKey="id"
-        pagination={{
-          current: pagination.current, // Hiển thị trang hiện tại, cộng 1 vì Ant Design bắt đầu từ 1
-          total: pagination.total, // Tổng số items
-          pageSize: pagination.pageSize, // Số mục trên mỗi trang (luôn là 20)
-          showSizeChanger: false,
-          onChange: (page) => {
-            // Đảm bảo trang không bao giờ là số âm
-            const safePage = Math.max(1, page);
-            fetchLabs(safePage, pagination.pageSize, filters); // Gọi lại API với trang mới
-          },
-        }}
-      />
-
-      {/* Modal để tạo mới hoặc chỉnh sửa */}
-      <Modal
-        title={editingRecord ? "Chỉnh sửa Lab" : "Tạo mới Lab"}
-        open={isOpen}
-        onCancel={() => setOpen(false)} // Đóng modal
-        onOk={() => form.submit()} // Gọi hàm submit khi bấm OK
-      >
-        <Spin spinning={isSubmitting}>
-          <Form
-            form={form}
-            labelCol={{
-              span: 24,
-            }}
-            onFinish={handleSaveOrUpdate} // Gọi hàm lưu hoặc cập nhật khi form submit
-          >
-            {/* Name */}
-            <Form.Item
-              label="Tên"
-              name="name"
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng nhập tên!",
-                },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-            {/* Price */}
-            <Form.Item
-              label="Price"
-              name="price"
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng nhập giá!",
-                },
-                {
-                  type: "number",
-                  min: 0,
-                  message: "Giá phải lớn hơn 0",
-                },
-              ]}
-            >
-              <InputNumber min={0} />
-            </Form.Item>
-            {/* Max Support Times */}
-            <Form.Item
-              label="Số lần hỗ trợ tối đa"
-              name="maxSupportTimes"
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng nhập số lần hỗ trợ tối đa!",
-                },
-                {
-                  type: "number",
-                  min: 0,
-                  message: "Số lần hỗ trợ tối đa phải là số dương",
-                },
-              ]}
-            >
-              <InputNumber min={0} />
-            </Form.Item>
-            {/* Author */}
-            <Form.Item
-              label="Tác giả"
-              name="author"
-              rules={[
-                {
-                  required: true,
-                  message: "Vui lòng nhập tác giả!",
-                },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              label="Kit"
-              name="kit"
-              rules={[{ required: true, message: "Vui lòng chọn kit!" }]}
-            >
-              <Button
-                onClick={() => {
-                  setKitModalVisible(true);
-                  fetchKits();
-                }}
-              >
-                {selectedKit
-                  ? `${selectedKit.name} - ${selectedKit[
-                      "purchase-cost"
-                    ].toLocaleString()} VND`
-                  : "Chọn Kit"}
-              </Button>
-            </Form.Item>
-            <Form.Item
-              label="Cấp độ"
-              name="level"
-              rules={[{ required: true, message: "Vui lòng chọn cấp độ!" }]}
-            >
-              <Select placeholder="Select Level">
-                {levels.map((level) => (
-                  <Option key={level.id} value={level.id}>
-                    {level.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-            <Form.Item
-              label="Tệp"
-              name="file"
-              rules={[
-                { required: false, message: "Vui lòng tải lên một tệp!" },
-              ]}
-            >
-              <Upload
-                beforeUpload={() => false}
-                onChange={handleFileChange}
-                maxCount={1}
-              >
-                <Button icon={<UploadOutlined />}>Tải tệp lên</Button>
-              </Upload>
-            </Form.Item>
-            {/* Status */}
-            {!editingRecord && (
-              <Form.Item
-                label="Trạng thái"
-                name="status"
-                valuePropName="checked"
-              >
-                <Switch
-                  checkedChildren="Có sẵn"
-                  unCheckedChildren="Không có sẵn"
-                />
+          {/* Header */}
+          <div className="flex flex-wrap justify-end">
+            <div className="w-full flex gap-4 justify-end">
+              {/* Input search */}
+              <Form.Item name="labName">
+                <Input placeholder="Tên Lab" />
               </Form.Item>
-            )}
-          </Form>
-        </Spin>
-      </Modal>
+              <Form.Item name="kitName">
+                <Input placeholder="Tên Kit" />
+              </Form.Item>
+              <Form.Item name="status">
+                <Select placeholder="Trạng thái" style={{ width: 120 }}>
+                  <Option value="">Tất cả</Option>
+                  <Option value="true">Có sẵn</Option>
+                  <Option value="false">Không có sẵn</Option>
+                </Select>
+              </Form.Item>
+            </div>
+            <div className="w-full flex gap-2 justify-end">
+              <Button
+                icon={<SearchOutlined />}
+                type="primary"
+                htmlType="submit"
+                className="mr-2"
+              >
+                Tìm kiếm
+              </Button>
+              <Button onClick={resetFilters}>Đặt lại</Button>
+            </div>
+          </div>
+        </div>
 
-      {/* Modal chọn Kit */}
-      <Modal
-        title="Chọn Kit"
-        open={kitModalVisible}
-        onCancel={() => setKitModalVisible(false)}
-        footer={null}
-      >
+        {/* Nút Thêm */}
+        <div className="flex justify-end ml-5 mb-3">
+          <button
+            onClick={() => {
+              form.resetFields();
+              setEditingRecord(null);
+              setOpen(true);
+            }}
+            className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+          >
+            <div>
+              <PlusCircleOutlined />
+            </div>
+            Thêm
+          </button>
+        </div>
+
+        {/* Table hiển thị danh sách labs */}
         <Table
-          dataSource={kits}
-          columns={kitModalColumns}
+          bordered
+          dataSource={dataSource}
+          columns={columns}
+          loading={loading}
+          rowClassName={(record) =>
+            record.status ? "" : "bg-gray-200 opacity-50 cursor-not-allowed"
+          }
+          rowKey="id"
           pagination={{
-            total: kitPagination.total,
-            current: kitPagination.current,
-            pageSize: kitPagination.pageSize,
-            onChange: (page) => fetchKits(page, kitPagination.pageSize),
+            current: pagination.current, // Hiển thị trang hiện tại, cộng 1 vì Ant Design bắt đầu từ 1
+            total: pagination.total, // Tổng số items
+            pageSize: pagination.pageSize, // Số mục trên mỗi trang (luôn là 20)
+            showSizeChanger: false,
+            onChange: (page) => {
+              // Đảm bảo trang không bao giờ là số âm
+              const safePage = Math.max(1, page);
+              fetchLabs(safePage, pagination.pageSize, filters); // Gọi lại API với trang mới
+            },
           }}
         />
-      </Modal>
-    </Form>
+
+        {/* Modal để tạo mới hoặc chỉnh sửa */}
+        <Modal
+          title={editingRecord ? "Chỉnh sửa Lab" : "Tạo mới Lab"}
+          open={isOpen}
+          onCancel={() => setOpen(false)} // Đóng modal
+          onOk={() => form.submit()} // Gọi hàm submit khi bấm OK
+        >
+          <Spin spinning={isSubmitting}>
+            <Form
+              form={form}
+              labelCol={{
+                span: 24,
+              }}
+              onFinish={handleSaveOrUpdate} // Gọi hàm lưu hoặc cập nhật khi form submit
+            >
+              {/* Name */}
+              <Form.Item
+                label="Tên"
+                name="name"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng nhập tên!",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+              {/* Price */}
+              <Form.Item
+                label="Price"
+                name="price"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng nhập giá!",
+                  },
+                  {
+                    type: "number",
+                    min: 0,
+                    message: "Giá phải lớn hơn 0",
+                  },
+                ]}
+              >
+                <InputNumber min={0} />
+              </Form.Item>
+              {/* Max Support Times */}
+              <Form.Item
+                label="Số lần hỗ trợ tối đa"
+                name="maxSupportTimes"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng nhập số lần hỗ trợ tối đa!",
+                  },
+                  {
+                    type: "number",
+                    min: 0,
+                    message: "Số lần hỗ trợ tối đa phải là số dương",
+                  },
+                ]}
+              >
+                <InputNumber min={0} />
+              </Form.Item>
+              {/* Author */}
+              <Form.Item
+                label="Tác giả"
+                name="author"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng nhập tác giả!",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                label="Kit"
+                name="kit"
+                rules={[{ required: true, message: "Vui lòng chọn kit!" }]}
+              >
+                <Button
+                  onClick={() => {
+                    setKitModalVisible(true);
+                    fetchKits();
+                  }}
+                >
+                  {selectedKit
+                    ? `${selectedKit.name} - ${selectedKit[
+                        "purchase-cost"
+                      ].toLocaleString()} VND`
+                    : "Chọn Kit"}
+                </Button>
+              </Form.Item>
+              <Form.Item
+                label="Cấp độ"
+                name="level"
+                rules={[{ required: true, message: "Vui lòng chọn cấp độ!" }]}
+              >
+                <Select placeholder="Select Level">
+                  {levels.map((level) => (
+                    <Option key={level.id} value={level.id}>
+                      {level.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+              <Form.Item
+                label="Tệp"
+                name="file"
+                rules={[
+                  { required: false, message: "Vui lòng tải lên một tệp!" },
+                ]}
+              >
+                <Upload
+                  beforeUpload={() => false}
+                  onChange={handleFileChange}
+                  maxCount={1}
+                >
+                  <Button icon={<UploadOutlined />}>Tải tệp lên</Button>
+                </Upload>
+              </Form.Item>
+              {/* Status */}
+              {!editingRecord && (
+                <Form.Item
+                  label="Trạng thái"
+                  name="status"
+                  valuePropName="checked"
+                >
+                  <Switch
+                    checkedChildren="Có sẵn"
+                    unCheckedChildren="Không có sẵn"
+                  />
+                </Form.Item>
+              )}
+            </Form>
+          </Spin>
+        </Modal>
+
+        {/* Modal chọn Kit */}
+        <Modal
+          title="Chọn Kit"
+          open={kitModalVisible}
+          onCancel={() => setKitModalVisible(false)}
+          footer={null}
+        >
+          <Table
+            dataSource={kits}
+            columns={kitModalColumns}
+            pagination={{
+              total: kitPagination.total,
+              current: kitPagination.current,
+              pageSize: kitPagination.pageSize,
+              onChange: (page) => fetchKits(page, kitPagination.pageSize),
+            }}
+          />
+        </Modal>
+      </Form>
+    </>
   );
 }
 
