@@ -9,7 +9,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token")?.replaceAll('"', "");
+    const token = localStorage.getItem("tokenDashboard")?.replaceAll('"', "");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -27,13 +27,15 @@ api.interceptors.response.use(
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const currentRefreshToken = localStorage.getItem("refreshToken");
+        const currentRefreshToken = localStorage.getItem(
+          "refreshTokenDashboard"
+        );
         const response = await axios.post(
           `${baseUrl}Users/RefreshToken/${currentRefreshToken}`
         );
         const { accessToken, refreshToken } = response.data.details;
-        localStorage.setItem("token", accessToken);
-        localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("tokenDashboard", accessToken);
+        localStorage.setItem("refreshTokenDashboard", refreshToken);
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return axios(originalRequest);
       } catch (refreshError) {

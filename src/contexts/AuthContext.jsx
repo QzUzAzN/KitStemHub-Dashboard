@@ -10,10 +10,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
+    const tokenDashboard = localStorage.getItem("tokenDashboard");
+    if (tokenDashboard) {
       try {
-        const decoded = jwtDecode(token);
+        const decoded = jwtDecode(tokenDashboard);
         setUser({
           email: decoded.email,
           role: decoded[
@@ -22,15 +22,15 @@ export const AuthProvider = ({ children }) => {
         });
       } catch (error) {
         console.error("Invalid token", error);
-        localStorage.removeItem("token");
+        // localStorage.removeItem("tokenDashboard");
       }
     }
     setLoading(false);
   }, []);
 
-  const login = (token) => {
-    localStorage.setItem("token", token);
-    const decoded = jwtDecode(token);
+  const login = (tokenDashboard) => {
+    localStorage.setItem("tokenDashboard", tokenDashboard);
+    const decoded = jwtDecode(tokenDashboard);
     setUser({
       email: decoded.email,
       role: decoded[
@@ -42,8 +42,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     return new Promise((resolve) => {
       setTimeout(() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("tokenDashboard");
+        localStorage.removeItem("refreshTokenDashboard");
         setUser(null);
         resolve();
       }, 1000); // Simulating an async operation
