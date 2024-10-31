@@ -13,6 +13,8 @@ import {
   Image,
   Divider,
   Tooltip,
+  DatePicker,
+  Modal as ConfirmModal,
 } from "antd";
 import { motion } from "framer-motion";
 import {
@@ -22,20 +24,26 @@ import {
   EyeOutlined,
   SortDescendingOutlined,
   SortAscendingOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  CarOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import api from "../../config/axios";
 import { toast } from "react-toastify";
+import moment from "moment-timezone"; // để đổi múi giờ sang vietnam
 
 const { Search } = Input;
 const { Option } = Select;
 const { Text } = Typography;
 const { Title } = Typography;
+const { RangePicker } = DatePicker;
 
 function OrderConfirmation() {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("Tất cả");
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [sortField, setSortField] = useState("createdat");
   const [sortOrder, setSortOrder] = useState("desc");
   const [pagination, setPagination] = useState({
@@ -47,6 +55,7 @@ function OrderConfirmation() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
   const [colorStatus, setColorStatus] = useState("");
+  const [dateRange, setDateRange] = useState(null);
 
   const fetchOrders = async (
     page = 1,
@@ -62,10 +71,25 @@ function OrderConfirmation() {
         status === "Tất cả" ? "" : `&shipping-status=${status}`;
       const emailQueryParam = emailQuery ? `&customer-email=${emailQuery}` : "";
       const sortQuery = `&sort-fields=${currentSortField}&sort-orders=${currentSortOrder}`;
+
+      let dateRangeQuery = "";
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        const startDate = moment(dateRange[0])
+          .tz("Asia/Ho_Chi_Minh")
+          .startOf("day")
+          .format("YYYY-MM-DD");
+        const endDate = moment(dateRange[1])
+          .tz("Asia/Ho_Chi_Minh")
+          .endOf("day")
+          .format("YYYY-MM-DD");
+        dateRangeQuery = `&created-from=${startDate}&created-to=${endDate}`;
+      }
+      console.log(dateRangeQuery);
+
       const response = await api.get(
         `orders?page=${
           page - 1
-        }&size=${pageSize}${statusQuery}${emailQueryParam}${sortQuery}`
+        }&size=${pageSize}${statusQuery}${emailQueryParam}${sortQuery}${dateRangeQuery}`
       );
       if (response.data.status === "success") {
         setOrders(response.data.details.data.orders);
@@ -77,8 +101,7 @@ function OrderConfirmation() {
       } else {
         toast.error("Không thể tải danh sách đơn hàng");
       }
-    } catch (error) {
-      // console.error("Lỗi khi tải danh sách đơn hàng:", error);
+    } catch {
       toast.error("Đã xảy ra lỗi khi tải danh sách đơn hàng");
     } finally {
       setLoading(false);
@@ -209,7 +232,7 @@ function OrderConfirmation() {
           </Text>
           <Text className="text-gray-600">
             <PhoneOutlined className="mr-1" />
-            {record.user["phone-number"]}
+            {record["phone-number"]}
           </Text>
           <Text className="text-gray-500 text-xs">
             <MailOutlined className="mr-1" />
@@ -233,29 +256,115 @@ function OrderConfirmation() {
     {
       title: "Action",
       key: "action",
+      width: 320,
       render: (_, record) => (
-        <Select
-          defaultValue={record["shipping-status"]}
-          style={{ width: 160 }}
-          onChange={(value) => handleStatusChange(record.id, value)}
+        <div
+          size="small"
+          className="shadow-sm hover:shadow-md transition-shadow"
+          bodyStyle={{ padding: "12px" }}
         >
-          <Option value="ĐÃ XÁC NHẬN">Đã xác nhận</Option>
-          <Option value="ĐANG GIAO HÀNG">Đang giao hàng</Option>
-          <Option value="GIAO HÀNG THÀNH CÔNG">Giao hàng thành công</Option>
-          <Option value="GIAO HÀNG THẤT BẠI">Giao hàng thất bại</Option>
-        </Select>
-      ),
-    },
-    {
-      title: "Chi tiết",
-      key: "details",
-      render: (_, record) => (
-        <Button
-          icon={<EyeOutlined />}
-          onClick={() => showOrderDetails(record.id)}
-        >
-          Xem chi tiết
-        </Button>
+          <Space direction="vertical" size="middle" className="w-full">
+            {/* Phần xử lý trạng thái */}
+            {(record["shipping-status"] === "CHỜ XÁC NHẬN" ||
+              record["shipping-status"] === "ĐÃ XÁC NHẬN" ||
+              record["shipping-status"] === "ĐANG GIAO HÀNG") && (
+              <div className="border-b pb-3">
+                {record["shipping-status"] === "CHỜ XÁC NHẬN" && (
+                  <Space.Compact block className="!flex">
+                    <Button
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
+                      className="flex-[2]"
+                      onClick={() =>
+                        showConfirmationModal(
+                          record.id,
+                          "ĐÃ XÁC NHẬN",
+                          record["shipping-status"]
+                        )
+                      }
+                    >
+                      Xác nhận đơn hàng
+                    </Button>
+                    <Button
+                      danger
+                      icon={<CloseCircleOutlined />}
+                      onClick={() =>
+                        showConfirmationModal(
+                          record.id,
+                          "GIAO HÀNG THẤT BẠI",
+                          record["shipping-status"]
+                        )
+                      }
+                      className="flex-1"
+                    >
+                      Hủy đơn
+                    </Button>
+                  </Space.Compact>
+                )}
+
+                {record["shipping-status"] === "ĐÃ XÁC NHẬN" && (
+                  <Button
+                    type="primary"
+                    icon={<CarOutlined />}
+                    className="!bg-orange-500 hover:!bg-orange-600 w-full h-[40px]"
+                    onClick={() =>
+                      showConfirmationModal(
+                        record.id,
+                        "ĐANG GIAO HÀNG",
+                        record["shipping-status"]
+                      )
+                    }
+                  >
+                    Bắt đầu giao hàng
+                  </Button>
+                )}
+
+                {record["shipping-status"] === "ĐANG GIAO HÀNG" && (
+                  <Space.Compact block className="!flex">
+                    <Button
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
+                      className="!bg-green-500 hover:!bg-green-600 flex-[2]"
+                      onClick={() =>
+                        showConfirmationModal(
+                          record.id,
+                          "GIAO HÀNG THÀNH CÔNG",
+                          record["shipping-status"]
+                        )
+                      }
+                    >
+                      Giao thành công
+                    </Button>
+                    <Button
+                      danger
+                      icon={<CloseCircleOutlined />}
+                      onClick={() =>
+                        showConfirmationModal(
+                          record.id,
+                          "GIAO HÀNG THẤT BẠI",
+                          record["shipping-status"]
+                        )
+                      }
+                      className="flex-1"
+                    >
+                      Thất bại
+                    </Button>
+                  </Space.Compact>
+                )}
+              </div>
+            )}
+
+            {/* Nút xem chi tiết */}
+            <Button
+              type="default"
+              icon={<EyeOutlined />}
+              onClick={() => showOrderDetails(record.id)}
+              className="w-full h-[36px] hover:bg-gray-50"
+            >
+              Xem chi tiết
+            </Button>
+          </Space>
+        </div>
       ),
     },
   ];
@@ -292,8 +401,7 @@ function OrderConfirmation() {
       } else {
         toast.error("Không thể cập nhật trạng thái đơn hàng");
       }
-    } catch (error) {
-      // console.error("Lỗi khi cập nhật trạng thái đơn hàng:", error);
+    } catch {
       toast.error("Đã xảy ra lỗi khi cập nhật trạng thái đơn hàng");
     }
   };
@@ -310,7 +418,7 @@ function OrderConfirmation() {
       } else {
         toast.error("Không thể tải thông tin chi tiết đơn hàng");
       }
-    } catch (error) {
+    } catch {
       toast.error("Đã xảy ra lỗi khi tải thông tin chi tiết đơn hàng");
     } finally {
       setLoadingOrderDetails(false);
@@ -322,6 +430,76 @@ function OrderConfirmation() {
       style: "currency",
       currency: "VND",
     }).format(amount);
+  };
+
+  const handleDateRangeChange = async (dates) => {
+    setDateRange(dates);
+    // console.log(dates);
+    setLoading(true);
+    try {
+      await fetchOrders(1, pagination.pageSize, statusFilter, searchText);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showConfirmationModal = (orderId, newStatus, currentStatus) => {
+    let title, icon, okText, cancelText, content;
+
+    switch (newStatus) {
+      case "ĐÃ XÁC NHẬN":
+        title = "Xác nhận đơn hàng";
+        icon = <CheckCircleOutlined className="text-blue-500" />;
+        content = "Bạn có chắc chắn muốn xác nhận đơn hàng này?";
+        okText = "Xác nhận";
+        break;
+      case "ĐANG GIAO HÀNG":
+        title = "Chuyển sang trạng thái đang giao hàng";
+        icon = <CarOutlined className="text-orange-500" />;
+        content = "Xác nhận chuyển đơn hàng sang trạng thái đang giao?";
+        okText = "Xác nhận giao hàng";
+        break;
+      case "GIAO HÀNG THÀNH CÔNG":
+        title = "Xác nhận giao hàng thành công";
+        icon = <CheckCircleOutlined className="text-green-500" />;
+        content = "Xác nhận đơn hàng đã được giao thành công?";
+        okText = "Xác nhận thành công";
+        break;
+      case "GIAO HÀNG THẤT BẠI":
+        title =
+          currentStatus === "CHỜ XÁC NHẬN"
+            ? "Hủy đơn hàng"
+            : "Xác nhận giao hàng thất bại";
+        icon = <CloseCircleOutlined className="text-red-500" />;
+        content =
+          currentStatus === "CHỜ XÁC NHẬN"
+            ? "Bạn có chắc chắn muốn hủy đơn hàng này?"
+            : "Xác nhận đơn hàng giao không thành công?";
+        okText =
+          currentStatus === "CHỜ XÁC NHẬN"
+            ? "Hủy đơn hàng"
+            : "Xác nhận thất bại";
+        break;
+    }
+
+    ConfirmModal.confirm({
+      title: (
+        <div className="flex items-center gap-2">
+          {icon} <span>{title}</span>
+        </div>
+      ),
+      icon: null,
+      content: content,
+      okText: okText,
+      cancelText: "Đóng",
+      okButtonProps: {
+        className:
+          newStatus === "GIAO HÀNG THẤT BẠI" ? "bg-red-500" : "bg-blue-500",
+      },
+      onOk() {
+        return handleStatusChange(orderId, newStatus);
+      },
+    });
   };
 
   return (
@@ -341,18 +519,25 @@ function OrderConfirmation() {
           style={{ width: 300 }}
           prefix={<SearchOutlined className="text-gray-400" />}
         />
-        <Select
-          defaultValue="Tất cả"
-          style={{ width: 200 }}
-          onChange={handleStatusFilterChange}
-        >
-          <Option value="Tất cả">Tất cả trạng thái</Option>
-          <Option value="CHỜ XÁC NHẬN">Chờ xác nhận</Option>
-          <Option value="ĐÃ XÁC NHẬN">Đã xác nhận</Option>
-          <Option value="ĐANG GIAO HÀNG">Đang giao hàng</Option>
-          <Option value="GIAO HÀNG THÀNH CÔNG">Giao hàng thành công</Option>
-          <Option value="GIAO HÀNG THẤT BẠI">Giao hàng thất bại</Option>
-        </Select>
+        <Space>
+          <RangePicker
+            onChange={handleDateRangeChange}
+            format="YYYY/MM/DD"
+            placeholder={["Từ ngày", "Đến ngày"]}
+          />
+          <Select
+            defaultValue="Tất cả"
+            style={{ width: 200 }}
+            onChange={handleStatusFilterChange}
+          >
+            <Option value="Tất cả">Tất cả trạng thái</Option>
+            <Option value="CHỜ XÁC NHẬN">Chờ xác nhận</Option>
+            <Option value="ĐÃ XÁC NHẬN">Đã xác nhận</Option>
+            <Option value="ĐANG GIAO HÀNG">Đang giao hàng</Option>
+            <Option value="GIAO HÀNG THÀNH CÔNG">Giao hàng thành công</Option>
+            <Option value="GIAO HÀNG THẤT BẠI">Giao hàng thất bại</Option>
+          </Select>
+        </Space>
       </div>
 
       <Table
@@ -361,9 +546,9 @@ function OrderConfirmation() {
         className="w-full"
         pagination={{
           ...pagination,
-          showSizeChanger: false, // This removes the page size selector
+          showSizeChanger: false,
         }}
-        // loading={loading}
+        loading={loading}
         onChange={handleTableChange}
         rowKey="id"
         scroll={{

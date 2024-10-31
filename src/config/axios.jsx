@@ -37,13 +37,7 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return axios(originalRequest);
       } catch (refreshError) {
-        //axios chịu trách nhiệm cho việc bắt 401 ở login
-        toast.error("Invalid email or password. Please try again.");
-        // console.error("Error refreshing token:", refreshError);
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        // window.location.href = "/login";
-        return Promise.reject(refreshError);
+        return Promise.reject(error);
       }
     }
     return Promise.reject(error);
