@@ -62,6 +62,26 @@ function LoginInput() {
       // console.log("Error message:", error.message);
       if (error.response.status !== 401)
         toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau!");
+
+      if (error.response?.data) {
+        const errorDetails = error.response.data.details;
+
+        if (errorDetails?.errors?.["invalid-credentials"]) {
+          toast.error(errorDetails.errors["invalid-credentials"]);
+        } else if (errorDetails.errors["unavailable-username"]) {
+          toast.error(errorDetails.errors["unavailable-username"]);
+        } else {
+          toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
+        }
+      } else if (error.request) {
+        // Xử lý lỗi network
+        toast.error(
+          "Không thể kết nối đến server. Vui lòng kiểm tra lại kết nối mạng."
+        );
+      } else {
+        // Xử lý các lỗi khác
+        toast.error("Có lỗi xảy ra. Vui lòng thử lại sau.");
+      }
     }
 
     // setIsSubmitting(false);
