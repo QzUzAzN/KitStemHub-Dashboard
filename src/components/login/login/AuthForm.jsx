@@ -22,7 +22,8 @@ function LoginInput() {
           throw new Error("Access token is missing from the response");
         }
 
-        localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("tokenDashboard", accessToken);
+        localStorage.setItem("refreshTokenDashboard", refreshToken);
 
         const decoded = jwtDecode(accessToken);
         const role =

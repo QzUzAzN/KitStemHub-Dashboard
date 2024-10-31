@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { toast, ToastContainer } from "react-toastify";
-import { Spin } from "antd"; // Import Spin from Ant Design
+import { Spin } from "antd";
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -46,7 +46,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         `You don't have permission to access this page. Redirecting to your dashboard.`,
         {
           position: "top-center",
-          autoClose: 1500,
+          autoClose: 5500,
         }
       );
       toastShown.current = true;
@@ -61,12 +61,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
       case "manager":
         redirectPath = "/manager";
         break;
+      case "staff":
+        redirectPath = "/staff";
     }
 
     return <Navigate to={redirectPath} replace />;
   }
-  <ToastContainer />;
-  return children;
+
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
