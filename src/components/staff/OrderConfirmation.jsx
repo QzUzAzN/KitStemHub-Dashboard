@@ -228,7 +228,7 @@ function OrderConfirmation() {
       render: (_, record) => (
         <Space direction="vertical" size="small">
           <Text strong className="text-blue-600">
-            {`${record.user["first-name"]} ${record.user["last-name"]}`}
+            {`${record.user["last-name"]} ${record.user["first-name"]}`}
           </Text>
           <Text className="text-gray-600">
             <PhoneOutlined className="mr-1" />

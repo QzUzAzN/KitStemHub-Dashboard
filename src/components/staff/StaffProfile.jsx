@@ -79,7 +79,7 @@ function StaffProfile() {
             </div>
             <div>
               <Title level={3} className="mb-1 text-gray-800">
-                {`${profileData.firstName} ${profileData.lastName}`}
+                {`${profileData.lastName} ${profileData.firstName}`}
               </Title>
               <Text className="text-gray-500 text-base">
                 {profileData.userName}
