@@ -308,12 +308,6 @@ function Dashboard() {
   // Update the stats array definition
   const stats = [
     {
-      title: "Tổng Khách Hàng",
-      value: "40,689",
-
-      icon: <UserOutlined className="text-blue-500" />,
-    },
-    {
       title: "Tổng Đơn Hàng",
       value: (totalOrders || 0).toLocaleString("vi-VN"),
 
@@ -328,18 +322,6 @@ function Dashboard() {
       title: "Tổng Doanh Thu",
       value: monthlyTotals.revenue.toLocaleString("vi-VN") + " đ",
       icon: <DollarOutlined className="text-green-500" />,
-    },
-    {
-      title: "Tổng Sản Phẩm",
-      value: "2040",
-
-      icon: <FieldTimeOutlined className="text-red-300" />,
-    },
-    {
-      title: "Tổng Số Lần Hỗ Trợ",
-      value: "2040",
-
-      icon: <FieldTimeOutlined className="text-red-300" />,
     },
   ];
 
@@ -683,6 +665,16 @@ function Dashboard() {
     console.log("Downloading report...");
   };
 
+  // Add new state variables after other state declarations
+  const [chartYear, setChartYear] = useState(
+    new Date().getFullYear().toString()
+  );
+
+  // Add new handlers after other handler functions
+  const handleChartYearChange = (value) => {
+    setChartYear(value);
+  };
+
   return (
     <div className="p-6 bg-blue-50">
       <div className="flex justify-between items-center mb-8">
@@ -778,6 +770,20 @@ function Dashboard() {
               <p className="text-gray-500 text-sm mt-1">
                 Doanh thu và lợi nhuận năm {selectedYear}
               </p>
+            </div>
+            {/* Add the new selects here */}
+            <div className="flex gap-4 items-center">
+              <Select
+                value={chartYear}
+                className="w-32"
+                options={availableYears.map((year) => ({
+                  value: year.toString(),
+                  label: year.toString(),
+                }))}
+                onChange={handleChartYearChange}
+                loading={isLoading}
+                disabled={isLoading}
+              />
             </div>
           </div>
           <div className="w-full h-[400px]">
