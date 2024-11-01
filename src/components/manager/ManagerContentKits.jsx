@@ -66,6 +66,7 @@ function ManagerContentKits() {
     categoryName: "",
     fromPrice: null,
     toPrice: null,
+    status: "",
   });
 
   // Hàm fetch dữ liệu từ API
@@ -76,6 +77,7 @@ function ManagerContentKits() {
     searchFilters = filters
   ) => {
     try {
+      setLoading(true);
       // Chuẩn bị các tham số tìm kiếm theo điều kiện của fromPrice và toPrice
       const params = {
         page: page - 1,
@@ -84,6 +86,9 @@ function ManagerContentKits() {
         "category-name": searchFilters.categoryName || filters.categoryName,
       };
 
+      if (searchFilters.status) {
+        params.status = searchFilters.status;
+      }
       const response = await api.get("kits", {
         params,
       });
@@ -131,6 +136,8 @@ function ManagerContentKits() {
         description: "Có lỗi xảy ra khi lấy danh sách kits!",
         duration: 3,
       });
+    } finally {
+      setLoading(false); // Kết thúc loading sau khi API hoàn thành
     }
   };
 
@@ -363,8 +370,13 @@ function ManagerContentKits() {
     setFilters({
       kitName: "",
       categoryName: "",
+      status: "",
     });
-    fetchKits(1, pagination.pageSize); // Fetch lại mà không có filter
+    fetchKits(1, pagination.pageSize, {
+      kitName: "",
+      categoryName: "",
+      status: "",
+    }); // Fetch lại mà không có filter
   };
 
   const handleViewDescription = (description) => {
@@ -378,12 +390,7 @@ function ManagerContentKits() {
     try {
       const response = await api.get(`kits/${kitId}`);
 
-      if (
-        response.data &&
-        response.data.details &&
-        response.data.details.data.kit &&
-        response.data.details.data.kit.components
-      ) {
+      if (response?.data?.details?.data?.kit?.components) {
         setComponentsData(response.data.details.data.kit.components); // Lưu các thành phần của kit vào state
       } else {
         setComponentsData([]); // Không có thành phần
@@ -809,19 +816,28 @@ function ManagerContentKits() {
   };
 
   return (
-    <Form form={form} component={false}>
+    <Form form={form} onFinish={handleFilterSubmit}>
       <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
         <div className="text-3xl font-semibold text-gray-700">Quản lý Kit</div>
 
         {/* Search Input */}
-        <div className="flex items-center">
-          <Form layout="inline" onFinish={handleFilterSubmit}>
+        <div className="flex flex-wrap justify-end">
+          <div className="w-full flex gap-4 justify-end">
             <Form.Item name="kitName">
               <Input placeholder="Tên Kit" />
             </Form.Item>
             <Form.Item name="categoryName">
               <Input placeholder="Tên loại Kit" />
             </Form.Item>
+            <Form.Item name="status">
+              <Select placeholder="Trạng thái" style={{ width: 120 }}>
+                <Option value="">Tất cả</Option>
+                <Option value="true">Có sẵn</Option>
+                <Option value="false">Không có sẵn</Option>
+              </Select>
+            </Form.Item>
+          </div>
+          <div className="w-full flex gap-2 justify-end">
             <Button
               icon={<SearchOutlined />}
               type="primary"
@@ -831,18 +847,18 @@ function ManagerContentKits() {
               Tìm Kiếm
             </Button>
             <Button onClick={resetFilters}>Đặt Lại</Button>
-          </Form>
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-end ml-5">
+      <div className="flex justify-end ml-5 mb-3">
         <button
           onClick={() => {
             form.resetFields();
             setEditingRecord(null);
             setOpen(true);
           }}
-          className="flex mr-10 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+          className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
         >
           <div>
             <PlusCircleOutlined />
