@@ -17,9 +17,11 @@ import {
   Button,
   Tag,
   Typography,
+  Select,
 } from "antd";
 import { useEffect, useState } from "react";
 import api from "../../config/axios";
+import { Option } from "antd/es/mentions";
 
 const { Text } = Typography;
 
@@ -31,11 +33,21 @@ function ManagerContentComponent() {
   const [editingRecord, setEditingRecord] = useState(null); // Để lưu record hiện tại nếu chỉnh sửa
   const [form] = Form.useForm(); // Khởi tạo form của Ant Design
   const [searchName, setSearchName] = useState(""); // State để lưu tên linh kiện cần tìm kiếm
+  const [types, setTypes] = useState([]);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
     total: 0,
   }); // Thêm trạng thái phân trang
+
+  const fetchTypes = async () => {
+    try {
+      const response = await api.get("/types");
+      setTypes(response.data.details.data["component-types"]);
+    } catch (error) {
+      console.error("Error fetching types:", error);
+    }
+  };
 
   // Fetch components from the API
   const fetchComponents = async (
@@ -182,7 +194,8 @@ function ManagerContentComponent() {
         "type-id": newComponent.typeId,
         name: newComponent.name,
       };
-      const response = await api.post("components", payload);
+      console.log("Gửi payload:", payload);
+      const response = await api.post("/components", payload);
       if (showNotification) {
         notification.destroy();
         notification.success({
@@ -281,7 +294,8 @@ function ManagerContentComponent() {
     fetchComponents(1, pagination.pageSize, searchName);
   };
   useEffect(() => {
-    fetchComponents(pagination.current, pagination.pageSize); // Fetch danh sách components khi component được mount
+    fetchComponents(pagination.current, pagination.pageSize);
+    fetchTypes();
   }, []);
 
   const columns = [
@@ -301,12 +315,14 @@ function ManagerContentComponent() {
       ),
     },
     {
-      title: "ID loại thành phần", // Cột mới để hiển thị Type ID
+      title: "Loại linh kiện",
       dataIndex: "type-id",
       key: "type-id",
       width: 200,
       render: (typeId) => (
-        <Text className="font-semibold text-grey-700">{typeId}</Text>
+        <Text className="font-semibold text-grey-700">
+          {types.find((type) => type.id === typeId)?.name || "Unknown Type"}
+        </Text>
       ),
     },
     {
@@ -353,7 +369,7 @@ function ManagerContentComponent() {
     <div>
       <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
         <div className="text-3xl font-semibold text-gray-700">
-          Quản lý thành phần Kit
+          Quản lý linh kiện Kit
         </div>
         <div className="flex items-center gap-2">
           <Input
@@ -419,17 +435,18 @@ function ManagerContentComponent() {
             </Form.Item>
             <Form.Item
               name="typeId"
-              label="Type ID"
+              label="Loại linh kiện"
               rules={[
-                {
-                  required: true,
-                  message: "Vui lòng nhập Type ID!",
-                  type: "number",
-                  min: 1,
-                },
+                { required: true, message: "Vui lòng chọn loại linh kiện!" },
               ]}
             >
-              <InputNumber min={1} style={{ width: "100%" }} />
+              <Select placeholder="Chọn loại linh kiện">
+                {types.map((type) => (
+                  <Option key={type.id} value={type.id}>
+                    {type.name}
+                  </Option>
+                ))}
+              </Select>
             </Form.Item>
           </Form>
         </Spin>
