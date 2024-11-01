@@ -30,6 +30,7 @@ const { Text } = Typography;
 
 function ManagerContentKits() {
   const [form] = Form.useForm();
+  const [formFilter] = Form.useForm();
   const [dataSource, setDataSource] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isOpen, setOpen] = useState(false);
@@ -93,20 +94,15 @@ function ManagerContentKits() {
         params,
       });
 
-      if (
-        response.data &&
-        response.data.details &&
-        response.data.details.data &&
-        response.data.details.data.kits
-      ) {
+      if (response.data.details.data.kits) {
         const kitsData = response.data.details.data.kits;
         const totalPages = response.data.details.data["total-pages"] || 0;
-        const currentPage = response.data.details.data["current-page"] || 1;
+        // const currentPage = response.data.details.data["current-page"] || 1;
 
         setDataSource(kitsData);
         setPagination({
           total: totalPages * pageSize,
-          current: currentPage,
+          current: page,
           pageSize: pageSize,
         });
       } else {
@@ -193,7 +189,7 @@ function ManagerContentKits() {
       form.resetFields();
       setImageFiles([]);
       setImagePreviews([]);
-
+      notification.destroy();
       notification.success({
         message: "Thành công",
         description: "Kit đã được tạo thành công!",
@@ -255,6 +251,7 @@ function ManagerContentKits() {
       console.log("Updated Kit:", response.data);
       await fetchKits();
       fetchCategories();
+      notification.destroy();
       notification.success({
         message: "Thành công",
         description: "Kit đã được cập nhật thành công!",
@@ -283,15 +280,7 @@ function ManagerContentKits() {
       console.log(`Attempting to delete kit with id: ${id}`);
 
       // Sử dụng phương thức DELETE như bạn yêu cầu
-      const response = await api.delete(`kits/${id}`, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Accept: "*/*",
-        },
-        data: {
-          id: id,
-        },
-      });
+      const response = await api.delete(`kits/${id}`);
       console.log("Kit deleted:", response.data);
 
       await fetchKits(); // Làm mới danh sách kits sau khi xóa
@@ -315,11 +304,7 @@ function ManagerContentKits() {
 
   const restoreKit = async (id) => {
     try {
-      const response = await api.put(`kits/restore/${id}`, null, {
-        headers: {
-          Accept: "*/*",
-        },
-      });
+      const response = await api.put(`kits/restore/${id}`);
       console.log("Kit restored:", response.data);
       await fetchKits();
       notification.destroy();
@@ -816,41 +801,52 @@ function ManagerContentKits() {
   };
 
   return (
-    <Form form={form} onFinish={handleFilterSubmit}>
-      <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
-        <div className="text-3xl font-semibold text-gray-700">Quản lý Kit</div>
-
-        {/* Search Input */}
-        <div className="flex flex-wrap justify-end">
-          <div className="w-full flex gap-4 justify-end">
-            <Form.Item name="kitName">
-              <Input placeholder="Tên Kit" />
-            </Form.Item>
-            <Form.Item name="categoryName">
-              <Input placeholder="Tên loại Kit" />
-            </Form.Item>
-            <Form.Item name="status">
-              <Select placeholder="Trạng thái" style={{ width: 120 }}>
-                <Option value="">Tất cả</Option>
-                <Option value="true">Có sẵn</Option>
-                <Option value="false">Không có sẵn</Option>
-              </Select>
-            </Form.Item>
+    <>
+      <Form form={formFilter} onFinish={handleFilterSubmit}>
+        <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
+          <div className="text-3xl font-semibold text-gray-700">
+            Quản lý Kit
           </div>
-          <div className="w-full flex gap-2 justify-end">
-            <Button
-              icon={<SearchOutlined />}
-              type="primary"
-              htmlType="submit"
-              className="mr-2"
-            >
-              Tìm Kiếm
-            </Button>
-            <Button onClick={resetFilters}>Đặt Lại</Button>
+
+          {/* Search Input */}
+          <div className="flex flex-wrap justify-end">
+            <div className="w-full flex gap-4 justify-end">
+              <Form.Item name="kitName">
+                <Input placeholder="Tên Kit" />
+              </Form.Item>
+              <Form.Item name="categoryName">
+                <Input placeholder="Tên loại Kit" />
+              </Form.Item>
+              <Form.Item name="status">
+                <Select placeholder="Trạng thái" style={{ width: 150 }}>
+                  <Option value="">Tất cả</Option>
+                  <Option value="true">
+                    <Tag color="green" className="font-semibold">
+                      Có sẵn
+                    </Tag>
+                  </Option>
+                  <Option value="false">
+                    <Tag color="red" className="font-semibold">
+                      Không có sẵn
+                    </Tag>
+                  </Option>
+                </Select>
+              </Form.Item>
+            </div>
+            <div className="w-full flex gap-2 justify-end">
+              <Button
+                icon={<SearchOutlined />}
+                type="primary"
+                htmlType="submit"
+                className="mr-2"
+              >
+                Tìm Kiếm
+              </Button>
+              <Button onClick={resetFilters}>Đặt Lại</Button>
+            </div>
           </div>
         </div>
-      </div>
-
+      </Form>
       <div className="flex justify-end ml-5 mb-3">
         <button
           onClick={() => {
@@ -1157,7 +1153,7 @@ function ManagerContentKits() {
           }}
         />
       </Modal>
-    </Form>
+    </>
   );
 }
 

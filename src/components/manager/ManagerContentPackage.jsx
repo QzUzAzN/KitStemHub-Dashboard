@@ -57,11 +57,12 @@ function ManagerContentPackage() {
     includeLabs: undefined,
   });
   const [labDetails, setLabDetails] = useState([]);
-  const [isLabModalOpen, setIsLabModalOpen] = useState(false); // Modal to view lab
-  const [availableLabs, setAvailableLabs] = useState([]); // State to store related Labs
-  const [selectedKitPrice, setSelectedKitPrice] = useState(null); // Giá Kit được chọn
-  const [selectedKit, setSelectedKit] = useState(null); // State to hold selected Kit
-  const [kitModalVisible, setKitModalVisible] = useState(false); // State to control Kit Modal
+  const [isLabModalOpen, setIsLabModalOpen] = useState(false);
+  const [availableLabs, setAvailableLabs] = useState([]);
+  const [selectedKitPrice, setSelectedKitPrice] = useState(null);
+  const [selectedKit, setSelectedKit] = useState(null);
+  const [kitModalVisible, setKitModalVisible] = useState(false);
+  const [kitSearchName, setKitSearchName] = useState("");
 
   const fetchPackages = async (
     page = 1,
@@ -138,10 +139,10 @@ function ManagerContentPackage() {
     }
   };
 
-  const fetchKits = async (page = 1, pageSize = 20) => {
+  const fetchKits = async (page = 1, pageSize = 20, kitName = "") => {
     try {
       setLoading(true);
-      const params = { page: page - 1, pageSize };
+      const params = { "kit-name": kitName, page: page - 1, pageSize };
       const response = await api.get("kits", { params });
       const kitsData = response.data.details.data.kits;
       const totalKits = response.data.details.data["total-pages"] * pageSize;
@@ -153,6 +154,10 @@ function ManagerContentPackage() {
       console.error("Error fetching kits:", error);
       setLoading(false);
     }
+  };
+
+  const handleSearchKit = () => {
+    fetchKits(1, kitPagination.pageSize, kitSearchName);
   };
 
   const fetchKitsAndLevels = async () => {
@@ -769,9 +774,28 @@ function ManagerContentPackage() {
       <Modal
         title="Chọn Kit"
         visible={kitModalVisible}
-        onCancel={() => setKitModalVisible(false)}
+        onCancel={() => {
+          setKitModalVisible(false);
+          setKitSearchName("");
+          fetchKits(1, kitPagination.pageSize, "");
+        }}
         footer={null}
       >
+        <div className="flex items-center mb-3">
+          <Input
+            placeholder="Tìm kiếm kit"
+            value={kitSearchName}
+            onChange={(e) => setKitSearchName(e.target.value)}
+          />
+          <Button
+            icon={<SearchOutlined />}
+            onClick={handleSearchKit}
+            type="primary"
+            className="ml-2"
+          >
+            Tìm kiếm
+          </Button>
+        </div>
         <Table
           dataSource={kits}
           columns={[
@@ -797,7 +821,8 @@ function ManagerContentPackage() {
             total: kitPagination.total,
             current: kitPagination.current,
             pageSize: kitPagination.pageSize,
-            onChange: (page, pageSize) => fetchKits(page, pageSize),
+            onChange: (page) =>
+              fetchKits(page, kitPagination.pageSize, kitSearchName),
           }}
         />
       </Modal>

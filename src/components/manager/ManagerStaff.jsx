@@ -22,6 +22,7 @@ import {
   UndoOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
+import AddressModal from "./AddressModal";
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -32,6 +33,9 @@ function ManagerStaff() {
   const [loading, setLoading] = useState(true);
   const [editingRecord, setEditingRecord] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
+  const [address, setAddress] = useState("");
+  const [errors, setErrors] = useState({});
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
@@ -125,7 +129,33 @@ function ManagerStaff() {
     }
   };
 
+  // Hàm kiểm tra tính hợp lệ của họ, tên và số điện thoại
+  const validateProfileData = () => {
+    const nameRegex = /^[A-Za-zÀ-ỹ\s]+$/; // Chỉ cho phép chữ cái và khoảng trắng
+    const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})\b/; // phải là số theo đầu số việt nam
+    const newErrors = {};
+
+    if (!nameRegex.test(form.getFieldValue("first-name"))) {
+      newErrors.firstName =
+        "Họ chỉ được chứa chữ cái và không có ký tự đặc biệt.";
+    }
+
+    if (!nameRegex.test(form.getFieldValue("last-name"))) {
+      newErrors.lastName =
+        "Tên chỉ được chứa chữ cái và không có ký tự đặc biệt.";
+    }
+
+    if (!phoneRegex.test(form.getFieldValue("phone-number"))) {
+      newErrors.phoneNumber =
+        "Số điện thoại phải có 10 số và bắt đầu bằng đầu số Việt Nam (03, 05, 07, 08, 09)";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // Trả về true nếu không có lỗi
+  };
+
   const createStaff = async (values) => {
+    if (!validateProfileData()) return;
     try {
       setIsSubmitting(true);
       const payload = {
@@ -134,7 +164,7 @@ function ManagerStaff() {
         "first-name": values["first-name"],
         "last-name": values["last-name"],
         "phone-number": values["phone-number"],
-        address: values.address,
+        address: address,
         "gender-code": values["gender-code"],
         "birth-date": values["birth-date"].format("YYYY-MM-DD"),
       };
@@ -158,6 +188,8 @@ function ManagerStaff() {
   };
 
   const updateStaff = async (staffUserName, values) => {
+    // Kiểm tra tính hợp lệ trước khi cập nhật nhân viên
+    if (!validateProfileData()) return;
     try {
       setIsSubmitting(true);
       const payload = {
@@ -283,6 +315,7 @@ function ManagerStaff() {
   const handleAddStaff = () => {
     setEditingRecord(null); // Đảm bảo không có bản ghi đang chỉnh sửa
     form.resetFields(); // Reset tất cả các trường của form
+    setAddress(""); // Reset địa chỉ khi thêm mới
     setIsModalVisible(true);
   };
 
@@ -298,6 +331,12 @@ function ManagerStaff() {
     } else {
       createStaff(values);
     }
+  };
+
+  const handleAddressSelected = (selectedAddress) => {
+    setAddress(selectedAddress); // Đặt địa chỉ vào state chính
+    form.setFieldsValue({ address: selectedAddress }); // Cập nhật trường địa chỉ trong form
+    setIsAddressModalVisible(false); // Đóng modal địa chỉ
   };
 
   useEffect(() => {
@@ -423,143 +462,187 @@ function ManagerStaff() {
   ];
   console.log(dataSource); // Kiểm tra dataSource trước khi render bảng
   return (
-    <Form form={form} component={false} onFinish={handleFilterSubmit}>
-      <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
-        <div className="text-2xl font-semibold text-gray-700">
-          Quản Lý Nhân Viên
-        </div>
-        {/* Filter Form */}
-        <Form layout="inline" onFinish={handleFilterSubmit}>
-          <Form.Item name="email">
-            <Input placeholder="Email" />
-          </Form.Item>
-          <Form.Item name="phoneNumber">
-            <Input placeholder="Số điện thoại" />
-          </Form.Item>
-          <Form.Item name="firstName">
-            <Input placeholder="Tên" />
-          </Form.Item>
-          <Form.Item name="lastName">
-            <Input placeholder="Họ" />
-          </Form.Item>
-          <Form.Item name="status">
-            <Select placeholder="Trạng thái" style={{ width: 120 }}>
-              <Option value={undefined}>
-                <Tag color="grey">Tất cả</Tag>
-              </Option>
-              <Option value={true}>
-                <Tag color="green">Hoạt động</Tag>
-              </Option>
-              <Option value={false}>
-                <Tag color="red">Vô hiệu hóa</Tag>
-              </Option>
-            </Select>
-          </Form.Item>
-          <Button
-            icon={<SearchOutlined />}
-            type="primary"
-            htmlType="submit"
-            className="mr-2"
-          >
-            Tìm kiếm
-          </Button>
-          <Button onClick={resetFilters}>Đặt lại</Button>
-        </Form>
-      </div>
-      <div className="flex justify-end ml-5 mb-3">
-        <button
-          onClick={handleAddStaff}
-          className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
-        >
-          <div>
-            <PlusCircleOutlined />
+    <div>
+      <Form form={form} component={false} onFinish={handleFilterSubmit}>
+        <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
+          <div className="text-2xl font-semibold text-gray-700">
+            Quản Lý Nhân Viên
           </div>
-          Thêm
-        </button>
-      </div>
-      <Table
-        bordered
-        dataSource={dataSource}
-        columns={columns}
-        loading={loading}
-        rowKey="user-name"
-        pagination={{
-          total: pagination.total,
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          onChange: (page) => fetchStaff(page),
-        }}
-      />
+          {/* Filter Form */}
+          <Form layout="inline" onFinish={handleFilterSubmit}>
+            <Form.Item name="email">
+              <Input placeholder="Email" />
+            </Form.Item>
+            <Form.Item name="phoneNumber">
+              <Input placeholder="Số điện thoại" />
+            </Form.Item>
+            <Form.Item name="firstName">
+              <Input placeholder="Tên" />
+            </Form.Item>
+            <Form.Item name="lastName">
+              <Input placeholder="Họ" />
+            </Form.Item>
+            <Form.Item name="status">
+              <Select placeholder="Trạng thái" style={{ width: 120 }}>
+                <Option value={undefined}>
+                  <Tag color="grey">Tất cả</Tag>
+                </Option>
+                <Option value={true}>
+                  <Tag color="green">Hoạt động</Tag>
+                </Option>
+                <Option value={false}>
+                  <Tag color="red">Vô hiệu hóa</Tag>
+                </Option>
+              </Select>
+            </Form.Item>
+            <Button
+              icon={<SearchOutlined />}
+              type="primary"
+              htmlType="submit"
+              className="mr-2"
+            >
+              Tìm kiếm
+            </Button>
+            <Button onClick={resetFilters}>Đặt lại</Button>
+          </Form>
+        </div>
+        <div className="flex justify-end ml-5 mb-3">
+          <button
+            onClick={handleAddStaff}
+            className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+          >
+            <div>
+              <PlusCircleOutlined />
+            </div>
+            Thêm
+          </button>
+        </div>
+        <Table
+          bordered
+          dataSource={dataSource}
+          columns={columns}
+          loading={loading}
+          rowKey="user-name"
+          pagination={{
+            total: pagination.total,
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            onChange: (page) => fetchStaff(page),
+          }}
+        />
 
-      <Modal
-        title={editingRecord ? "Chỉnh sửa Nhân Viên" : "Thêm Nhân Viên"}
-        visible={isModalVisible}
-        onCancel={handleCancel}
-        onOk={() => form.submit()}
-        confirmLoading={isSubmitting}
-      >
-        <Form form={form} onFinish={handleSave} layout="vertical">
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[{ required: true, message: "Vui lòng nhập email!" }]}
-          >
-            <Input disabled={!!editingRecord} />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            label="Mật khẩu"
-            rules={[
-              { required: !editingRecord, message: "Vui lòng nhập mật khẩu!" },
-            ]}
-          >
-            <Input.Password
-              autoComplete="new-password"
-              disabled={!!editingRecord}
-            />
-            {/* Dùng "new-password" cho trường hợp đăng ký */}
-          </Form.Item>
-          <Form.Item
-            name="first-name"
-            label="Tên"
-            rules={[{ required: true, message: "Vui lòng nhập tên!" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="last-name"
-            label="Họ"
-            rules={[{ required: true, message: "Vui lòng nhập họ!" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item name="phone-number" label="Số điện thoại">
-            <Input />
-          </Form.Item>
-          <Form.Item name="address" label="Địa chỉ">
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="gender-code"
-            label="Giới tính"
-            rules={[{ required: true, message: "Vui lòng chọn giới tính!" }]}
-          >
-            <Select>
-              <Option value={1}>Nam</Option>
-              <Option value={2}>Nữ</Option>
-              <Option value={0}>Khác</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="birth-date"
-            label="Ngày sinh"
-            rules={[{ required: true, message: "Vui lòng chọn ngày sinh!" }]}
-          >
-            <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </Form>
+        <Modal
+          title={editingRecord ? "Chỉnh sửa Nhân Viên" : "Thêm Nhân Viên"}
+          visible={isModalVisible}
+          onCancel={handleCancel}
+          onOk={() => form.submit()}
+          confirmLoading={isSubmitting}
+        >
+          <Form form={form} onFinish={handleSave} layout="vertical">
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[{ required: true, message: "Vui lòng nhập email!" }]}
+            >
+              <Input disabled={!!editingRecord} />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              label="Mật khẩu"
+              rules={[
+                {
+                  required: !editingRecord,
+                  message: "Vui lòng nhập mật khẩu!",
+                },
+              ]}
+            >
+              <Input.Password
+                autoComplete="new-password"
+                disabled={!!editingRecord}
+              />
+              {/* Dùng "new-password" cho trường hợp đăng ký */}
+            </Form.Item>
+            <Form.Item
+              name="first-name"
+              label="Tên"
+              rules={[
+                {
+                  required: true,
+                  message: errors.firstName || "Vui lòng nhập tên!",
+                },
+              ]}
+              validateStatus={errors.firstName ? "error" : ""}
+              help={errors.firstName}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="last-name"
+              label="Họ"
+              rules={[
+                {
+                  required: true,
+                  message: errors.lastName || "Vui lòng nhập họ!",
+                },
+              ]}
+              validateStatus={errors.lastName ? "error" : ""}
+              help={errors.lastName}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="phone-number"
+              label="Số điện thoại"
+              rules={[
+                {
+                  required: true,
+                  message: errors.phoneNumber || "Vui lòng nhập số điện thoại!",
+                },
+              ]}
+              validateStatus={errors.phoneNumber ? "error" : ""}
+              help={errors.phoneNumber}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="address"
+              label="Địa chỉ"
+              rules={[{ required: true, message: "Vui lòng chọn địa chỉ!" }]}
+            >
+              <Input
+                value={address}
+                onClick={() => setIsAddressModalVisible(true)}
+                readOnly
+                placeholder="Nhấn để chọn địa chỉ"
+              />
+            </Form.Item>
+            <Form.Item
+              name="gender-code"
+              label="Giới tính"
+              rules={[{ required: true, message: "Vui lòng chọn giới tính!" }]}
+            >
+              <Select>
+                <Option value={1}>Nam</Option>
+                <Option value={2}>Nữ</Option>
+                <Option value={0}>Khác</Option>
+              </Select>
+            </Form.Item>
+            <Form.Item
+              name="birth-date"
+              label="Ngày sinh"
+              rules={[{ required: true, message: "Vui lòng chọn ngày sinh!" }]}
+            >
+              <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
+            </Form.Item>
+          </Form>
+        </Modal>
+      </Form>
+      <AddressModal
+        visible={isAddressModalVisible}
+        onClose={() => setIsAddressModalVisible(false)}
+        onAddressSelected={handleAddressSelected}
+      />
+    </div>
   );
 }
 
