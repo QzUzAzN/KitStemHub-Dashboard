@@ -78,8 +78,7 @@ function ManagerContentLabs() {
   const fetchLabs = async (
     page = 1,
     pageSize = 20,
-    searchFilters = filters,
-    showNotification = true
+    searchFilters = filters
   ) => {
     try {
       setLoading(true); // Bắt đầu loading khi gọi API
@@ -111,7 +110,6 @@ function ManagerContentLabs() {
         // Cập nhật dữ liệu lab vào state
         setDataSource(labsData);
 
-        // Tính toán pagination
         setPagination({
           total: totalPages * pageSize,
           current: currentPage + 1,
@@ -128,21 +126,7 @@ function ManagerContentLabs() {
       }
 
       setLoading(false);
-      if (showNotification) {
-        notification.destroy();
-        notification.success({
-          message: "Thành công",
-          description: "Lấy danh sách labs thành công!",
-          duration: 3,
-        });
-      }
     } catch (error) {
-      notification.destroy();
-      notification.error({
-        message: "Lỗi",
-        description: "Có lỗi xảy ra khi lấy danh sách labs!",
-        duration: 3,
-      });
       console.error("Error fetching labs:", error);
       setLoading(false); // Tắt loading nếu có lỗi
     }
@@ -287,7 +271,6 @@ function ManagerContentLabs() {
         `Error updating lab with id ${id}:`,
         error.response?.data || error.message
       );
-      console.log("Chi tiết lỗi từ server:", error.response?.data?.details);
     }
     setIsSubmitting(false);
   };
@@ -300,12 +283,7 @@ function ManagerContentLabs() {
         return;
       }
 
-      const response = await api.delete(`labs/${id}`, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        data: { id },
-      });
+      const response = await api.delete(`labs/${id}`);
       await fetchLabs(pagination.current, pagination.pageSize); // Refresh lại danh sách sau khi xóa
       notification.destroy();
       notification.success({
@@ -329,11 +307,7 @@ function ManagerContentLabs() {
       const formData = new FormData();
       formData.append("id", id);
 
-      const response = await api.put(`labs/restore/${id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await api.put(`labs/restore/${id}`, formData);
 
       await fetchLabs(pagination.current, pagination.pageSize);
       notification.destroy();
@@ -365,7 +339,7 @@ function ManagerContentLabs() {
 
   // Hàm reset bộ lọc (Reset tất cả input và fetch lại tất cả dữ liệu)
   const resetFilters = () => {
-    form.resetFields(); // Reset các input
+    formFilter.resetFields(); // Reset các input
     setFilters({
       labName: "",
       kitName: "",

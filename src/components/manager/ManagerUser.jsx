@@ -43,8 +43,7 @@ function ManagerUser() {
   const fetchUsers = async (
     page = 1,
     pageSize = 20,
-    searchFilters = filters,
-    showNotification = true
+    searchFilters = filters
   ) => {
     try {
       setLoading(true);
@@ -64,12 +63,7 @@ function ManagerUser() {
         params,
       });
 
-      if (
-        response.data &&
-        response.data.details &&
-        response.data.details.data &&
-        response.data.details.data.users
-      ) {
+      if (response?.data?.details?.data?.users) {
         const userData = response.data.details.data.users;
         const totalPages = response.data.details.data["total-pages"] || 0;
         const currentPage = response.data.details.data["current-page"] || 0;
@@ -91,14 +85,6 @@ function ManagerUser() {
       }
 
       setLoading(false);
-      if (showNotification) {
-        notification.destroy();
-        notification.success({
-          message: "Thành công",
-          description: "Lấy danh sách người dùng thành công!",
-          duration: 3,
-        });
-      }
     } catch (error) {
       console.error("Error fetching users:", error);
       setLoading(false);
@@ -176,7 +162,13 @@ function ManagerUser() {
       lastName: "",
       status: undefined,
     });
-    fetchUsers(1, pagination.pageSize);
+    fetchUsers(1, pagination.pageSize, {
+      email: "",
+      phoneNumber: "",
+      firstName: "",
+      lastName: "",
+      status: undefined,
+    });
   };
 
   useEffect(() => {
@@ -272,50 +264,56 @@ function ManagerUser() {
     },
   ];
   return (
-    <Form form={form} component={false} onFinish={handleFilterSubmit}>
-      <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
-        <div className="text-2xl font-semibold text-gray-700">
-          Quản Lý Người Dùng
-        </div>
-        {/* Filter Form */}
-        <Form layout="inline" onFinish={handleFilterSubmit}>
-          <Form.Item name="email">
-            <Input placeholder="Email" />
-          </Form.Item>
-          <Form.Item name="phoneNumber">
-            <Input placeholder="Số điện thoại" />
-          </Form.Item>
-          <Form.Item name="firstName">
-            <Input placeholder="Tên" />
-          </Form.Item>
-          <Form.Item name="lastName">
-            <Input placeholder="Họ" />
-          </Form.Item>
-          <Form.Item name="status">
-            <Select placeholder="Trạng thái" style={{ width: 120 }}>
-              <Option value={undefined}>
-                <Tag color="grey">Tất cả</Tag>
-              </Option>
-              <Option value={true}>
-                <Tag color="green">Hoạt động</Tag>
-              </Option>
-              <Option value={false}>
-                <Tag color="red">Vô hiệu hóa</Tag>
-              </Option>
-            </Select>
-          </Form.Item>
-          <Button
-            icon={<SearchOutlined />}
-            type="primary"
-            htmlType="submit"
-            className="mr-2"
-          >
-            Tìm kiếm
-          </Button>
-          <Button onClick={resetFilters}>Đặt lại</Button>
-        </Form>
-      </div>
+    <>
+      <Form form={form} onFinish={handleFilterSubmit}>
+        <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
+          <div className="text-2xl font-semibold text-gray-700">
+            Quản Lý Người Dùng
+          </div>
+          {/* Filter Form */}
 
+          <div className="flex flex-wrap justify-end">
+            <div className="w-full flex gap-4 justify-end">
+              <Form.Item name="email">
+                <Input placeholder="Email" />
+              </Form.Item>
+              <Form.Item name="phoneNumber">
+                <Input placeholder="Số điện thoại" />
+              </Form.Item>
+              <Form.Item name="firstName">
+                <Input placeholder="Tên" />
+              </Form.Item>
+              <Form.Item name="lastName">
+                <Input placeholder="Họ" />
+              </Form.Item>
+              <Form.Item name="status">
+                <Select placeholder="Trạng thái" style={{ width: 120 }}>
+                  <Option value={undefined}>
+                    <Tag color="grey">Tất cả</Tag>
+                  </Option>
+                  <Option value={true}>
+                    <Tag color="green">Hoạt động</Tag>
+                  </Option>
+                  <Option value={false}>
+                    <Tag color="red">Vô hiệu hóa</Tag>
+                  </Option>
+                </Select>
+              </Form.Item>
+            </div>
+            <div className="w-full flex gap-2 justify-end">
+              <Button
+                icon={<SearchOutlined />}
+                type="primary"
+                htmlType="submit"
+                className="mr-2"
+              >
+                Tìm kiếm
+              </Button>
+              <Button onClick={resetFilters}>Đặt lại</Button>
+            </div>
+          </div>
+        </div>
+      </Form>
       <Table
         bordered
         dataSource={dataSource}
@@ -329,7 +327,7 @@ function ManagerUser() {
           onChange: (page) => fetchUsers(page),
         }}
       />
-    </Form>
+    </>
   );
 }
 

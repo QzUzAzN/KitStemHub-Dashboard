@@ -67,8 +67,7 @@ function ManagerContentPackage() {
   const fetchPackages = async (
     page = 1,
     pageSize = 20,
-    searchFilters = filters,
-    showNotification = true
+    searchFilters = filters
   ) => {
     try {
       setLoading(true);
@@ -93,11 +92,7 @@ function ManagerContentPackage() {
         params,
       });
       console.log("respone: ", response.data);
-      if (
-        response.data &&
-        response.data.details &&
-        response.data.details.data
-      ) {
+      if (response?.data?.details?.data?.packages) {
         const packageData = response.data.details.data.packages;
         const totalPages = response.data.details.data["total-pages"] || 0;
         const currentPage = response.data.details.data["current-page"] || 0;
@@ -121,14 +116,6 @@ function ManagerContentPackage() {
       }
 
       setLoading(false);
-      if (showNotification) {
-        notification.destroy();
-        notification.success({
-          message: "Thành công",
-          description: "Lấy danh sách package thành công",
-          duration: 3,
-        });
-      }
     } catch (error) {
       console.error("Error fetching packages:", error);
       setLoading(false);
@@ -247,11 +234,7 @@ function ManagerContentPackage() {
       console.log(`Attempting to hide package with id: ${id}`);
 
       // Call the DELETE API to hide the package
-      const response = await api.delete(`packages/${id}`, {
-        headers: {
-          Accept: "*/*",
-        },
-      });
+      const response = await api.delete(`packages/${id}`);
 
       console.log("Package deleted (hidden):", response.data);
 
@@ -288,11 +271,7 @@ function ManagerContentPackage() {
       console.log(`Attempting to restore package with id: ${id}`);
 
       // Call the PUT API to restore the package
-      const response = await api.put(`packages/restore/${id}`, null, {
-        headers: {
-          Accept: "*/*",
-        },
-      });
+      const response = await api.put(`packages/restore/${id}`);
 
       console.log("Package restored:", response.data);
 

@@ -50,12 +50,7 @@ function ManagerContentComponent() {
   };
 
   // Fetch components from the API
-  const fetchComponents = async (
-    page = 1,
-    pageSize = 20,
-    name = "",
-    showNotification = true
-  ) => {
+  const fetchComponents = async (page = 1, pageSize = 20, name = "") => {
     try {
       setLoading(true);
       const params = { page: page - 1, pageSize, name };
@@ -75,22 +70,9 @@ function ManagerContentComponent() {
         setDataSource([]);
       }
       setLoading(false);
-      if (showNotification) {
-        notification.destroy();
-        notification.success({
-          message: "Thành công",
-          description: "Lấy danh sách linh kiện thành công!",
-          duration: 3,
-        });
-      }
     } catch (error) {
       setLoading(false);
       console.error("Error fetching components:", error);
-      notification.error({
-        message: "Lỗi",
-        description: "Có lỗi xảy ra khi lấy danh sách linh kiện!",
-        duration: 3,
-      });
     }
   };
 
@@ -112,7 +94,7 @@ function ManagerContentComponent() {
         notification.destroy();
         notification.success({
           message: "Thành công",
-          description: "Linh kiện đã được ẩn thành công!",
+          description: "Linh kiện đã được xóa thành công!",
           duration: 3,
         });
       }
@@ -162,32 +144,21 @@ function ManagerContentComponent() {
         searchName
       ); // Làm mới danh sách components sau khi phục hồi
     } catch (error) {
-      if (error.response) {
-        console.error(
-          `Error restoring component with id ${id}:`,
-          error.response.data
-        );
-        notification.error({
-          message: "Lỗi",
-          description: `Có lỗi xảy ra khi phục hồi linh kiện với id ${id}: ${
-            error.response.data.details?.message || "Lỗi không xác định"
-          }`,
-        });
-      } else {
-        console.error(
-          `Error restoring component with id ${id}:`,
-          error.message
-        );
-        notification.error({
-          message: "Lỗi",
-          description: `Có lỗi xảy ra khi phục hồi linh kiện với id ${id}: ${error.message}`,
-        });
-      }
+      console.error(
+        `Error restoring component with id ${id}:`,
+        error.response.data
+      );
+      notification.error({
+        message: "Lỗi",
+        description: `Có lỗi xảy ra khi phục hồi linh kiện với id ${id}: ${
+          error.response.data.details?.message || "Lỗi không xác định"
+        }`,
+      });
     }
   };
 
   // Function to create a new component
-  const createComponent = async (newComponent, showNotification = true) => {
+  const createComponent = async (newComponent) => {
     try {
       setIsSubmitting(true); // Bắt đầu loading
       const payload = {
@@ -196,14 +167,7 @@ function ManagerContentComponent() {
       };
       console.log("Gửi payload:", payload);
       const response = await api.post("/components", payload);
-      if (showNotification) {
-        notification.destroy();
-        notification.success({
-          message: "Thành công",
-          description: "Linh kiện đã được tạo thành công!",
-          duration: 3,
-        });
-      }
+
       await fetchComponents(
         pagination.current,
         pagination.pageSize,
