@@ -54,8 +54,7 @@ function ManagerStaff() {
   const fetchStaff = async (
     page = 1,
     pageSize = 20,
-    searchFilters = filters,
-    showNotification = true
+    searchFilters = filters
   ) => {
     try {
       setLoading(true);
@@ -109,14 +108,6 @@ function ManagerStaff() {
       }
 
       setLoading(false);
-      if (showNotification) {
-        notification.destroy();
-        notification.success({
-          message: "Thành công",
-          description: "Lấy danh sách nhân viên thành công!",
-          duration: 3,
-        });
-      }
     } catch (error) {
       console.error("Error fetching staff:", error);
       setLoading(false);
@@ -308,7 +299,13 @@ function ManagerStaff() {
       lastName: "",
       status: undefined,
     });
-    fetchStaff(1, pagination.pageSize);
+    fetchStaff(1, pagination.pageSize, {
+      email: "",
+      phoneNumber: "",
+      firstName: "",
+      lastName: "",
+      status: undefined,
+    });
   };
 
   // Hàm mở modal và reset lại form
@@ -463,48 +460,52 @@ function ManagerStaff() {
   console.log(dataSource); // Kiểm tra dataSource trước khi render bảng
   return (
     <div>
-      <Form form={form} component={false} onFinish={handleFilterSubmit}>
+      <Form form={form} onFinish={handleFilterSubmit}>
         <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
           <div className="text-2xl font-semibold text-gray-700">
             Quản Lý Nhân Viên
           </div>
           {/* Filter Form */}
-          <Form layout="inline" onFinish={handleFilterSubmit}>
-            <Form.Item name="email">
-              <Input placeholder="Email" />
-            </Form.Item>
-            <Form.Item name="phoneNumber">
-              <Input placeholder="Số điện thoại" />
-            </Form.Item>
-            <Form.Item name="firstName">
-              <Input placeholder="Tên" />
-            </Form.Item>
-            <Form.Item name="lastName">
-              <Input placeholder="Họ" />
-            </Form.Item>
-            <Form.Item name="status">
-              <Select placeholder="Trạng thái" style={{ width: 120 }}>
-                <Option value={undefined}>
-                  <Tag color="grey">Tất cả</Tag>
-                </Option>
-                <Option value={true}>
-                  <Tag color="green">Hoạt động</Tag>
-                </Option>
-                <Option value={false}>
-                  <Tag color="red">Vô hiệu hóa</Tag>
-                </Option>
-              </Select>
-            </Form.Item>
-            <Button
-              icon={<SearchOutlined />}
-              type="primary"
-              htmlType="submit"
-              className="mr-2"
-            >
-              Tìm kiếm
-            </Button>
-            <Button onClick={resetFilters}>Đặt lại</Button>
-          </Form>
+          <div className="flex flex-wrap justify-end">
+            <div className="w-full flex gap-4 justify-end">
+              <Form.Item name="email">
+                <Input placeholder="Email" />
+              </Form.Item>
+              <Form.Item name="phoneNumber">
+                <Input placeholder="Số điện thoại" />
+              </Form.Item>
+              <Form.Item name="firstName">
+                <Input placeholder="Tên" />
+              </Form.Item>
+              <Form.Item name="lastName">
+                <Input placeholder="Họ" />
+              </Form.Item>
+              <Form.Item name="status">
+                <Select placeholder="Trạng thái" style={{ width: 120 }}>
+                  <Option value={undefined}>
+                    <Tag color="grey">Tất cả</Tag>
+                  </Option>
+                  <Option value={true}>
+                    <Tag color="green">Hoạt động</Tag>
+                  </Option>
+                  <Option value={false}>
+                    <Tag color="red">Vô hiệu hóa</Tag>
+                  </Option>
+                </Select>
+              </Form.Item>
+            </div>
+            <div className="w-full flex gap-2 justify-end">
+              <Button
+                icon={<SearchOutlined />}
+                type="primary"
+                htmlType="submit"
+                className="mr-2"
+              >
+                Tìm kiếm
+              </Button>
+              <Button onClick={resetFilters}>Đặt lại</Button>
+            </div>
+          </div>
         </div>
         <div className="flex justify-end ml-5 mb-3">
           <button

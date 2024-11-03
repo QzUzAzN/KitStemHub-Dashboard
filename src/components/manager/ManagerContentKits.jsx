@@ -74,7 +74,6 @@ function ManagerContentKits() {
   const fetchKits = async (
     page = 1,
     pageSize = 20,
-    showNotification = true,
     searchFilters = filters
   ) => {
     try {
@@ -116,22 +115,22 @@ function ManagerContentKits() {
 
       setLoading(false);
 
-      if (showNotification) {
-        notification.destroy();
-        notification.success({
-          message: "Thành công",
-          description: "Lấy danh sách kits thành công!",
-          duration: 3,
-        });
-      }
+      // if (showNotification) {
+      //   notification.destroy();
+      //   notification.success({
+      //     message: "Thành công",
+      //     description: "Lấy danh sách kits thành công!",
+      //     duration: 3,
+      //   });
+      // }
     } catch (error) {
       console.error("Error fetching kits:", error);
       setLoading(false);
-      notification.error({
-        message: "Lỗi",
-        description: "Có lỗi xảy ra khi lấy danh sách kits!",
-        duration: 3,
-      });
+      // notification.error({
+      //   message: "Lỗi",
+      //   description: "Có lỗi xảy ra khi lấy danh sách kits!",
+      //   duration: 3,
+      // });
     } finally {
       setLoading(false); // Kết thúc loading sau khi API hoàn thành
     }
@@ -351,7 +350,7 @@ function ManagerContentKits() {
 
   // Hàm reset bộ lọc (Reset tất cả input và fetch lại tất cả dữ liệu)
   const resetFilters = () => {
-    form.resetFields(); // Reset các input
+    formFilter.resetFields(); // Reset các input
     setFilters({
       kitName: "",
       categoryName: "",
@@ -386,11 +385,11 @@ function ManagerContentKits() {
     } catch (error) {
       console.error("Error fetching components:", error);
       setIsFetchingComponents(false); // Dừng loading nếu có lỗi
-      notification.error({
-        message: "Lỗi",
-        description: "Có lỗi xảy ra khi lấy danh sách thành phần!",
-        duration: 3,
-      });
+      // notification.error({
+      //   message: "Lỗi",
+      //   description: "Có lỗi xảy ra khi lấy danh sách thành phần!",
+      //   duration: 3,
+      // });
     }
   };
 
@@ -413,11 +412,11 @@ function ManagerContentKits() {
     } catch (error) {
       console.error("Lỗi khi lấy thành phần:", error);
       notification.destroy();
-      notification.error({
-        message: "Lỗi",
-        description: "Có lỗi xảy ra khi lấy danh sách thành phần!",
-        duration: 3,
-      });
+      // notification.error({
+      //   message: "Lỗi",
+      //   description: "Có lỗi xảy ra khi lấy danh sách thành phần!",
+      //   duration: 3,
+      // });
     }
   };
 
@@ -819,7 +818,11 @@ function ManagerContentKits() {
               </Form.Item>
               <Form.Item name="status">
                 <Select placeholder="Trạng thái" style={{ width: 150 }}>
-                  <Option value="">Tất cả</Option>
+                  <Option value="">
+                    <Tag color="gray" className="font-semibold">
+                      Tất cả
+                    </Tag>
+                  </Option>
                   <Option value="true">
                     <Tag color="green" className="font-semibold">
                       Có sẵn
