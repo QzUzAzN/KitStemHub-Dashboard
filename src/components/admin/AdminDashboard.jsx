@@ -44,13 +44,8 @@ const AdminDashboard = () => {
       const response = await api.get("categories");
       // console.log("Fetched categories:", response.data);
       if (response.data.status === "success") {
-        const categoriesWithId = response.data.details.data.categories.map(
-          (category) => ({
-            ...category,
-          })
-        );
-        setCategories(categoriesWithId);
-        // console.log(categoriesWithId);
+        setCategories(response.data.details.data.categories);
+        // console.log(response.data.details.data.categories);
       } else {
         // console.error("Received data structure is unexpected:", response.data);
         setCategories([]);
@@ -70,6 +65,7 @@ const AdminDashboard = () => {
       //Trỏ đến thuộc tính id trong đối tượng dữ liệu danh mục, giúp bảng lấy và hiển thị giá trị của thuộc tính này
       dataIndex: "id",
       key: "id",
+      //order: text, record, index
       render: (text, record) => (
         <span className={!record.status ? "opacity-50" : ""}>{text}</span>
       ),
@@ -207,7 +203,7 @@ const AdminDashboard = () => {
       let response;
       if (editingCategory) {
         response = await api.put(`categories`, values);
-        console.log("Update response:", response.data);
+        // console.log("Update response:", response.data);
         toast.success("Category updated successfully");
       } else {
         response = await api.post("categories", values);

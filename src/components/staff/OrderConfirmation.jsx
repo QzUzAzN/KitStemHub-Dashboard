@@ -27,11 +27,9 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   CarOutlined,
-  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import api from "../../config/axios";
 import { toast } from "react-toastify";
-import moment from "moment-timezone"; // để đổi múi giờ sang vietnam
 
 const { Search } = Input;
 const { Option } = Select;
@@ -73,24 +71,17 @@ function OrderConfirmation() {
       const sortQuery = `&sort-fields=${currentSortField}&sort-orders=${currentSortOrder}`;
 
       let dateRangeQuery = "";
-      if (dateRange && dateRange[0] && dateRange[1]) {
-        const startDate = moment(dateRange[0])
-          .tz("Asia/Ho_Chi_Minh")
-          .startOf("day")
-          .format("YYYY-MM-DD");
-        const endDate = moment(dateRange[1])
-          .tz("Asia/Ho_Chi_Minh")
-          .endOf("day")
-          .format("YYYY-MM-DD");
+      if (dateRange?.[0] && dateRange?.[1]) {
+        const startDate = dateRange[0].format("YYYY-MM-DD");
+        const endDate = dateRange[1].format("YYYY-MM-DD");
         dateRangeQuery = `&created-from=${startDate}&created-to=${endDate}`;
       }
-      console.log(dateRangeQuery);
 
-      const response = await api.get(
-        `orders?page=${
-          page - 1
-        }&size=${pageSize}${statusQuery}${emailQueryParam}${sortQuery}${dateRangeQuery}`
-      );
+      const finalUrl = `orders?page=${
+        page - 1
+      }&size=${pageSize}${statusQuery}${emailQueryParam}${sortQuery}${dateRangeQuery}`;
+      console.log("final URl " + finalUrl);
+      const response = await api.get(finalUrl);
       if (response.data.status === "success") {
         setOrders(response.data.details.data.orders);
         setPagination({
@@ -101,7 +92,48 @@ function OrderConfirmation() {
       } else {
         toast.error("Không thể tải danh sách đơn hàng");
       }
-    } catch {
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      toast.error("Đã xảy ra lỗi khi tải danh sách đơn hàng");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchOrdersWithDates = async (
+    page = 1,
+    pageSize = 20,
+    status = "Tất cả",
+    emailQuery = "",
+    dateRangeQuery = "",
+    currentSortField = sortField,
+    currentSortOrder = sortOrder
+  ) => {
+    try {
+      const statusQuery =
+        status === "Tất cả" ? "" : `&shipping-status=${status}`;
+      const emailQueryParam = emailQuery ? `&customer-email=${emailQuery}` : "";
+      const sortQuery = `&sort-fields=${currentSortField}&sort-orders=${currentSortOrder}`;
+
+      const finalUrl = `orders?page=${
+        page - 1
+      }&size=${pageSize}${statusQuery}${emailQueryParam}${sortQuery}${dateRangeQuery}`;
+
+      console.log("Final URL:", finalUrl);
+
+      const response = await api.get(finalUrl);
+      if (response.data.status === "success") {
+        setOrders(response.data.details.data.orders);
+        setPagination({
+          ...pagination,
+          current: page,
+          total: response.data.details.data["total-pages"] * pageSize,
+        });
+      } else {
+        toast.error("Không thể tải danh sách đơn hàng");
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
       toast.error("Đã xảy ra lỗi khi tải danh sách đơn hàng");
     } finally {
       setLoading(false);
@@ -109,7 +141,7 @@ function OrderConfirmation() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrdersWithDates();
   }, [sortField, sortOrder]);
 
   const handleTableChange = (pagination, filters, sorter) => {
@@ -120,17 +152,22 @@ function OrderConfirmation() {
       newSortOrder = sorter.order === "ascend" ? "asc" : "desc";
     }
 
-    // console.log("New Sort Field:", newSortField);
-    // console.log("New Sort Order:", newSortOrder);
-
     setSortField(newSortField);
     setSortOrder(newSortOrder);
 
-    fetchOrders(
+    let dateRangeQuery = "";
+    if (dateRange?.[0] && dateRange?.[1]) {
+      const startDate = dateRange[0].format("YYYY-MM-DD");
+      const endDate = dateRange[1].format("YYYY-MM-DD");
+      dateRangeQuery = `&created-from=${startDate}&created-to=${endDate}`;
+    }
+
+    fetchOrdersWithDates(
       pagination.current,
       pagination.pageSize,
       statusFilter,
       searchText,
+      dateRangeQuery,
       newSortField,
       newSortOrder
     );
@@ -258,11 +295,7 @@ function OrderConfirmation() {
       key: "action",
       width: 320,
       render: (_, record) => (
-        <div
-          size="small"
-          className="shadow-sm hover:shadow-md transition-shadow"
-          bodyStyle={{ padding: "12px" }}
-        >
+        <div className="shadow-sm hover:shadow-md transition-shadow p-3">
           <Space direction="vertical" size="middle" className="w-full">
             {/* Phần xử lý trạng thái */}
             {(record["shipping-status"] === "CHỜ XÁC NHẬN" ||
@@ -432,19 +465,38 @@ function OrderConfirmation() {
     }).format(amount);
   };
 
-  const handleDateRangeChange = async (dates) => {
+  const handleDateRangeChange = (dates) => {
     setDateRange(dates);
-    // console.log(dates);
-    setLoading(true);
-    try {
-      await fetchOrders(1, pagination.pageSize, statusFilter, searchText);
-    } finally {
-      setLoading(false);
+
+    if (!dates) {
+      fetchOrders(1, pagination.pageSize, statusFilter, searchText);
+      return;
+    }
+
+    if (dates?.[0] && dates?.[1]) {
+      const startDate = dates[0].format("YYYY-MM-DD");
+      const endDate = dates[1].format("YYYY-MM-DD");
+      console.log("Calling API with date range:", startDate, "-", endDate);
+
+      const dateRangeQuery = `&created-from=${startDate}&created-to=${endDate}`;
+
+      try {
+        setLoading(true);
+        fetchOrdersWithDates(
+          1,
+          pagination.pageSize,
+          statusFilter,
+          searchText,
+          dateRangeQuery
+        );
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   const showConfirmationModal = (orderId, newStatus, currentStatus) => {
-    let title, icon, okText, cancelText, content;
+    let title, icon, okText, content;
 
     switch (newStatus) {
       case "ĐÃ XÁC NHẬN":
@@ -491,7 +543,6 @@ function OrderConfirmation() {
       icon: null,
       content: content,
       okText: okText,
-      cancelText: "Đóng",
       okButtonProps: {
         className:
           newStatus === "GIAO HÀNG THẤT BẠI" ? "bg-red-500" : "bg-blue-500",
@@ -524,6 +575,11 @@ function OrderConfirmation() {
             onChange={handleDateRangeChange}
             format="YYYY/MM/DD"
             placeholder={["Từ ngày", "Đến ngày"]}
+            showTime={false}
+            use12Hours={false}
+            showToday={true}
+            inputReadOnly={true}
+            allowClear={true}
           />
           <Select
             defaultValue="Tất cả"
@@ -588,6 +644,12 @@ function OrderConfirmation() {
                   <Text>Ngày tạo:</Text>
                   <Text strong>
                     {new Date(selectedOrder["created-at"]).toLocaleString()}
+                  </Text>
+                </div>
+                <div className="flex justify-between">
+                  <Text>Ngày Giao Hàng:</Text>
+                  <Text strong>
+                    {new Date(selectedOrder["delivered-at"]).toLocaleString()}
                   </Text>
                 </div>
                 <div className="flex justify-between">
