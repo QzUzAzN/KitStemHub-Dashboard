@@ -91,7 +91,7 @@ function StaffProfile() {
         <Row gutter={[24, 24]} className="bg-white rounded-lg">
           <Col xs={24} sm={12}>
             <Form.Item
-              name="firstName"
+              name="lastName"
               label={
                 <span className="sm:text-left lg:text-right text-gray-700 font-medium text-base w-32 inline-block">
                   Họ <span className="sm:hidden lg:inline-block">:</span>
@@ -101,7 +101,7 @@ function StaffProfile() {
               className="mb-4"
             >
               <Input
-                defaultValue={capitalize(profileData.firstName)}
+                defaultValue={capitalize(profileData.lastName)}
                 readOnly
                 size="large"
                 className="hover:border-blue-400 focus:shadow-sm transition-all w-full capitalize"
@@ -111,7 +111,7 @@ function StaffProfile() {
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item
-              name="lastName"
+              name="firstName"
               label={
                 <span className="sm:text-left lg:text-right text-gray-700 font-medium text-base w-32 inline-block">
                   Tên <span className="sm:hidden lg:inline-block">:</span>
@@ -121,7 +121,7 @@ function StaffProfile() {
               className="mb-4"
             >
               <Input
-                defaultValue={capitalize(profileData.lastName)}
+                defaultValue={capitalize(profileData.firstName)}
                 readOnly
                 size="large"
                 className="hover:border-blue-400 focus:shadow-sm transition-all w-full capitalize"

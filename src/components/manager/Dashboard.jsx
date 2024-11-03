@@ -2,10 +2,8 @@ import { Card, Row, Col, Select, Spin, Button } from "antd";
 import { Line, Bar } from "react-chartjs-2";
 import api from "../../config/axios";
 import {
-  UserOutlined,
   ShoppingCartOutlined,
   DollarOutlined,
-  FieldTimeOutlined,
   DownloadOutlined,
 } from "@ant-design/icons";
 import {
@@ -45,12 +43,6 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat("vi-VN").format(value) + " đ";
 };
 
-// Add this function at the top level, after the ChartJS.register
-const getDaysInMonth = (year, month) => {
-  return new Date(year, month, 0).getDate(); //30/31/28/29
-};
-
-// Add this array near the top of the file, after the imports
 const chartColors = [
   "rgba(59, 130, 246, 0.8)", // Blue
   "rgba(16, 185, 129, 0.8)", // Green
@@ -66,7 +58,7 @@ function Dashboard() {
       {
         label: "Số package đã bán",
         data: [],
-        backgroundColor: "rgba(59, 130, 246, 0.8)",
+
         borderColor: "rgb(59, 130, 246)",
         borderWidth: 1,
       },
@@ -101,7 +93,6 @@ function Dashboard() {
           revenueResponse.data.details.data["year-dto"];
         const profitMonthlyData = profitResponse.data.details.data["year-dto"];
 
-        // Get current date info
         const currentDate = new Date();
         const currentYear = currentDate.getFullYear();
         const currentMonth = currentDate.getMonth(); // 0-11
@@ -196,6 +187,7 @@ function Dashboard() {
     ],
   };
 
+  //style cho chart
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -345,9 +337,6 @@ function Dashboard() {
           });
         }
 
-        // Take only the first 5 items if we somehow get more
-        topPackages = topPackages.slice(0, 5);
-
         // Transform API data for chart
         const chartData = {
           labels: topPackages.map((pkg) =>
@@ -426,7 +415,6 @@ function Dashboard() {
             "total-package-price": 0,
           });
         }
-        packages = packages.slice(0, 5);
 
         setTopRevenueChartData({
           labels: packages.map((pkg) =>
@@ -488,7 +476,6 @@ function Dashboard() {
     fetchAllData(selectedYear, selectedMonth);
   }, [selectedYear, selectedMonth]);
 
-  // Cập nhật các hàm xử lý onChange
   const handleYearChange = (value) => {
     setSelectedYear(value);
   };
@@ -609,7 +596,6 @@ function Dashboard() {
   // Thêm state mới để lưu trữ danh sách các năm có dữ liệu
   const [availableYears, setAvailableYears] = useState([]);
 
-  // Sửa lại hàm kiểm tra năm có doanh thu
   const checkYearHasRevenue = async (year) => {
     try {
       const response = await api.get(`analytics/revenues/${year}`);
@@ -733,14 +719,9 @@ function Dashboard() {
                 <div className="flex justify-between items-start">
                   <div className="space-y-3">
                     <p className="text-gray-500 font-medium">{stat.title}</p>
-                    <h2 className="text-3xl font-bold text-gray-800">
+                    <h2 className="text-3xl font-bold text-gray-800 pb-4">
                       {stat.value}
                     </h2>
-                    <p
-                      className={`flex items-center text-sm font-medium ${
-                        stat.isIncrease ? "text-emerald-500" : "text-rose-500"
-                      }`}
-                    ></p>
                   </div>
                   <div
                     className={`p-4 rounded-full bg-opacity-10 ${
@@ -751,8 +732,6 @@ function Dashboard() {
                         : index === 2
                         ? "bg-emerald-500/10"
                         : index === 3
-                        ? "bg-emerald-500/10"
-                        : "bg-rose-500/10"
                     }`}
                   >
                     {stat.icon}
