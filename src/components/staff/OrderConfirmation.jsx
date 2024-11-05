@@ -60,6 +60,7 @@ function OrderConfirmation() {
     pageSize = 20,
     status = "Tất cả",
     emailQuery = "",
+
     currentSortField = sortField,
     currentSortOrder = sortOrder
   ) => {
@@ -468,16 +469,22 @@ function OrderConfirmation() {
   const handleDateRangeChange = (dates) => {
     setDateRange(dates);
 
+    // When dates is null (cleared), fetch all orders without date filter
     if (!dates) {
-      fetchOrders(1, pagination.pageSize, statusFilter, searchText);
+      fetchOrdersWithDates(
+        1,
+        pagination.pageSize,
+        statusFilter,
+        searchText,
+        "" // empty date range query
+      );
       return;
     }
 
+    // When dates are selected
     if (dates?.[0] && dates?.[1]) {
       const startDate = dates[0].format("YYYY-MM-DD");
       const endDate = dates[1].format("YYYY-MM-DD");
-      console.log("Calling API with date range:", startDate, "-", endDate);
-
       const dateRangeQuery = `&created-from=${startDate}&created-to=${endDate}`;
 
       try {
@@ -649,7 +656,9 @@ function OrderConfirmation() {
                 <div className="flex justify-between">
                   <Text>Ngày Giao Hàng:</Text>
                   <Text strong>
-                    {new Date(selectedOrder["delivered-at"]).toLocaleString()}
+                    {selectedOrder["delivered-at"] !== null
+                      ? new Date(selectedOrder["delivered-at"]).toLocaleString()
+                      : ""}
                   </Text>
                 </div>
                 <div className="flex justify-between">

@@ -44,11 +44,12 @@ const formatCurrency = (value) => {
 };
 
 const chartColors = [
-  "rgba(59, 130, 246, 0.8)", // Blue
-  "rgba(16, 185, 129, 0.8)", // Green
-  "rgba(245, 158, 11, 0.8)", // Yellow
   "rgba(239, 68, 68, 0.8)", // Red
-  "rgba(139, 92, 246, 0.8)", // Purple
+  "rgba(139, 92, 246, 0.8)", // Purplez
+  "rgba(245, 158, 11, 0.8)", // Yellow
+  "rgba(16, 185, 129, 0.8)", // Green
+
+  "rgba(59, 130, 246, 0.8)", // Blue
 ];
 
 function Dashboard() {
