@@ -95,7 +95,7 @@ function ManagerContentPackage() {
       if (response?.data?.details?.data?.packages) {
         const packageData = response.data.details.data.packages;
         const totalPages = response.data.details.data["total-pages"] || 0;
-        const currentPage = response.data.details.data["current-page"] || 0;
+        // const currentPage = response.data.details.data["current-page"] || 0;
 
         // Đảm bảo dữ liệu thực sự được trả về từ API
         console.log("Packages:", packageData);
@@ -103,7 +103,7 @@ function ManagerContentPackage() {
         setDataSource(packageData);
         setPagination({
           total: totalPages * pageSize,
-          current: currentPage + 1,
+          current: page,
           pageSize: pageSize,
         });
       } else {
@@ -585,10 +585,14 @@ function ManagerContentPackage() {
               style={{ width: "200px" }} // Đặt kích thước cho "Status"
             >
               <Option value={true}>
-                <Tag color="green">Có sẵn</Tag>
+                <Tag color="green" className="font-semibold">
+                  Có sẵn
+                </Tag>
               </Option>
               <Option value={false}>
-                <Tag color="red">Không có sẵn</Tag>
+                <Tag color="red" className="font-semibold">
+                  Không có sẵn
+                </Tag>
               </Option>
             </Select>
             {/* <Select

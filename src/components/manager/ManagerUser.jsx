@@ -288,14 +288,15 @@ function ManagerUser() {
               </Form.Item>
               <Form.Item name="status">
                 <Select placeholder="Trạng thái" style={{ width: 120 }}>
-                  <Option value={undefined}>
-                    <Tag color="grey">Tất cả</Tag>
-                  </Option>
                   <Option value={true}>
-                    <Tag color="green">Hoạt động</Tag>
+                    <Tag color="green" className="font-semibold">
+                      Hoạt động
+                    </Tag>
                   </Option>
                   <Option value={false}>
-                    <Tag color="red">Vô hiệu hóa</Tag>
+                    <Tag color="red" className="font-semibold">
+                      Vô hiệu hóa
+                    </Tag>
                   </Option>
                 </Select>
               </Form.Item>

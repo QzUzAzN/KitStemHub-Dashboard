@@ -105,14 +105,14 @@ function ManagerContentLabs() {
       if (response?.data?.details?.data?.labs) {
         const labsData = response.data.details.data.labs;
         const totalPages = response.data.details.data["total-pages"] || 0;
-        const currentPage = response.data.details.data["current-page"] || 0;
+        // const currentPage = response.data.details.data["current-page"] || 0;
 
         // Cập nhật dữ liệu lab vào state
         setDataSource(labsData);
 
         setPagination({
           total: totalPages * pageSize,
-          current: currentPage + 1,
+          current: page,
           pageSize: pageSize,
         });
       } else {
@@ -575,7 +575,7 @@ function ManagerContentLabs() {
   }, []);
 
   return (
-    <>
+    <div>
       <Form form={formFilter} onFinish={handleFilterSubmit}>
         <div className="flex justify-between p-4 bg-white shadow-md items-center mb-3">
           <div className="text-3xl font-semibold text-gray-700">
@@ -593,9 +593,16 @@ function ManagerContentLabs() {
               </Form.Item>
               <Form.Item name="status">
                 <Select placeholder="Trạng thái" style={{ width: 120 }}>
-                  <Option value="">Tất cả</Option>
-                  <Option value="true">Có sẵn</Option>
-                  <Option value="false">Không có sẵn</Option>
+                  <Option value="true">
+                    <Tag color="green" className="font-semibold">
+                      Có sẵn
+                    </Tag>
+                  </Option>
+                  <Option value="false">
+                    <Tag color="red" className="font-semibold">
+                      Không có sẵn
+                    </Tag>
+                  </Option>
                 </Select>
               </Form.Item>
             </div>
@@ -826,7 +833,7 @@ function ManagerContentLabs() {
           }}
         />
       </Modal>
-    </>
+    </div>
   );
 }
 

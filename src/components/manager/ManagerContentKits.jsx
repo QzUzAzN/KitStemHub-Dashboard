@@ -345,7 +345,7 @@ function ManagerContentKits() {
       ...values, // Chỉ update những trường mà người dùng đã điền
     };
     setFilters(updatedFilters); // Cập nhật filters với các giá trị mới
-    fetchKits(1, pagination.pageSize, false, updatedFilters); // Gọi API với filter đã cập nhật
+    fetchKits(1, pagination.pageSize, updatedFilters); // Gọi API với filter đã cập nhật
   };
 
   // Hàm reset bộ lọc (Reset tất cả input và fetch lại tất cả dữ liệu)
@@ -818,11 +818,11 @@ function ManagerContentKits() {
               </Form.Item>
               <Form.Item name="status">
                 <Select placeholder="Trạng thái" style={{ width: 150 }}>
-                  <Option value="">
+                  {/* <Option value="">
                     <Tag color="gray" className="font-semibold">
                       Tất cả
                     </Tag>
-                  </Option>
+                  </Option> */}
                   <Option value="true">
                     <Tag color="green" className="font-semibold">
                       Có sẵn
@@ -976,7 +976,7 @@ function ManagerContentKits() {
             <Form.Item
               label="Tóm tắt"
               name="brief"
-              rules={[{ required: true, message: "Vui lòng nhập tóm tắt!" }]}
+              // rules={[{ required: true, message: "Vui lòng nhập tóm tắt!" }]}
             >
               <Input />
             </Form.Item>
@@ -984,7 +984,7 @@ function ManagerContentKits() {
             <Form.Item
               label="Mô tả"
               name="description"
-              rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
+              // rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
             >
               <Input.TextArea rows={3} />
             </Form.Item>
@@ -993,6 +993,7 @@ function ManagerContentKits() {
               label="Thêm thành phần"
               name="components"
               valuePropName="components"
+              rules={[{ required: true, message: "Vui lòng chọn linh kiện!" }]}
             >
               <Button
                 type="dashed"
@@ -1040,7 +1041,11 @@ function ManagerContentKits() {
               <InputNumber min={0} />
             </Form.Item>
 
-            <Form.Item label="Thể loại" name="categoryId">
+            <Form.Item
+              label="Thể loại"
+              name="categoryId"
+              rules={[{ required: true, message: "Vui lòng chọn thể loại!" }]}
+            >
               <Select>
                 {categories.map((category) => (
                   <Option key={category.id} value={category.id}>

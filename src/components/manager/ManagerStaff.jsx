@@ -29,13 +29,14 @@ const { Text } = Typography;
 
 function ManagerStaff() {
   const [form] = Form.useForm();
+  const [formFilter] = Form.useForm();
   const [dataSource, setDataSource] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingRecord, setEditingRecord] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
   const [address, setAddress] = useState("");
-  const [errors, setErrors] = useState({});
+
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
@@ -60,10 +61,10 @@ function ManagerStaff() {
       setLoading(true);
       const params = {
         role: "staff",
-        email: searchFilters.email || undefined,
-        "phone-number": searchFilters.phoneNumber || undefined,
-        "first-name": searchFilters.firstName || undefined,
-        "last-name": searchFilters.lastName || undefined,
+        email: searchFilters.email,
+        "phone-number": searchFilters.phoneNumber,
+        "first-name": searchFilters.firstName,
+        "last-name": searchFilters.lastName,
         status:
           searchFilters.status === undefined ? undefined : searchFilters.status,
         page: page - 1,
@@ -89,12 +90,12 @@ function ManagerStaff() {
         }));
         console.log(staffData);
         const totalPages = response.data.details.data["total-pages"] || 0;
-        const currentPage = response.data.details.data["current-page"] || 0;
+        // const currentPage = response.data.details.data["current-page"] || 0;
 
         setDataSource(staffData);
         setPagination({
           total: totalPages * pageSize,
-          current: currentPage,
+          current: page,
           pageSize: pageSize,
         });
       } else {
@@ -120,33 +121,7 @@ function ManagerStaff() {
     }
   };
 
-  // Hàm kiểm tra tính hợp lệ của họ, tên và số điện thoại
-  const validateProfileData = () => {
-    const nameRegex = /^[A-Za-zÀ-ỹ\s]+$/; // Chỉ cho phép chữ cái và khoảng trắng
-    const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})\b/; // phải là số theo đầu số việt nam
-    const newErrors = {};
-
-    if (!nameRegex.test(form.getFieldValue("first-name"))) {
-      newErrors.firstName =
-        "Họ chỉ được chứa chữ cái và không có ký tự đặc biệt.";
-    }
-
-    if (!nameRegex.test(form.getFieldValue("last-name"))) {
-      newErrors.lastName =
-        "Tên chỉ được chứa chữ cái và không có ký tự đặc biệt.";
-    }
-
-    if (!phoneRegex.test(form.getFieldValue("phone-number"))) {
-      newErrors.phoneNumber =
-        "Số điện thoại phải có 10 số và bắt đầu bằng đầu số Việt Nam (03, 05, 07, 08, 09)";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0; // Trả về true nếu không có lỗi
-  };
-
   const createStaff = async (values) => {
-    if (!validateProfileData()) return;
     try {
       setIsSubmitting(true);
       const payload = {
@@ -179,8 +154,6 @@ function ManagerStaff() {
   };
 
   const updateStaff = async (staffUserName, values) => {
-    // Kiểm tra tính hợp lệ trước khi cập nhật nhân viên
-    if (!validateProfileData()) return;
     try {
       setIsSubmitting(true);
       const payload = {
@@ -285,13 +258,13 @@ function ManagerStaff() {
   };
 
   const handleFilterSubmit = (values) => {
-    console.log("fileter: ", values);
-    setFilters(values);
-    fetchStaff(1, pagination.pageSize, values);
+    const updatedFilters = { ...filters, ...values };
+    setFilters(updatedFilters);
+    fetchStaff(1, pagination.pageSize, updatedFilters);
   };
 
   const resetFilters = () => {
-    form.resetFields();
+    formFilter.resetFields();
     setFilters({
       email: "",
       phoneNumber: "",
@@ -322,14 +295,70 @@ function ManagerStaff() {
     setIsModalVisible(false);
   };
 
-  const handleSave = (values) => {
-    if (editingRecord) {
-      updateStaff(editingRecord["user-name"], values);
-    } else {
-      createStaff(values);
+  // Kiểm tra xem email đã tồn tại chưa
+  const checkAvailability = async (email, phoneNumber) => {
+    try {
+      const response = await api.get("/users", { params: { role: "staff" } });
+      const emails = response.data.details.data.users.map(
+        (user) => user["user-name"]
+      );
+      const phoneNumbers = response.data.details.data.users.map(
+        (user) => user["phone-number"]
+      );
+      const emailExists = emails.includes(email);
+      const phoneNumberExists = phoneNumbers.includes(phoneNumber);
+
+      return { emailExists, phoneNumberExists };
+    } catch (error) {
+      console.log("Lỗi check email or sdt: ", error);
+      return { emailExists: false, phoneNumberExists: false };
     }
   };
 
+  // Hàm tạo hoặc cập nhật nhân viên
+  const handleSave = async () => {
+    try {
+      // Lấy tất cả giá trị của các trường từ form
+      const values = form.getFieldsValue();
+
+      // Log ra các trường dữ liệu
+      console.log("Form Data:", values);
+
+      // Thực hiện validate dữ liệu
+      await form.validateFields();
+
+      if (editingRecord) {
+        updateStaff(editingRecord["user-name"], values);
+      } else {
+        const { emailExists, phoneNumberExists } = await checkAvailability(
+          values.email,
+          values["phone-number"]
+        );
+        // Xử lý nếu email hoặc số điện thoại đã tồn tại
+        if (emailExists) {
+          form.setFields([
+            {
+              name: "email",
+              errors: ["Email đã tồn tại. Vui lòng nhập email khác!"],
+            },
+          ]);
+        }
+        if (phoneNumberExists) {
+          form.setFields([
+            {
+              name: "phone-number",
+              errors: ["Số điện thoại đã tồn tại. Vui lòng nhập số khác!"],
+            },
+          ]);
+        }
+        if (!emailExists && !phoneNumberExists) {
+          createStaff(values);
+        }
+      }
+    } catch (error) {
+      console.log("Validation failed:", error);
+    }
+  };
   const handleAddressSelected = (selectedAddress) => {
     setAddress(selectedAddress); // Đặt địa chỉ vào state chính
     form.setFieldsValue({ address: selectedAddress }); // Cập nhật trường địa chỉ trong form
@@ -353,19 +382,20 @@ function ManagerStaff() {
       ),
     },
     {
-      title: "Tên",
-      dataIndex: "first-name",
-      key: "first-name",
-      width: 150,
-      render: (firstName) => <Text className="font-semibold">{firstName}</Text>,
-    },
-    {
       title: "Họ",
       dataIndex: "last-name",
       key: "last-name",
       width: 150,
       render: (lastName) => <Text className="font-semibold">{lastName}</Text>,
     },
+    {
+      title: "Tên",
+      dataIndex: "first-name",
+      key: "first-name",
+      width: 150,
+      render: (firstName) => <Text className="font-semibold">{firstName}</Text>,
+    },
+
     {
       title: "Giới tính",
       dataIndex: "gender-code",
@@ -407,12 +437,6 @@ function ManagerStaff() {
       key: "address",
       width: 300,
       render: (address) => <Text className="font-semibold">{address}</Text>,
-    },
-    {
-      title: "Điểm",
-      dataIndex: "points",
-      key: "points",
-      render: (points) => <Text className="font-semibold">{points || 0}</Text>,
     },
     {
       title: "Trạng thái",
@@ -457,10 +481,16 @@ function ManagerStaff() {
       ),
     },
   ];
-  console.log(dataSource); // Kiểm tra dataSource trước khi render bảng
+  const emailRegex =
+    /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  const passwordRegex =
+    /^(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/;
+  const lastNameRegex = /^[A-Za-zÀ-ỹ\s]+$/;
+  const firstNameRegex = /^[A-Za-zÀ-ỹ\s]+$/;
+  const phoneNumberRegex = /^(0[3|5|7|8|9])+([0-9]{8})\b/;
   return (
     <div>
-      <Form form={form} onFinish={handleFilterSubmit}>
+      <Form form={formFilter} onFinish={handleFilterSubmit}>
         <div className="flex justify-between p-4 bg-white shadow-md items-center mb-7">
           <div className="text-2xl font-semibold text-gray-700">
             Quản Lý Nhân Viên
@@ -482,14 +512,15 @@ function ManagerStaff() {
               </Form.Item>
               <Form.Item name="status">
                 <Select placeholder="Trạng thái" style={{ width: 120 }}>
-                  <Option value={undefined}>
-                    <Tag color="grey">Tất cả</Tag>
-                  </Option>
                   <Option value={true}>
-                    <Tag color="green">Hoạt động</Tag>
+                    <Tag color="green" className="font-semibold">
+                      Hoạt động
+                    </Tag>
                   </Option>
                   <Option value={false}>
-                    <Tag color="red">Vô hiệu hóa</Tag>
+                    <Tag color="red" className="font-semibold">
+                      Vô hiệu hóa
+                    </Tag>
                   </Option>
                 </Select>
               </Form.Item>
@@ -507,137 +538,195 @@ function ManagerStaff() {
             </div>
           </div>
         </div>
-        <div className="flex justify-end ml-5 mb-3">
-          <button
-            onClick={handleAddStaff}
-            className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
-          >
-            <div>
-              <PlusCircleOutlined />
-            </div>
-            Thêm
-          </button>
-        </div>
-        <Table
-          bordered
-          dataSource={dataSource}
-          columns={columns}
-          loading={loading}
-          rowKey="user-name"
-          pagination={{
-            total: pagination.total,
-            current: pagination.current,
-            pageSize: pagination.pageSize,
-            onChange: (page) => fetchStaff(page),
-          }}
-        />
-
-        <Modal
-          title={editingRecord ? "Chỉnh sửa Nhân Viên" : "Thêm Nhân Viên"}
-          visible={isModalVisible}
-          onCancel={handleCancel}
-          onOk={() => form.submit()}
-          confirmLoading={isSubmitting}
-        >
-          <Form form={form} onFinish={handleSave} layout="vertical">
-            <Form.Item
-              name="email"
-              label="Email"
-              rules={[{ required: true, message: "Vui lòng nhập email!" }]}
-            >
-              <Input disabled={!!editingRecord} />
-            </Form.Item>
-            <Form.Item
-              name="password"
-              label="Mật khẩu"
-              rules={[
-                {
-                  required: !editingRecord,
-                  message: "Vui lòng nhập mật khẩu!",
-                },
-              ]}
-            >
-              <Input.Password
-                autoComplete="new-password"
-                disabled={!!editingRecord}
-              />
-              {/* Dùng "new-password" cho trường hợp đăng ký */}
-            </Form.Item>
-            <Form.Item
-              name="first-name"
-              label="Tên"
-              rules={[
-                {
-                  required: true,
-                  message: errors.firstName || "Vui lòng nhập tên!",
-                },
-              ]}
-              validateStatus={errors.firstName ? "error" : ""}
-              help={errors.firstName}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              name="last-name"
-              label="Họ"
-              rules={[
-                {
-                  required: true,
-                  message: errors.lastName || "Vui lòng nhập họ!",
-                },
-              ]}
-              validateStatus={errors.lastName ? "error" : ""}
-              help={errors.lastName}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              name="phone-number"
-              label="Số điện thoại"
-              rules={[
-                {
-                  required: true,
-                  message: errors.phoneNumber || "Vui lòng nhập số điện thoại!",
-                },
-              ]}
-              validateStatus={errors.phoneNumber ? "error" : ""}
-              help={errors.phoneNumber}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              name="address"
-              label="Địa chỉ"
-              rules={[{ required: true, message: "Vui lòng chọn địa chỉ!" }]}
-            >
-              <Input
-                value={address}
-                onClick={() => setIsAddressModalVisible(true)}
-                readOnly
-                placeholder="Nhấn để chọn địa chỉ"
-              />
-            </Form.Item>
-            <Form.Item
-              name="gender-code"
-              label="Giới tính"
-              rules={[{ required: true, message: "Vui lòng chọn giới tính!" }]}
-            >
-              <Select>
-                <Option value={1}>Nam</Option>
-                <Option value={2}>Nữ</Option>
-                <Option value={0}>Khác</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item
-              name="birth-date"
-              label="Ngày sinh"
-              rules={[{ required: true, message: "Vui lòng chọn ngày sinh!" }]}
-            >
-              <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
-            </Form.Item>
-          </Form>
-        </Modal>
       </Form>
+      <div className="flex justify-end ml-5 mb-3">
+        <button
+          onClick={handleAddStaff}
+          className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
+        >
+          <div>
+            <PlusCircleOutlined />
+          </div>
+          Thêm
+        </button>
+      </div>
+      <Table
+        bordered
+        dataSource={dataSource}
+        columns={columns}
+        loading={loading}
+        rowKey="user-name"
+        pagination={{
+          total: pagination.total,
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          onChange: (page) => fetchStaff(page, pagination.pageSize),
+        }}
+      />
+
+      <Modal
+        title={editingRecord ? "Chỉnh sửa Nhân Viên" : "Thêm Nhân Viên"}
+        visible={isModalVisible}
+        onCancel={handleCancel}
+        onOk={handleSave}
+        confirmLoading={isSubmitting}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập email!",
+              },
+              {
+                pattern: emailRegex,
+                message: "Email không hợp lệ!",
+              },
+            ]}
+            validateTrigger="onBlur"
+          >
+            <Input
+              autoComplete="off"
+              onChange={() => form.setFields([{ name: "email", errors: [] }])}
+              disabled={!!editingRecord}
+              placeholder="staff@example.com"
+            />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            label="Mật khẩu"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập mật khẩu!",
+              },
+              {
+                pattern: passwordRegex,
+                message: "Mật khẩu không hợp lệ!",
+              },
+            ]}
+            validateTrigger="onBlur"
+          >
+            <Input.Password
+              autoComplete="new-password"
+              onChange={() =>
+                form.setFields([{ name: "password", errors: [] }])
+              }
+              disabled={!!editingRecord}
+            />
+          </Form.Item>
+          <Form.Item
+            name="last-name"
+            label="Họ"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập họ!",
+              },
+              {
+                pattern: lastNameRegex,
+                message: "Họ không hợp lệ!",
+              },
+            ]}
+            validateTrigger="onBlur"
+          >
+            <Input
+              onChange={() =>
+                form.setFields([{ name: "last-name", errors: [] }])
+              }
+            />
+          </Form.Item>
+          <Form.Item
+            name="first-name"
+            label="Tên"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập tên!",
+              },
+              {
+                pattern: firstNameRegex,
+                message: "Tên không hợp lệ!",
+              },
+            ]}
+            validateTrigger="onBlur"
+          >
+            <Input
+              onChange={() =>
+                form.setFields([{ name: "first-name", errors: [] }])
+              }
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="phone-number"
+            label="Số điện thoại"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập số điện thoại!",
+              },
+              {
+                pattern: phoneNumberRegex,
+                message: "Số điện thoại không hợp lệ!",
+              },
+            ]}
+            validateTrigger="onBlur"
+          >
+            <Input
+              onChange={() =>
+                form.setFields([{ name: "phone-number", errors: [] }])
+              }
+            />
+          </Form.Item>
+          <Form.Item
+            name="address"
+            label="Địa chỉ"
+            rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
+            validateTrigger="onBlur"
+          >
+            <Input
+              value={address}
+              onClick={() => setIsAddressModalVisible(true)}
+              readOnly
+              placeholder="Nhấn để chọn địa chỉ"
+              onChange={() => form.setFields([{ name: "address", errors: [] }])}
+            />
+          </Form.Item>
+          <Form.Item
+            name="gender-code"
+            label="Giới tính"
+            rules={[{ required: true, message: "Vui lòng chọn giới tính!" }]}
+            validateTrigger="onBlur"
+          >
+            <Select
+              onChange={() =>
+                form.setFields([{ name: "gender-code", errors: [] }])
+              }
+            >
+              <Option value={1}>Nam</Option>
+              <Option value={2}>Nữ</Option>
+              <Option value={0}>Khác</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="birth-date"
+            label="Ngày sinh"
+            rules={[{ required: true, message: "Vui lòng chọn ngày sinh!" }]}
+            validateTrigger="onBlur"
+          >
+            <DatePicker
+              format="YYYY-MM-DD"
+              style={{ width: "100%" }}
+              onChange={() =>
+                form.setFields([{ name: "birth-date", errors: [] }])
+              }
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
       <AddressModal
         visible={isAddressModalVisible}
         onClose={() => setIsAddressModalVisible(false)}
