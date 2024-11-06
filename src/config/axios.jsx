@@ -30,10 +30,11 @@ api.interceptors.response.use(
         const currentRefreshToken = localStorage.getItem(
           "refreshTokenDashboard"
         );
-        const response = await axios.post(
-          `${baseUrl}Users/RefreshToken/${currentRefreshToken}`
+        const response = await api.post(
+          `${baseUrl}users/refreshtoken/${currentRefreshToken}`
         );
-        const { accessToken, refreshToken } = response.data.details;
+        const accessToken = response.data.details["access-token"];
+        const refreshToken = response.data.details["refresh-token"];
         localStorage.setItem("tokenDashboard", accessToken);
         localStorage.setItem("refreshTokenDashboard", refreshToken);
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
