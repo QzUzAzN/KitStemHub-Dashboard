@@ -95,15 +95,22 @@ function LoginInput() {
   return (
     <div
       className="relative flex items-center justify-center min-h-screen bg-cover bg-center"
-      style={{ backgroundImage: `url('/Ustm.gif')` }}
+      style={{
+        backgroundImage: `url(/loginbg.png)`,
+      }}
     >
-      {/* Overlay để làm mờ ảnh nền */}
-      <div className="absolute inset-0 bg-black opacity-10 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 backdrop-blur-[3px]"></div>
 
-      <div className="relative z-10 w-full max-w-md p-8 space-y-8 bg-white bg-opacity-30 backdrop-blur-sm rounded-lg shadow-lg">
-        <h2 className="text-3xl font-extrabold text-center text-white">
-          Hello, Welcome!
-        </h2>
+      <div className="relative z-10 w-full max-w-md p-8 space-y-6 bg-white/60 backdrop-blur-md rounded-xl shadow-2xl border border-white/20">
+        <div className="flex flex-col items-center space-y-4">
+          <h2 className="text-3xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+            STEM Kit Management
+          </h2>
+          <p className="text-blue-600 text-center text-sm font-medium">
+            Hệ thống quản lý bộ kit STEM
+          </p>
+        </div>
+
         <Form
           name="login"
           initialValues={{ remember: true }}
@@ -111,6 +118,7 @@ function LoginInput() {
           onFinishFailed={onFinishFailed}
           layout="vertical"
           size="large"
+          className="space-y-4"
         >
           <Form.Item
             name="email"
@@ -126,9 +134,9 @@ function LoginInput() {
             ]}
           >
             <Input
-              prefix={<UserOutlined className="text-gray-400" />}
-              placeholder="Email"
-              className="rounded-md"
+              prefix={<UserOutlined className="text-gray-600" />}
+              placeholder="Email đăng nhập"
+              className="rounded-lg bg-white/90 text-gray-700 placeholder-gray-500"
             />
           </Form.Item>
           <Form.Item
@@ -141,21 +149,27 @@ function LoginInput() {
             ]}
           >
             <Input.Password
-              prefix={<LockOutlined className="text-gray-400" />}
+              prefix={<LockOutlined className="text-gray-600" />}
               placeholder="Mật khẩu"
-              className="rounded-md"
+              className="rounded-lg !bg-white/90 text-gray-700 placeholder-gray-500"
             />
           </Form.Item>
           <Form.Item>
             <Button
               type="primary"
               htmlType="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 rounded-md transition duration-300 ease-in-out transform hover:scale-105"
+              className="w-full !bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-700 hover:to-purple-700 rounded-lg border-0 transition duration-300 ease-in-out transform hover:scale-105 h-12 text-base font-semibold text-white"
             >
               Đăng nhập
             </Button>
           </Form.Item>
         </Form>
+
+        {/* Footer text */}
+        <div className="text-center text-blue-600 text-sm font-medium">
+          <p>Hệ thống quản lý và theo dõi bộ kit STEM</p>
+          <p className="mt-1 text-blue-600">© 2024 KitStemHub</p>
+        </div>
       </div>
     </div>
   );
