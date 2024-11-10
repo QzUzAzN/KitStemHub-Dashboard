@@ -300,15 +300,22 @@ function ManagerContentPackage() {
   };
 
   const handleKitChange = async (kitId) => {
-    setKitModalVisible(false); // Close kit modal
-    form.setFieldsValue({ labIds: [] }); // Reset labs when a new kit is selected
+    setKitModalVisible(false); // Đóng modal chọn kit
+    form.setFieldsValue({ labIds: [] }); // Reset labs khi chọn kit mới
+
     try {
       const selectedKit = kits.find((kit) => kit.id === kitId);
       setSelectedKitPrice(selectedKit ? selectedKit.price : null); // Lưu giá Kit được chọn
 
+      // Gọi API để lấy danh sách Labs liên quan đến Kit đã chọn
       const response = await api.get(`kits/${kitId}/lab`);
-      const labs = response.data.details.data.labs || [];
-      setAvailableLabs(labs); // Cập nhật danh sách Labs
+      let labs = response.data.details.data.labs || [];
+
+      // Lọc chỉ lấy labs có status = false
+      labs = labs.filter((lab) => lab.status === true);
+
+      // Cập nhật danh sách Labs sau khi lọc
+      setAvailableLabs(labs);
     } catch (error) {
       console.error("Error fetching labs:", error);
       notification.error({
@@ -414,6 +421,14 @@ function ManagerContentPackage() {
       status: undefined,
       includeLabs: undefined,
     });
+  };
+
+  const handleCancel = () => {
+    form.resetFields(); // Reset lại tất cả các trường trong form
+    setEditingRecord(null); // Đặt editingRecord về null
+    setSelectedKit(null); // Đặt lại kit đã chọn nếu có
+    setAvailableLabs([]); // Đặt lại danh sách Labs nếu cần
+    setOpen(false); // Đóng modal
   };
 
   const columns = [
@@ -595,18 +610,6 @@ function ManagerContentPackage() {
                 </Tag>
               </Option>
             </Select>
-            {/* <Select
-              placeholder="Bao gồm những bài lab"
-              value={filters.includeLabs}
-              onChange={(value) =>
-                setFilters({ ...filters, includeLabs: value })
-              }
-              style={{ width: "250px" }} // Đặt kích thước cho "Include Labs"
-            >
-              <Option value={undefined}>Tất Cả</Option>
-              <Option value={true}>Có</Option>
-              <Option value={false}>Không</Option>
-            </Select> */}
           </div>
           <div className="w-full flex gap-4 justify-end">
             {/* Nút Search */}
@@ -629,6 +632,8 @@ function ManagerContentPackage() {
           onClick={() => {
             form.resetFields();
             setEditingRecord(null);
+            setSelectedKit(null); // Đặt lại kit đã chọn nếu có
+            setAvailableLabs([]);
             setOpen(true);
           }}
           className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
@@ -663,7 +668,7 @@ function ManagerContentPackage() {
       <Modal
         title={editingRecord ? "Chỉnh Sửa Gói" : "Tạo Gói Mới"}
         open={isOpen}
-        onCancel={() => setOpen(false)}
+        onCancel={handleCancel}
         onOk={() => form.submit()}
       >
         <Spin spinning={isSubmitting}>
@@ -743,7 +748,12 @@ function ManagerContentPackage() {
               <InputNumber min={0} style={{ width: "100%" }} />
             </Form.Item>
 
-            <Form.Item name="status" label="Trạng thái" valuePropName="checked">
+            <Form.Item
+              name="status"
+              label="Trạng thái"
+              valuePropName="checked"
+              style={{ display: editingRecord ? "none" : "block" }} // Ẩn trường khi chỉnh sửa
+            >
               <Switch
                 checkedChildren="Có sẵn"
                 unCheckedChildren="Không có sẵn"

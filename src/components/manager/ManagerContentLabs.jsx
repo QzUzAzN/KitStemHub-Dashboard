@@ -24,6 +24,7 @@ import {
   Spin,
   Tag,
   Typography,
+  message,
 } from "antd";
 import { useEffect, useState } from "react";
 import { Option } from "antd/es/mentions";
@@ -569,6 +570,13 @@ function ManagerContentLabs() {
     }
   };
 
+  const handleCancel = () => {
+    setOpen(false);
+    setEditingRecord(null);
+    setSelectedKit(null); // Reset selectedKit khi hủy modal
+    form.resetFields(); // Reset các trường trong form
+  };
+
   useEffect(() => {
     fetchLabs();
     fetchLevelsAndKits();
@@ -626,6 +634,7 @@ function ManagerContentLabs() {
           onClick={() => {
             form.resetFields();
             setEditingRecord(null);
+            setSelectedKit(null);
             setOpen(true);
           }}
           className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
@@ -664,7 +673,7 @@ function ManagerContentLabs() {
       <Modal
         title={editingRecord ? "Chỉnh sửa Lab" : "Tạo mới Lab"}
         open={isOpen}
-        onCancel={() => setOpen(false)} // Đóng modal
+        onCancel={handleCancel} // Đóng modal
         onOk={() => form.submit()} // Gọi hàm submit khi bấm OK
       >
         <Spin spinning={isSubmitting}>
@@ -770,13 +779,26 @@ function ManagerContentLabs() {
             </Form.Item>
             <Form.Item label="Tệp" name="file">
               <Upload
-                beforeUpload={() => false}
+                accept=".pdf,.doc,.docx"
+                beforeUpload={(file) => {
+                  const allowedTypes = [
+                    "application/pdf",
+                    "application/msword",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                  ];
+                  if (!allowedTypes.includes(file.type)) {
+                    message.error("Chỉ cho phép tải file PDF hoặc Word");
+                    return Upload.LIST_IGNORE; // Ngăn file không hợp lệ vào danh sách tải lên
+                  }
+                  return false; // Ngăn tải file lên tự động
+                }}
                 onChange={handleFileChange}
                 maxCount={1}
               >
                 <Button icon={<UploadOutlined />}>Tải tệp lên</Button>
               </Upload>
             </Form.Item>
+
             {/* Status */}
             {!editingRecord && (
               <Form.Item
