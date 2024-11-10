@@ -114,23 +114,9 @@ function ManagerContentKits() {
       }
 
       setLoading(false);
-
-      // if (showNotification) {
-      //   notification.destroy();
-      //   notification.success({
-      //     message: "Thành công",
-      //     description: "Lấy danh sách kits thành công!",
-      //     duration: 3,
-      //   });
-      // }
     } catch (error) {
       console.error("Error fetching kits:", error);
       setLoading(false);
-      // notification.error({
-      //   message: "Lỗi",
-      //   description: "Có lỗi xảy ra khi lấy danh sách kits!",
-      //   duration: 3,
-      // });
     } finally {
       setLoading(false); // Kết thúc loading sau khi API hoàn thành
     }
@@ -385,11 +371,6 @@ function ManagerContentKits() {
     } catch (error) {
       console.error("Error fetching components:", error);
       setIsFetchingComponents(false); // Dừng loading nếu có lỗi
-      // notification.error({
-      //   message: "Lỗi",
-      //   description: "Có lỗi xảy ra khi lấy danh sách thành phần!",
-      //   duration: 3,
-      // });
     }
   };
 
@@ -412,11 +393,6 @@ function ManagerContentKits() {
     } catch (error) {
       console.error("Lỗi khi lấy thành phần:", error);
       notification.destroy();
-      // notification.error({
-      //   message: "Lỗi",
-      //   description: "Có lỗi xảy ra khi lấy danh sách thành phần!",
-      //   duration: 3,
-      // });
     }
   };
 
@@ -855,6 +831,9 @@ function ManagerContentKits() {
           onClick={() => {
             form.resetFields();
             setEditingRecord(null);
+            setImageFiles([]);
+            setImagePreviews([]);
+            setSelectedComponents([]);
             setOpen(true);
           }}
           className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
@@ -1058,11 +1037,15 @@ function ManagerContentKits() {
             <Form.Item label="Tải ảnh lên" name="images">
               <Input
                 type="file"
+                accept="image/*"
                 multiple
                 onChange={(e) => {
                   const files = Array.from(e.target.files);
-                  setImageFiles(files);
-                  const filePreviews = files.map((file) => {
+                  const imageFiles = files.filter((file) =>
+                    file.type.startsWith("image/")
+                  );
+                  setImageFiles(imageFiles);
+                  const filePreviews = imageFiles.map((file) => {
                     const reader = new FileReader();
                     return new Promise((resolve) => {
                       reader.onload = (event) => resolve(event.target.result);
@@ -1075,21 +1058,26 @@ function ManagerContentKits() {
                   });
                 }}
               />
-              <div className="grid grid-cols-3 gap-4 mt-2">
-                {imagePreviews.map((preview, index) => (
-                  <img
-                    key={index}
-                    src={preview}
-                    alt={`Preview ${index + 1}`}
-                    style={{
-                      width: "100px",
-                      height: "auto",
-                      marginTop: "10px",
-                    }}
-                  />
-                ))}
-              </div>
-              {!imageFiles.length &&
+              {/* Hiển thị hình ảnh xem trước nếu có ảnh mới được tải lên */}
+              {imageFiles.length > 0 && (
+                <div className="grid grid-cols-3 gap-4 mt-2">
+                  {imagePreviews.map((preview, index) => (
+                    <img
+                      key={index}
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      style={{
+                        width: "100px",
+                        height: "auto",
+                        marginTop: "10px",
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Hiển thị hình ảnh đã tồn tại nếu không có ảnh mới được tải lên */}
+              {imageFiles.length === 0 &&
                 editingRecord &&
                 editingRecord["kit-images"] &&
                 editingRecord["kit-images"].length > 0 && (
