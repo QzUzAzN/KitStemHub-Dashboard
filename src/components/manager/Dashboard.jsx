@@ -44,12 +44,11 @@ const formatCurrency = (value) => {
 };
 
 const chartColors = [
-  "rgba(239, 68, 68, 0.8)", // Red
-  "rgba(139, 92, 246, 0.8)", // Purplez
-  "rgba(245, 158, 11, 0.8)", // Yellow
-  "rgba(16, 185, 129, 0.8)", // Green
-
-  "rgba(59, 130, 246, 0.8)", // Blue
+  "rgba(59, 130, 246, 0.8)", // Màu gốc
+  "rgba(59, 130, 246, 0.7)", // Màu giảm alpha
+  "rgba(59, 130, 246, 0.6)", // Màu giảm alpha
+  "rgba(59, 130, 246, 0.5)", // Màu giảm alpha
+  "rgba(59, 130, 246, 0.4)", // Màu giảm alpha
 ];
 
 function Dashboard() {
@@ -343,7 +342,7 @@ function Dashboard() {
           labels: topPackages.map((pkg) =>
             pkg["package-name"] === "N/A"
               ? "Chưa có dữ liệu"
-              : `${pkg["package-name"]} (${pkg["kit-name"]})`
+              : pkg["package-name"] + " - " + pkg["kit-name"]
           ),
           datasets: [
             {
@@ -413,13 +412,16 @@ function Dashboard() {
         while (packages.length < 5) {
           packages.push({
             "kit-name": "N/A",
+            "package-name": "N/A",
             "total-package-price": 0,
           });
         }
 
         setTopRevenueChartData({
           labels: packages.map((pkg) =>
-            pkg["kit-name"] === "N/A" ? "Chưa có dữ liệu" : pkg["kit-name"]
+            pkg["kit-name"] === "N/A"
+              ? "Chưa có dữ liệu"
+              : pkg["package-name"] + " - " + pkg["kit-name"]
           ),
           datasets: [
             {
@@ -699,15 +701,6 @@ function Dashboard() {
             loading={isLoading}
             disabled={isLoading}
           />
-          <Button
-            type="primary"
-            icon={<DownloadOutlined />}
-            onClick={handleDownloadReport}
-            className="bg-blue-500 hover:bg-blue-600 flex items-center"
-            loading={isLoading}
-          >
-            Tải Báo Cáo
-          </Button>
         </div>
       </div>
 
