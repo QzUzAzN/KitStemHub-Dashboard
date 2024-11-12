@@ -119,6 +119,7 @@ function LoginInput() {
           layout="vertical"
           size="large"
           className="space-y-4"
+          validateTrigger="onSubmit" // chỉ validate khi submit
         >
           <Form.Item
             name="email"
