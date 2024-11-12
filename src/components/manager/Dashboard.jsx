@@ -342,7 +342,7 @@ function Dashboard() {
           labels: topPackages.map((pkg) =>
             pkg["package-name"] === "N/A"
               ? "Chưa có dữ liệu"
-              : `${pkg["package-name"]} (${pkg["kit-name"]})`
+              : pkg["package-name"] + " - " + pkg["kit-name"]
           ),
           datasets: [
             {
@@ -412,13 +412,16 @@ function Dashboard() {
         while (packages.length < 5) {
           packages.push({
             "kit-name": "N/A",
+            "package-name": "N/A",
             "total-package-price": 0,
           });
         }
 
         setTopRevenueChartData({
           labels: packages.map((pkg) =>
-            pkg["kit-name"] === "N/A" ? "Chưa có dữ liệu" : pkg["kit-name"]
+            pkg["kit-name"] === "N/A"
+              ? "Chưa có dữ liệu"
+              : pkg["package-name"] + " - " + pkg["kit-name"]
           ),
           datasets: [
             {
@@ -698,15 +701,6 @@ function Dashboard() {
             loading={isLoading}
             disabled={isLoading}
           />
-          <Button
-            type="primary"
-            icon={<DownloadOutlined />}
-            onClick={handleDownloadReport}
-            className="bg-blue-500 hover:bg-blue-600 flex items-center"
-            loading={isLoading}
-          >
-            Tải Báo Cáo
-          </Button>
         </div>
       </div>
 
