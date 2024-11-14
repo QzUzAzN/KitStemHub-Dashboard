@@ -58,7 +58,7 @@ function ManagerUser() {
         page: page - 1,
         pageSize: pageSize,
       };
-      console.log("params: ", params);
+
       const response = await api.get("users", {
         params,
       });
@@ -81,7 +81,6 @@ function ManagerUser() {
           current: 1,
           pageSize: pageSize,
         });
-        console.error("No user data found in response:", response.data);
       }
 
       setLoading(false);
@@ -103,7 +102,7 @@ function ManagerUser() {
       const response = await api.delete(
         `users/${encodeURIComponent(userName)}`
       );
-      console.log("User deleted:", response.data);
+
       await fetchUsers();
       notification.destroy();
       notification.success({
@@ -128,7 +127,6 @@ function ManagerUser() {
       const response = await api.put(
         `/users/restore/${encodeURIComponent(userName)}`
       );
-      console.log("User restored:", response.data);
       await fetchUsers();
       notification.destroy();
       notification.success({
@@ -242,8 +240,8 @@ function ManagerUser() {
             <Popconfirm
               title="Bạn có chắc chắn muốn xóa?"
               onConfirm={() => {
-                console.log("Attempting to delete user:", record["user-name"]); // Kiểm tra tên người dùng
-                deleteUser(record["user-name"]); // Gọi hàm xoá với tên người dùng
+                console.log("Attempting to delete user:", record["user-name"]);
+                deleteUser(record["user-name"]);
               }}
             >
               <DeleteOutlined className="cursor-pointer text-red-500" />
@@ -253,7 +251,7 @@ function ManagerUser() {
               title="Bạn có muốn khôi phục người dùng này?"
               onConfirm={() => {
                 console.log("Attempting to restore user:", record["user-name"]);
-                restoreUser(record["user-name"]); // Khôi phục người dùng thành "Available"
+                restoreUser(record["user-name"]);
               }}
             >
               <UndoOutlined className="cursor-pointer text-green-400" />

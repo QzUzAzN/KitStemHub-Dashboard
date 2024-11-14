@@ -51,7 +51,6 @@ function ManagerStaff() {
     status: undefined,
   });
 
-  // Fetch staff data from API
   const fetchStaff = async (
     page = 1,
     pageSize = 20,
@@ -70,11 +69,9 @@ function ManagerStaff() {
         page: page - 1,
         pageSize: pageSize,
       };
-      console.log("params: ", params);
       const response = await api.get("/users", {
         params,
       });
-      console.log(response.data.details.data.users); // Kiểm tra dữ liệu trả về từ API
 
       if (response.data?.details?.data?.users) {
         const staffData = response.data.details.data.users.map((user) => ({
@@ -105,19 +102,12 @@ function ManagerStaff() {
           current: 1,
           pageSize: pageSize,
         });
-        console.error("No staff data found in response:", response.data);
       }
 
       setLoading(false);
     } catch (error) {
       console.error("Error fetching staff:", error);
       setLoading(false);
-      notification.destroy();
-      notification.error({
-        message: "Lỗi",
-        description: "Có lỗi xảy ra khi lấy danh sách nhân viên!",
-        duration: 3,
-      });
     }
   };
 
@@ -136,13 +126,13 @@ function ManagerStaff() {
       };
       console.log("Create payload:", payload);
       const response = await api.post("/users/register/staff", payload);
-      console.log("Create response:", response.data); // Kiểm tra dữ liệu trả về sau khi tạo
+      console.log("Create response:", response.data);
       notification.success({
         message: "Thành công",
         description: "Nhân viên đã được thêm thành công!",
       });
-      await fetchStaff(); // Refresh the list
-      setIsModalVisible(false); // Close modal after success
+      await fetchStaff();
+      setIsModalVisible(false);
     } catch (error) {
       notification.error({
         message: "Lỗi",
@@ -281,21 +271,18 @@ function ManagerStaff() {
     });
   };
 
-  // Hàm mở modal và reset lại form
   const handleAddStaff = () => {
-    setEditingRecord(null); // Đảm bảo không có bản ghi đang chỉnh sửa
-    form.resetFields(); // Reset tất cả các trường của form
-    setAddress(""); // Reset địa chỉ khi thêm mới
+    setEditingRecord(null);
+    form.resetFields();
+    setAddress("");
     setIsModalVisible(true);
   };
 
-  // Đóng modal và đảm bảo rằng form được reset mỗi khi modal đóng
   const handleCancel = () => {
-    form.resetFields(); // Reset lại form khi đóng modal
+    form.resetFields();
     setIsModalVisible(false);
   };
 
-  // Kiểm tra xem email đã tồn tại chưa
   const checkAvailability = async (email, phoneNumber) => {
     try {
       const response = await api.get("/users", { params: { role: "staff" } });
@@ -315,16 +302,10 @@ function ManagerStaff() {
     }
   };
 
-  // Hàm tạo hoặc cập nhật nhân viên
   const handleSave = async () => {
     try {
-      // Lấy tất cả giá trị của các trường từ form
       const values = form.getFieldsValue();
 
-      // Log ra các trường dữ liệu
-      console.log("Form Data:", values);
-
-      // Thực hiện validate dữ liệu
       await form.validateFields();
 
       if (editingRecord) {
@@ -334,7 +315,7 @@ function ManagerStaff() {
           values.email,
           values["phone-number"]
         );
-        // Xử lý nếu email hoặc số điện thoại đã tồn tại
+
         if (emailExists) {
           form.setFields([
             {
@@ -360,9 +341,9 @@ function ManagerStaff() {
     }
   };
   const handleAddressSelected = (selectedAddress) => {
-    setAddress(selectedAddress); // Đặt địa chỉ vào state chính
-    form.setFieldsValue({ address: selectedAddress }); // Cập nhật trường địa chỉ trong form
-    setIsAddressModalVisible(false); // Đóng modal địa chỉ
+    setAddress(selectedAddress);
+    form.setFieldsValue({ address: selectedAddress });
+    setIsAddressModalVisible(false);
   };
 
   useEffect(() => {

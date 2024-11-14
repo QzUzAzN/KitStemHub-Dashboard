@@ -35,18 +35,18 @@ const { Text } = Typography;
 function ManagerContentLabs() {
   const [formFilter] = Form.useForm();
   const [form] = Form.useForm();
-  const [dataSource, setDataSource] = useState([]); // Sử dụng dữ liệu labs từ props
+  const [dataSource, setDataSource] = useState([]);
   const [isOpen, setOpen] = useState(false);
   const [levels, setLevels] = useState([]);
   const [kits, setKits] = useState([]);
   const [file, setFile] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null); // Trạng thái để biết là thêm mới hay chỉnh sửa
-  const [loading, setLoading] = useState(false); // Thêm state để hiển thị trạng thái loading
+  const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pagination, setPagination] = useState({
-    current: 1, // Bắt đầu từ trang 0
-    total: 0, // Tổng số items
-    pageSize: 20, // Số mục trên mỗi trang (cố định là 20)
+    current: 1,
+    total: 0,
+    pageSize: 20,
   });
   const [kitPagination, setKitPagination] = useState({
     current: 1,
@@ -57,7 +57,7 @@ function ManagerContentLabs() {
     labName: "",
     kitName: "",
     status: "",
-  }); // Bộ lọc cho lab name và kit name
+  });
   const [selectedKit, setSelectedKit] = useState(null);
   const [kitModalVisible, setKitModalVisible] = useState(false);
   const [kitSearchName, setKitSearchName] = useState("");
@@ -65,14 +65,9 @@ function ManagerContentLabs() {
   // Hàm xử lý khi chọn file từ Upload component
   const handleFileChange = (info) => {
     if (info.file.status === "removed") {
-      setFile(null); // Xóa file khỏi state nếu người dùng xóa file
+      setFile(null);
     } else {
       setFile(info.fileList[0].originFileObj);
-
-      console.log(info);
-      console.log(info.fileList[0].originFileObj);
-
-      // Lưu file vào state
     }
   };
 
@@ -82,23 +77,20 @@ function ManagerContentLabs() {
     searchFilters = filters
   ) => {
     try {
-      setLoading(true); // Bắt đầu loading khi gọi API
-      // Nếu page nhỏ hơn 1, ta đặt nó về 1 để không gửi giá trị âm
-      const currentPage = Math.max(0, page - 1); // Đảm bảo page không bao giờ âm
+      setLoading(true);
+
+      const currentPage = Math.max(0, page - 1);
       const params = {
-        page: currentPage, // API bắt đầu từ trang 0
+        page: currentPage,
         pageSize: pageSize,
-        "lab-name": searchFilters.labName || filters.labName, // Lọc theo lab name
-        "kit-name": searchFilters.kitName || filters.kitName, // Lọc theo kit name
+        "lab-name": searchFilters.labName || filters.labName,
+        "kit-name": searchFilters.kitName || filters.kitName,
       };
 
       if (searchFilters.status) {
         params.status = searchFilters.status;
       }
 
-      // Gọi API với tham số page và kiểm tra tham số
-      console.log("Fetching labs with params:", params);
-      // Gọi API với tham số page
       const response = await api.get("labs", {
         params,
       });
@@ -108,7 +100,6 @@ function ManagerContentLabs() {
         const totalPages = response.data.details.data["total-pages"] || 0;
         // const currentPage = response.data.details.data["current-page"] || 0;
 
-        // Cập nhật dữ liệu lab vào state
         setDataSource(labsData);
 
         setPagination({
@@ -117,7 +108,6 @@ function ManagerContentLabs() {
           pageSize: pageSize,
         });
       } else {
-        // Nếu không có dữ liệu mong đợi
         setDataSource([]);
         setPagination({
           total: 0,
@@ -129,7 +119,7 @@ function ManagerContentLabs() {
       setLoading(false);
     } catch (error) {
       console.error("Error fetching labs:", error);
-      setLoading(false); // Tắt loading nếu có lỗi
+      setLoading(false);
     }
   };
 
@@ -159,7 +149,7 @@ function ManagerContentLabs() {
     form.setFieldsValue({ kit: kit.id });
   };
 
-  // Hàm lấy Levels và Kits từ API
+  // Hàm lấy Levels và Kits
   const fetchLevelsAndKits = async () => {
     try {
       const levelsResponse = await api.get("levels");
@@ -172,12 +162,9 @@ function ManagerContentLabs() {
     }
   };
 
-  // Hàm tạo Kit mới với multipart/form-data
   const createLab = async (newLab) => {
     setIsSubmitting(true);
     try {
-      console.log("New Lab data before FormData:", newLab); // Log the incoming data
-      console.log("Status value before FormData:", newLab.status);
       const formData = new FormData();
 
       formData.append("LevelId", newLab.levelId);
@@ -187,25 +174,14 @@ function ManagerContentLabs() {
       formData.append("MaxSupportTimes", newLab.maxSupportTimes);
       formData.append("Author", newLab.author);
       formData.append("Status", newLab.status ? true : false);
-      // Kiểm tra file trước khi thêm vào formData
 
-      // Log each entry in FormData to confirm data being sent
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-      if (!file) {
-        alert("Vui lòng tải lên một tệp trước khi gửi.");
-        return; // Ngừng nếu không có file
-      }
       formData.append("File", file);
       const response = await api.post("labs", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      console.log("Created Lab:", response.data);
-      fetchLabs(pagination.current, pagination.pageSize); // Refresh lại danh sách sau khi thêm mới
+      fetchLabs(pagination.current, pagination.pageSize);
       notification.destroy();
       notification.success({
         message: "Thành công",
@@ -227,13 +203,12 @@ function ManagerContentLabs() {
     setIsSubmitting(false);
   };
 
-  // Hàm cập nhật Lab với multipart/form-data và cấu trúc request mới
   const updateLab = async (id, updatedLab) => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
 
-      formData.append("Id", id); // Gửi ID vào body
+      formData.append("Id", id);
       formData.append("LevelId", updatedLab.levelId);
       formData.append("KitId", updatedLab.kitId);
       formData.append("Name", updatedLab.name);
@@ -241,19 +216,16 @@ function ManagerContentLabs() {
       formData.append("MaxSupportTimes", updatedLab.maxSupportTimes);
       formData.append("Author", updatedLab.author);
 
-      // Nếu có file thì thêm file vào formData
       if (updatedLab.file) {
         formData.append("File", updatedLab.file);
       }
 
-      // Gọi API cập nhật lab
       const response = await api.put("labs", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
-      console.log("Updated Lab:", response.data);
       fetchLabs(pagination.current, pagination.pageSize);
       notification.destroy();
       notification.success({
@@ -276,7 +248,6 @@ function ManagerContentLabs() {
     setIsSubmitting(false);
   };
 
-  // Hàm xóa Kit dựa trên ID
   const handleDelete = async (id) => {
     try {
       if (!id) {
@@ -285,7 +256,7 @@ function ManagerContentLabs() {
       }
 
       const response = await api.delete(`labs/${id}`);
-      await fetchLabs(pagination.current, pagination.pageSize); // Refresh lại danh sách sau khi xóa
+      await fetchLabs(pagination.current, pagination.pageSize);
       notification.destroy();
       notification.success({
         message: "Thành công",
@@ -302,7 +273,7 @@ function ManagerContentLabs() {
       console.error(`Error deleting lab with id ${id}:`, error);
     }
   };
-  // Hàm khôi phục lab
+
   const restoreLab = async (id) => {
     try {
       const formData = new FormData();
@@ -328,32 +299,32 @@ function ManagerContentLabs() {
     }
   };
 
-  // Hàm xử lý khi submit filter (khi người dùng nhấn Search)
+  // Hàm xử lý khi submit filter
   const handleFilterSubmit = (values) => {
     const updatedFilters = {
       ...filters,
-      ...values, // Chỉ update những trường mà người dùng đã điền
+      ...values,
     };
-    setFilters(updatedFilters); // Cập nhật filters với các giá trị mới
-    fetchLabs(1, pagination.pageSize, updatedFilters); // Gọi API với filter đã cập nhật
+    setFilters(updatedFilters);
+    fetchLabs(1, pagination.pageSize, updatedFilters);
   };
 
-  // Hàm reset bộ lọc (Reset tất cả input và fetch lại tất cả dữ liệu)
+  // Hàm reset filter
   const resetFilters = () => {
-    formFilter.resetFields(); // Reset các input
+    formFilter.resetFields();
     setFilters({
       labName: "",
       kitName: "",
       status: "",
     });
-    fetchLabs(1, pagination.pageSize, { labName: "", kitName: "", status: "" }); // Fetch lại mà không có filter
+    fetchLabs(1, pagination.pageSize, { labName: "", kitName: "", status: "" });
   };
 
   const viewLabFile = async (labId) => {
     try {
       const response = await api.get(`labs/${labId}/url`);
       const signedUrl = response.data.details["signed-url"];
-      window.open(signedUrl, "_blank"); // Mở URL trong tab mới
+      window.open(signedUrl, "_blank");
     } catch (error) {
       notification.error({
         message: "Lỗi",
@@ -366,8 +337,8 @@ function ManagerContentLabs() {
 
   const columns = [
     {
-      title: "STT", // Cột Số Thứ Tự
-      key: "index", // Đặt tên cho cột
+      title: "STT",
+      key: "index",
       render: (text, record, index) => (
         <span>
           {(pagination.current - 1) * pagination.pageSize + index + 1}
@@ -414,7 +385,7 @@ function ManagerContentLabs() {
         <Text className="font-semibold text-gray-700">
           {price.toLocaleString()} VND
         </Text>
-      ), // Hiển thị số tiền
+      ),
     },
     {
       title: "Số lần hỗ trợ tối đa",
@@ -446,7 +417,7 @@ function ManagerContentLabs() {
     },
     {
       title: "Kit",
-      dataIndex: ["kit", "name"], // Lấy tên từ kit.name
+      dataIndex: ["kit", "name"],
       key: "kit",
       render: (kitName) => (
         <Text className="font-semibold text-orange-400">{kitName}</Text>
@@ -454,7 +425,7 @@ function ManagerContentLabs() {
     },
     {
       title: "Cấp độ",
-      dataIndex: ["level", "name"], // Lấy tên từ level.name
+      dataIndex: ["level", "name"],
       key: "level",
       render: (level) => (
         <Tag color="purple" className="font-semibold">
@@ -513,12 +484,11 @@ function ManagerContentLabs() {
   const handleEdit = (record) => {
     setEditingRecord(record);
 
-    // Fetch thông tin Kit cho Lab hiện tại
     const selectedKitData = kits.find((kit) => kit.id === record.kit.id);
     if (selectedKitData) {
       setSelectedKit(selectedKitData);
     } else {
-      setSelectedKit(null); // Nếu không tìm thấy Kit, đặt lại selectedKit về null
+      setSelectedKit(null);
     }
     form.setFieldsValue({
       ...record,
@@ -529,19 +499,14 @@ function ManagerContentLabs() {
     setOpen(true);
   };
 
-  // Xử lý khi lưu hoặc cập nhật
   const handleSaveOrUpdate = async (values) => {
     try {
       console.log(values);
       if (!file) {
-        alert("Vui lòng tải lên một tệp trước khi gửi.");
+        message.error("Vui lòng tải lên một tệp trước khi gửi.");
         return;
       }
-
-      console.log(values.name);
-
       const labData = {
-        //id: editingRecord ? editingRecord.id : null, // Đảm bảo có ID nếu đang chỉnh sửa
         kitId: selectedKit?.id || values.kit,
         levelId: values.level,
         name: values.name,
@@ -549,21 +514,16 @@ function ManagerContentLabs() {
         maxSupportTimes: values.maxSupportTimes,
         author: values.author,
         status: values.status,
-        file: file || editingRecord?.file, // Kiểm tra nếu đã có file trước đó
+        file: file || editingRecord?.file,
       };
-
-      console.log("Sending data to API:", labData); // Log FormData before sending
       if (editingRecord) {
-        // Nếu đang chỉnh sửa
-        await updateLab(editingRecord.id, labData); // Gọi API cập nhật
+        await updateLab(editingRecord.id, labData);
       } else {
-        // Nếu đang thêm mới
-        await createLab(labData); // Gọi API thêm mới
+        await createLab(labData);
       }
-
-      setOpen(false); // Đóng modal
-      form.resetFields(); // Reset form
-      setEditingRecord(null); // Reset trạng thái chỉnh sửa
+      setOpen(false);
+      form.resetFields();
+      setEditingRecord(null);
       fetchLabs(pagination.current, pagination.pageSize, filters);
     } catch (error) {
       console.error("Failed to save or update lab:", error);
@@ -573,8 +533,8 @@ function ManagerContentLabs() {
   const handleCancel = () => {
     setOpen(false);
     setEditingRecord(null);
-    setSelectedKit(null); // Reset selectedKit khi hủy modal
-    form.resetFields(); // Reset các trường trong form
+    setSelectedKit(null);
+    form.resetFields();
   };
 
   useEffect(() => {
@@ -635,6 +595,7 @@ function ManagerContentLabs() {
             form.resetFields();
             setEditingRecord(null);
             setSelectedKit(null);
+            setFile(null);
             setOpen(true);
           }}
           className="flex mr-4 gap-3 text-gray-900 hover:text-white border border-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-10 py-2.5 text-center me-2 mb-2 dark:border-gray-600 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-800"
@@ -657,14 +618,13 @@ function ManagerContentLabs() {
         }
         rowKey="id"
         pagination={{
-          current: pagination.current, // Hiển thị trang hiện tại, cộng 1 vì Ant Design bắt đầu từ 1
-          total: pagination.total, // Tổng số items
-          pageSize: pagination.pageSize, // Số mục trên mỗi trang (luôn là 20)
+          current: pagination.current,
+          total: pagination.total,
+          pageSize: pagination.pageSize,
           showSizeChanger: false,
           onChange: (page) => {
-            // Đảm bảo trang không bao giờ là số âm
             const safePage = Math.max(1, page);
-            fetchLabs(safePage, pagination.pageSize, filters); // Gọi lại API với trang mới
+            fetchLabs(safePage, pagination.pageSize, filters);
           },
         }}
       />
@@ -673,8 +633,8 @@ function ManagerContentLabs() {
       <Modal
         title={editingRecord ? "Chỉnh sửa Lab" : "Tạo mới Lab"}
         open={isOpen}
-        onCancel={handleCancel} // Đóng modal
-        onOk={() => form.submit()} // Gọi hàm submit khi bấm OK
+        onCancel={handleCancel}
+        onOk={() => form.submit()}
       >
         <Spin spinning={isSubmitting}>
           <Form
@@ -682,7 +642,7 @@ function ManagerContentLabs() {
             labelCol={{
               span: 24,
             }}
-            onFinish={handleSaveOrUpdate} // Gọi hàm lưu hoặc cập nhật khi form submit
+            onFinish={handleSaveOrUpdate}
           >
             {/* Name */}
             <Form.Item
@@ -788,9 +748,9 @@ function ManagerContentLabs() {
                   ];
                   if (!allowedTypes.includes(file.type)) {
                     message.error("Chỉ cho phép tải file PDF hoặc Word");
-                    return Upload.LIST_IGNORE; // Ngăn file không hợp lệ vào danh sách tải lên
+                    return Upload.LIST_IGNORE;
                   }
-                  return false; // Ngăn tải file lên tự động
+                  return false;
                 }}
                 onChange={handleFileChange}
                 maxCount={1}
