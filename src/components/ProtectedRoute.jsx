@@ -16,16 +16,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }, [location]);
 
   if (loading) {
-    // Return a centered spinner
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
+      <div className="flex justify-center items-center h-screen">
         <Spin size="large" />
       </div>
     );
@@ -39,8 +31,17 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  const userDashboardPath = {
+    admin: "/admin",
+    manager: "/manager",
+    staff: "/staff",
+  }[user.role];
+
+  if (location.pathname === "/") {
+    return <Navigate to={userDashboardPath} replace />;
+  }
+
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Hiển thị thông báo
     if (!toastShown.current) {
       toast.error(
         `You don't have permission to access this page. Redirecting to your dashboard.`,
@@ -52,20 +53,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
       toastShown.current = true;
     }
 
-    // Chuyển hướng dựa trên vai trò của người dùng
-    let redirectPath = "/";
-    switch (user.role) {
-      case "admin":
-        redirectPath = "/admin";
-        break;
-      case "manager":
-        redirectPath = "/manager";
-        break;
-      case "staff":
-        redirectPath = "/staff";
-    }
-
-    return <Navigate to={redirectPath} replace />;
+    return <Navigate to={userDashboardPath} replace />;
   }
 
   return <>{children}</>;

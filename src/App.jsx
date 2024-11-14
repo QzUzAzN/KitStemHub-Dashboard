@@ -87,7 +87,7 @@ function App() {
             <Route path="support-history" element={<SupportHistory />} />
             <Route path="profile" element={<StaffProfile />} />
           </Route>
-          <Route path="/" element={<LoginRegisterPage />} />
+          {/* <Route path="/" element={<LoginRegisterPage />} /> */}
         </Routes>
       </Router>
     </AuthProvider>

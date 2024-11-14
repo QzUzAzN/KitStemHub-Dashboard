@@ -1,11 +1,7 @@
-import { Card, Row, Col, Select, Spin, Button } from "antd";
+import { Card, Row, Col, Select, Spin } from "antd";
 import { Line, Bar } from "react-chartjs-2";
 import api from "../../config/axios";
-import {
-  ShoppingCartOutlined,
-  DollarOutlined,
-  DownloadOutlined,
-} from "@ant-design/icons";
+import { ShoppingCartOutlined, DollarOutlined } from "@ant-design/icons";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -52,33 +48,138 @@ const chartColors = [
 ];
 
 function Dashboard() {
+  // 1. Khai báo tất cả states trước
   const [topSellerData, setTopSellerData] = useState({
     labels: [],
     datasets: [
       {
         label: "Số package đã bán",
         data: [],
-
         borderColor: "rgb(59, 130, 246)",
         borderWidth: 1,
       },
     ],
   });
 
-  const [selectedYear, setSelectedYear] = useState("2024");
+  const [statsYear, setStatsYear] = useState(
+    new Date().getFullYear().toString()
+  );
+  const [chartYear, setChartYear] = useState(
+    new Date().getFullYear().toString()
+  );
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [availableYears, setAvailableYears] = useState([]);
+  const [totalOrders, setTotalOrders] = useState(0);
 
-  // Thay đổi state revenueData
   const [revenueData, setRevenueData] = useState({
     revenues: [],
     profits: [],
     labels: [],
   });
+
   const [monthlyTotals, setMonthlyTotals] = useState({
     revenue: 0,
     profit: 0,
   });
-  // Thêm hàm để fetch dữ liệu doanh thu
-  const fetchRevenueData = async (year) => {
+
+  const [topRevenueChartData, setTopRevenueChartData] = useState({
+    labels: Array(5).fill("Chưa có dữ liệu"),
+    datasets: [
+      {
+        label: "Doanh thu",
+        data: Array(5).fill(0),
+        backgroundColor: "rgba(34, 197, 94, 0.8)",
+        borderColor: "rgb(34, 197, 94)",
+        borderWidth: 1,
+      },
+    ],
+  });
+
+  // Add chartData state
+  const [chartData, setChartData] = useState({
+    labels: [],
+    datasets: [
+      {
+        label: "Tổng doanh thu",
+        data: [],
+        borderColor: "rgb(59, 130, 246)",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: "rgb(59, 130, 246)",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      },
+      {
+        label: "Tổng lợi nhuận",
+        data: [],
+        borderColor: "rgb(34, 197, 94)",
+        backgroundColor: "rgba(34, 197, 94, 0.1)",
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: "rgb(34, 197, 94)",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      },
+    ],
+  });
+
+  // 2. Khai báo các hàm utility
+  const getLastDayOfMonth = (year, month) => {
+    return new Date(year, month, 0).getDate();
+  };
+
+  // 3. Khai báo các hàm fetch data
+  const fetchMonthlyStats = async (year, month) => {
+    try {
+      const [revenueResponse, profitResponse] = await Promise.all([
+        api.get(`analytics/revenues/${year}`),
+        api.get(`analytics/profits/${year}`),
+      ]);
+
+      if (
+        revenueResponse.data.status === "success" &&
+        profitResponse.data.status === "success"
+      ) {
+        const revenueMonthlyData =
+          revenueResponse.data.details.data["year-dto"];
+        const profitMonthlyData = profitResponse.data.details.data["year-dto"];
+
+        const monthNames = [
+          "january",
+          "february",
+          "march",
+          "april",
+          "may",
+          "june",
+          "july",
+          "august",
+          "september",
+          "october",
+          "november",
+          "december",
+        ];
+
+        // Calculate monthly totals for the selected month
+        const monthIndex = month - 1;
+        const monthName = monthNames[monthIndex];
+
+        setMonthlyTotals({
+          revenue: revenueMonthlyData[monthName] || 0,
+          profit: profitMonthlyData[monthName] || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching monthly stats:", error);
+    }
+  };
+
+  const fetchChartRevenue = async (year) => {
     try {
       const [revenueResponse, profitResponse] = await Promise.all([
         api.get(`analytics/revenues/${year}`),
@@ -95,12 +196,10 @@ function Dashboard() {
 
         const currentDate = new Date();
         const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth(); // 0-11
+        const currentMonth = currentDate.getMonth();
 
-        // Determine how many months to show
         const monthsToShow = year < currentYear ? 12 : currentMonth + 1;
 
-        // Create arrays with monthly data
         const monthNames = [
           "january",
           "february",
@@ -124,68 +223,242 @@ function Dashboard() {
           .slice(0, monthsToShow)
           .map((month) => profitMonthlyData[month]);
 
-        // Create labels only for shown months
         const labels = Array.from(
           { length: monthsToShow },
           (_, i) => `Tháng ${i + 1}`
         );
 
-        setRevenueData({
-          revenues,
-          profits,
+        setChartData({
           labels,
-        });
-
-        // Calculate monthly totals for the selected month
-        const monthIndex = selectedMonth - 1;
-        // console.log(monthIndex);
-        setMonthlyTotals({
-          revenue: revenues[monthIndex] || 0,
-          profit: profits[monthIndex] || 0,
+          datasets: [
+            {
+              ...chartData.datasets[0],
+              data: revenues,
+            },
+            {
+              ...chartData.datasets[1],
+              data: profits,
+            },
+          ],
         });
       }
     } catch (error) {
-      console.error("Error fetching revenue/profit data:", error);
+      console.error("Error fetching chart revenue:", error);
     }
   };
 
-  // Thêm useEffect để fetch dữ liệu khi năm thay đổi
-  useEffect(() => {
-    fetchRevenueData(selectedYear);
-  }, [selectedYear]);
+  const fetchTotalOrders = async (year, month) => {
+    try {
+      const monthStr = month.toString().padStart(2, "0");
+      const lastDay = getLastDayOfMonth(year, month);
 
-  // Cập nhật chartData để sử dụng labels động
-  const chartData = {
-    labels: revenueData.labels,
-    datasets: [
-      {
-        label: "Tổng doanh thu",
-        data: revenueData.revenues,
-        borderColor: "rgb(59, 130, 246)",
-        backgroundColor: "rgba(59, 130, 246, 0.1)",
-        tension: 0.4,
-        fill: true,
-        pointBackgroundColor: "rgb(59, 130, 246)",
-        pointBorderColor: "#fff",
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-      {
-        label: "Tổng lợi nhuận",
-        data: revenueData.profits,
-        borderColor: "rgb(34, 197, 94)",
-        backgroundColor: "rgba(34, 197, 94, 0.1)",
-        tension: 0.4,
-        fill: true,
-        pointBackgroundColor: "rgb(34, 197, 94)",
-        pointBorderColor: "#fff",
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-    ],
+      const fromStr = `${year}-${monthStr}-01`;
+      const toStr = `${year}-${monthStr}-${lastDay}`;
+
+      const response = await api.get(
+        `analytics/orders?from-date=${fromStr}&to-date=${toStr}`
+      );
+      // console.log(" + ", response.data);
+
+      if (response.data.status === "success") {
+        setTotalOrders(response.data.details.data["number-of-orders"]);
+      }
+    } catch (error) {
+      console.error("Error fetching total orders:", error);
+      setTotalOrders(0);
+    }
   };
+
+  const fetchTopPackages = async (year) => {
+    try {
+      const response = await api.get(`analytics/packages/top/5/year/${year}`);
+      console.log(response.data);
+
+      if (response.data.status === "success") {
+        let topPackages = response.data.details.data["top-packages"];
+
+        // Ensure we always have exactly 5 items
+        while (topPackages.length < 5) {
+          topPackages.push({
+            "package-id": null,
+            "package-name": "N/A",
+            "kit-id": null,
+            "kit-name": "",
+            "sold-quantity": 0,
+          });
+        }
+
+        // Transform API data for chart
+        const chartData = {
+          labels: topPackages.map((pkg) =>
+            pkg["package-name"] === "N/A"
+              ? "Chưa có dữ liệu"
+              : pkg["package-name"] + " - " + pkg["kit-name"]
+          ),
+          datasets: [
+            {
+              label: "Số package đã bán",
+              data: topPackages.map((pkg) => pkg["sold-quantity"]),
+              backgroundColor: chartColors,
+              borderColor: chartColors,
+              borderWidth: 1,
+            },
+          ],
+        };
+
+        setTopSellerData(chartData);
+      }
+    } catch (error) {
+      // If there's an error, show empty data with 5 placeholder items
+      const emptyData = {
+        labels: Array(5).fill("Chưa có dữ liệu"),
+        datasets: [
+          {
+            label: "Số package đã bán",
+            data: Array(5).fill(0),
+            backgroundColor: chartColors,
+            borderColor: chartColors,
+            borderWidth: 1,
+          },
+        ],
+      };
+      setTopSellerData(emptyData);
+      console.error("Error fetching top packages:", error);
+    }
+  };
+
+  const fetchTopRevenuePackages = async (year) => {
+    try {
+      const fromDate = `${year}-01-01`;
+      const toDate = `${year}-12-31`;
+
+      const response = await api.get(
+        `analytics/package/sale?from-date=${fromDate}&to-date=${toDate}`
+      );
+
+      if (response.data.status === "success") {
+        let packages = response.data.details.data.packages;
+
+        // Ensure we always have exactly 5 items
+        while (packages.length < 5) {
+          packages.push({
+            "kit-name": "N/A",
+            "package-name": "N/A",
+            "total-package-price": 0,
+          });
+        }
+
+        setTopRevenueChartData({
+          labels: packages.map((pkg) =>
+            pkg["kit-name"] === "N/A"
+              ? "Chưa có dữ liệu"
+              : pkg["package-name"] + " - " + pkg["kit-name"]
+          ),
+          datasets: [
+            {
+              label: "Doanh thu",
+              data: packages.map((pkg) => pkg["total-package-price"]),
+              backgroundColor: chartColors,
+              borderColor: chartColors,
+              borderWidth: 1,
+            },
+          ],
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching top revenue packages:", error);
+      setTopRevenueChartData({
+        labels: Array(5).fill("Chưa có dữ liệu"),
+        datasets: [
+          {
+            label: "Doanh thu",
+            data: Array(5).fill(0),
+            backgroundColor: chartColors,
+            borderColor: chartColors,
+            borderWidth: 1,
+          },
+        ],
+      });
+    }
+  };
+
+  // 4. Khai báo các hàm xử lý sự kiện
+  const handleStatsYearChange = (value) => {
+    setStatsYear(value);
+  };
+
+  const handleChartYearChange = (value) => {
+    setChartYear(value);
+  };
+
+  const handleMonthChange = (value) => {
+    setSelectedMonth(value);
+  };
+
+  // 5. Khai báo các useEffect
+  // Initialize years on mount
+  useEffect(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let year = currentYear; year >= 2020; year--) {
+      years.push(year);
+    }
+    setAvailableYears(years);
+    setStatsYear(currentYear.toString());
+    setChartYear(currentYear.toString());
+  }, []);
+
+  // Effect for stats data
+  useEffect(() => {
+    const fetchStatsData = async () => {
+      try {
+        setIsLoading(true);
+        await Promise.all([
+          fetchTotalOrders(statsYear, selectedMonth),
+          fetchMonthlyStats(statsYear, selectedMonth),
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStatsData();
+  }, [statsYear, selectedMonth]);
+
+  // Effect for chart data
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        setIsLoading(true);
+        await Promise.all([
+          fetchChartRevenue(chartYear),
+          fetchTopPackages(chartYear),
+          fetchTopRevenuePackages(chartYear),
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchChartData();
+  }, [chartYear]);
+
+  // 6. Khai báo các biến phụ thuộc vào state
+  const stats = [
+    {
+      title: "Tổng Đơn Hàng",
+      value: (totalOrders || 0).toLocaleString("vi-VN"),
+      icon: <ShoppingCartOutlined className="text-yellow-500" />,
+    },
+    {
+      title: "Tổng Lợi Nhuận",
+      value: monthlyTotals.profit.toLocaleString("vi-VN") + " đ",
+      icon: <DollarOutlined className="text-green-500" />,
+    },
+    {
+      title: "Tổng Doanh Thu",
+      value: monthlyTotals.revenue.toLocaleString("vi-VN") + " đ",
+      icon: <DollarOutlined className="text-green-500" />,
+    },
+  ];
 
   //style cho chart
   const options = {
@@ -269,222 +542,6 @@ function Dashboard() {
         },
       },
     },
-  };
-
-  // Add new state for total orders
-  const [totalOrders, setTotalOrders] = useState(0);
-
-  // Add function to fetch total orders
-  const fetchTotalOrders = async (year, month) => {
-    try {
-      const monthStr = month.toString().padStart(2, "0");
-      const lastDay = getLastDayOfMonth(year, month);
-
-      const fromStr = `${year}-${monthStr}-01`;
-      const toStr = `${year}-${monthStr}-${lastDay}`;
-
-      const response = await api.get(
-        `analytics/orders?from-date=${fromStr}&to-date=${toStr}`
-      );
-      // console.log(" + ", response.data);
-
-      if (response.data.status === "success") {
-        setTotalOrders(response.data.details.data["number-of-orders"]);
-      }
-    } catch (error) {
-      console.error("Error fetching total orders:", error);
-      setTotalOrders(0);
-    }
-  };
-
-  // Update the stats array definition
-  const stats = [
-    {
-      title: "Tổng Đơn Hàng",
-      value: (totalOrders || 0).toLocaleString("vi-VN"),
-
-      icon: <ShoppingCartOutlined className="text-yellow-500" />,
-    },
-    {
-      title: "Tổng Lợi Nhuận",
-      value: monthlyTotals.profit.toLocaleString("vi-VN") + " đ",
-      icon: <DollarOutlined className="text-green-500" />,
-    },
-    {
-      title: "Tổng Doanh Thu",
-      value: monthlyTotals.revenue.toLocaleString("vi-VN") + " đ",
-      icon: <DollarOutlined className="text-green-500" />,
-    },
-  ];
-
-  // Add fetch function
-  const fetchTopPackages = async (year) => {
-    try {
-      const response = await api.get(`analytics/packages/top/5/year/${year}`);
-      console.log(response.data);
-
-      if (response.data.status === "success") {
-        let topPackages = response.data.details.data["top-packages"];
-
-        // Ensure we always have exactly 5 items
-        while (topPackages.length < 5) {
-          topPackages.push({
-            "package-id": null,
-            "package-name": "N/A",
-            "kit-id": null,
-            "kit-name": "",
-            "sold-quantity": 0,
-          });
-        }
-
-        // Transform API data for chart
-        const chartData = {
-          labels: topPackages.map((pkg) =>
-            pkg["package-name"] === "N/A"
-              ? "Chưa có dữ liệu"
-              : pkg["package-name"] + " - " + pkg["kit-name"]
-          ),
-          datasets: [
-            {
-              label: "Số package đã bán",
-              data: topPackages.map((pkg) => pkg["sold-quantity"]),
-              backgroundColor: chartColors,
-              borderColor: chartColors,
-              borderWidth: 1,
-            },
-          ],
-        };
-
-        setTopSellerData(chartData);
-      }
-    } catch (error) {
-      // If there's an error, show empty data with 5 placeholder items
-      const emptyData = {
-        labels: Array(5).fill("Chưa có dữ liệu"),
-        datasets: [
-          {
-            label: "Số package đã bán",
-            data: Array(5).fill(0),
-            backgroundColor: chartColors,
-            borderColor: chartColors,
-            borderWidth: 1,
-          },
-        ],
-      };
-      setTopSellerData(emptyData);
-      console.error("Error fetching top packages:", error);
-    }
-  };
-
-  // Add new state for top revenue data
-  const [topRevenueChartData, setTopRevenueChartData] = useState({
-    labels: Array(5).fill("Chưa có dữ liệu"),
-    datasets: [
-      {
-        label: "Doanh thu",
-        data: Array(5).fill(0),
-        backgroundColor: "rgba(34, 197, 94, 0.8)",
-        borderColor: "rgb(34, 197, 94)",
-        borderWidth: 1,
-      },
-    ],
-  });
-
-  // Add this function to get the last day of a month
-  const getLastDayOfMonth = (year, month) => {
-    return new Date(year, month, 0).getDate();
-  };
-
-  // Update the fetch function for top revenue packages
-  const fetchTopRevenuePackages = async (year) => {
-    try {
-      const fromDate = `${year}-01-01`;
-      const toDate = `${year}-12-31`;
-
-      const response = await api.get(
-        `analytics/package/sale?from-date=${fromDate}&to-date=${toDate}`
-      );
-
-      if (response.data.status === "success") {
-        let packages = response.data.details.data.packages;
-
-        // Ensure we always have exactly 5 items
-        while (packages.length < 5) {
-          packages.push({
-            "kit-name": "N/A",
-            "package-name": "N/A",
-            "total-package-price": 0,
-          });
-        }
-
-        setTopRevenueChartData({
-          labels: packages.map((pkg) =>
-            pkg["kit-name"] === "N/A"
-              ? "Chưa có dữ liệu"
-              : pkg["package-name"] + " - " + pkg["kit-name"]
-          ),
-          datasets: [
-            {
-              label: "Doanh thu",
-              data: packages.map((pkg) => pkg["total-package-price"]),
-              backgroundColor: chartColors,
-              borderColor: chartColors,
-              borderWidth: 1,
-            },
-          ],
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching top revenue packages:", error);
-      setTopRevenueChartData({
-        labels: Array(5).fill("Chưa có dữ liệu"),
-        datasets: [
-          {
-            label: "Doanh thu",
-            data: Array(5).fill(0),
-            backgroundColor: chartColors,
-            borderColor: chartColors,
-            borderWidth: 1,
-          },
-        ],
-      });
-    }
-  };
-
-  // Add state for selected month
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-
-  // Thêm state loading
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Cập nhật hàm fetchAllData
-  const fetchAllData = async (year, month) => {
-    try {
-      setIsLoading(true); // Bắt đầu loading
-      await Promise.all([
-        fetchRevenueData(year),
-        fetchTopPackages(year),
-        fetchTopRevenuePackages(year),
-        fetchTotalOrders(year, month),
-      ]);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setIsLoading(false); // Kết thúc loading
-    }
-  };
-
-  // Cập nhật useEffect để sử dụng fetchAllData
-  useEffect(() => {
-    fetchAllData(selectedYear, selectedMonth);
-  }, [selectedYear, selectedMonth]);
-
-  const handleYearChange = (value) => {
-    setSelectedYear(value);
-  };
-
-  const handleMonthChange = (value) => {
-    setSelectedMonth(value);
   };
 
   const topSellerOptions = {
@@ -596,116 +653,58 @@ function Dashboard() {
     },
   };
 
-  // Thêm state mới để lưu trữ danh sách các năm có dữ liệu
-  const [availableYears, setAvailableYears] = useState([]);
-
-  const checkYearHasRevenue = async (year) => {
-    try {
-      const response = await api.get(`analytics/revenues/${year}`);
-
-      if (response.data.status === "success") {
-        const monthlyData = response.data.details.data["year-dto"];
-        // Check if any month has revenue
-        return Object.values(monthlyData).some((value) => value > 0);
-      }
-      return false;
-    } catch (error) {
-      console.error(`Error checking revenue for year ${year}:`, error);
-      return false;
-    }
-  };
-
-  // Thêm hàm để lấy danh sách các năm có doanh thu
-  const fetchAvailableYears = async () => {
-    try {
-      const currentYear = new Date().getFullYear();
-      const years = [];
-
-      // Kiểm tra 5 năm gần nhất
-      for (let year = currentYear; year >= currentYear - 4; year--) {
-        const hasRevenue = await checkYearHasRevenue(year);
-        if (hasRevenue) {
-          years.push(year);
-        }
-      }
-
-      if (years.length > 0) {
-        setAvailableYears(years);
-        setSelectedYear(years[0].toString());
-      } else {
-        // Nếu không có năm nào có doanh thu, mặc định hiển thị năm hiện tại
-        setAvailableYears([currentYear]);
-        setSelectedYear(currentYear.toString());
-      }
-    } catch (error) {
-      console.error("Error fetching available years:", error);
-      const currentYear = new Date().getFullYear();
-      setAvailableYears([currentYear]);
-      setSelectedYear(currentYear.toString());
-    }
-  };
-
-  // Thêm useEffect để fetch danh sách năm khi component mount
-  useEffect(() => {
-    fetchAvailableYears();
-  }, []);
-
   const handleDownloadReport = () => {
     console.log("Downloading report...");
-  };
-
-  // Add new state variables after other state declarations
-  const [chartYear, setChartYear] = useState(
-    new Date().getFullYear().toString()
-  );
-
-  // Add new handlers after other handler functions
-  const handleChartYearChange = (value) => {
-    setChartYear(value);
   };
 
   return (
     <div className="p-6 bg-blue-50">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <div className="flex gap-4 items-center">
-          <Select
-            value={selectedYear}
-            className="w-32"
-            options={availableYears.map((year) => ({
-              value: year.toString(),
-              label: year.toString(),
-            }))}
-            onChange={handleYearChange}
-            loading={isLoading}
-            disabled={isLoading}
-          />
-          <Select
-            value={selectedMonth}
-            className="w-32"
-            options={[
-              { value: 1, label: "Tháng 1" },
-              { value: 2, label: "Tháng 2" },
-              { value: 3, label: "Tháng 3" },
-              { value: 4, label: "Tháng 4" },
-              { value: 5, label: "Tháng 5" },
-              { value: 6, label: "Tháng 6" },
-              { value: 7, label: "Tháng 7" },
-              { value: 8, label: "Tháng 8" },
-              { value: 9, label: "Tháng 9" },
-              { value: 10, label: "Tháng 10" },
-              { value: 11, label: "Tháng 11" },
-              { value: 12, label: "Tháng 12" },
-            ]}
-            onChange={handleMonthChange}
-            loading={isLoading}
-            disabled={isLoading}
-          />
-        </div>
       </div>
 
-      {/* Thêm Spin bao quanh nội dung chính */}
-      <Spin spinning={isLoading} tip="Đang tải...">
+      {/* Stats cards with their own year/month selectors */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-800">
+            Thống kê theo tháng
+          </h2>
+          <div className="flex gap-4 items-center">
+            <Select
+              value={statsYear}
+              className="w-32"
+              options={availableYears.map((year) => ({
+                value: year.toString(),
+                label: year.toString(),
+              }))}
+              onChange={handleStatsYearChange}
+              loading={isLoading}
+              disabled={isLoading}
+            />
+            <Select
+              value={selectedMonth}
+              className="w-32"
+              options={[
+                { value: 1, label: "Tháng 1" },
+                { value: 2, label: "Tháng 2" },
+                { value: 3, label: "Tháng 3" },
+                { value: 4, label: "Tháng 4" },
+                { value: 5, label: "Tháng 5" },
+                { value: 6, label: "Tháng 6" },
+                { value: 7, label: "Tháng 7" },
+                { value: 8, label: "Tháng 8" },
+                { value: 9, label: "Tháng 9" },
+                { value: 10, label: "Tháng 10" },
+                { value: 11, label: "Tháng 11" },
+                { value: 12, label: "Tháng 12" },
+              ]}
+              onChange={handleMonthChange}
+              loading={isLoading}
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
         <Row gutter={[16, 16]}>
           {stats.map((stat, index) => (
             <Col xs={24} sm={12} lg={8} key={index}>
@@ -735,28 +734,32 @@ function Dashboard() {
             </Col>
           ))}
         </Row>
+      </div>
 
-        <Card className="mt-8 border-0 rounded-xl hover:shadow-lg transition-shadow duration-300">
+      {/* Charts section with its own year selector */}
+      <div className="mt-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-800">Biểu đồ thống kê</h2>
+          <Select
+            value={chartYear}
+            className="w-32"
+            options={availableYears.map((year) => ({
+              value: year.toString(),
+              label: year.toString(),
+            }))}
+            onChange={handleChartYearChange}
+            loading={isLoading}
+            disabled={isLoading}
+          />
+        </div>
+
+        <Card className="border-0 rounded-xl hover:shadow-lg transition-shadow duration-300">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-xl font-bold text-gray-800">Sales Details</h2>
               <p className="text-gray-500 text-sm mt-1">
-                Doanh thu và lợi nhuận năm {selectedYear}
+                Doanh thu và lợi nhuận năm {chartYear}
               </p>
-            </div>
-            {/* Add the new selects here */}
-            <div className="flex gap-4 items-center">
-              <Select
-                value={chartYear}
-                className="w-32"
-                options={availableYears.map((year) => ({
-                  value: year.toString(),
-                  label: year.toString(),
-                }))}
-                onChange={handleChartYearChange}
-                loading={isLoading}
-                disabled={isLoading}
-              />
             </div>
           </div>
           <div className="w-full h-[400px]">
@@ -773,7 +776,7 @@ function Dashboard() {
                     Top 5 Best-seller
                   </h2>
                   <p className="text-gray-500 text-sm mt-1">
-                    Package được bán nhiều nhất
+                    Package được bán nhiều nhất năm {chartYear}
                   </p>
                 </div>
               </div>
@@ -790,7 +793,7 @@ function Dashboard() {
                     Top 5 Doanh Thu
                   </h2>
                   <p className="text-gray-500 text-sm mt-1">
-                    Package có doanh thu cao nhất
+                    Package có doanh thu cao nhất năm {chartYear}
                   </p>
                 </div>
               </div>
@@ -800,7 +803,7 @@ function Dashboard() {
             </Card>
           </Col>
         </Row>
-      </Spin>
+      </div>
     </div>
   );
 }

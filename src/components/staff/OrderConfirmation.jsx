@@ -337,20 +337,36 @@ function OrderConfirmation() {
                 )}
 
                 {record["shipping-status"] === "ĐÃ XÁC NHẬN" && (
-                  <Button
-                    type="primary"
-                    icon={<CarOutlined />}
-                    className="!bg-orange-500 hover:!bg-orange-600 w-full h-[40px]"
-                    onClick={() =>
-                      showConfirmationModal(
-                        record.id,
-                        "ĐANG GIAO HÀNG",
-                        record["shipping-status"]
-                      )
-                    }
-                  >
-                    Bắt đầu giao hàng
-                  </Button>
+                  <Space.Compact block className="!flex">
+                    <Button
+                      type="primary"
+                      icon={<CarOutlined />}
+                      className="!bg-orange-500 hover:!bg-orange-600 flex-[2]"
+                      onClick={() =>
+                        showConfirmationModal(
+                          record.id,
+                          "ĐANG GIAO HÀNG",
+                          record["shipping-status"]
+                        )
+                      }
+                    >
+                      Bắt đầu giao hàng
+                    </Button>
+                    <Button
+                      danger
+                      icon={<CloseCircleOutlined />}
+                      onClick={() =>
+                        showConfirmationModal(
+                          record.id,
+                          "GIAO HÀNG THẤT BẠI",
+                          record["shipping-status"]
+                        )
+                      }
+                      className="flex-1"
+                    >
+                      Hủy đơn
+                    </Button>
+                  </Space.Compact>
                 )}
 
                 {record["shipping-status"] === "ĐANG GIAO HÀNG" && (
@@ -632,7 +648,11 @@ function OrderConfirmation() {
         title={<Title level={3}>Chi tiết đơn hàng: {selectedOrder?.id}</Title>}
         visible={modalVisible}
         onCancel={() => setModalVisible(false)}
-        footer={null}
+        footer={
+          <Space>
+            <Button onClick={() => setModalVisible(false)}>Đóng</Button>
+          </Space>
+        }
         width={900}
       >
         {loadingOrderDetails ? (
@@ -693,6 +713,27 @@ function OrderConfirmation() {
                   <Text>Ghi chú:</Text>
                   <Text strong>{selectedOrder.note || "Không có"}</Text>
                 </div>
+                {(selectedOrder["shipping-status"] === "CHỜ XÁC NHẬN" ||
+                  selectedOrder["shipping-status"] === "ĐÃ XÁC NHẬN") && (
+                  <div className="pt-4 border-t">
+                    <Button
+                      danger
+                      type="primary"
+                      icon={<CloseCircleOutlined />}
+                      onClick={() => {
+                        setModalVisible(false); // Đóng modal chi tiết
+                        showConfirmationModal(
+                          selectedOrder.id,
+                          "GIAO HÀNG THẤT BẠI",
+                          selectedOrder["shipping-status"]
+                        );
+                      }}
+                      className="w-full h-[40px]"
+                    >
+                      Hủy đơn hàng
+                    </Button>
+                  </div>
+                )}
               </Space>
             </Card>
 
