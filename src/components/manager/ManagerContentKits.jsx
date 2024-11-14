@@ -36,15 +36,15 @@ function ManagerContentKits() {
   const [isOpen, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editingRecord, setEditingRecord] = useState(null);
-  const [imageFiles, setImageFiles] = useState([]); // Mảng để lưu nhiều file ảnh
-  const [imagePreviews, setImagePreviews] = useState([]); // Mảng để lưu preview của nhiều ảnh
-  const [viewImagesModalVisible, setViewImagesModalVisible] = useState(false); // Modal hiển thị tất cả ảnh
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [viewImagesModalVisible, setViewImagesModalVisible] = useState(false);
   const [currentImages, setCurrentImages] = useState([]); // Mảng lưu trữ ảnh hiện tại để xem
   const [viewComponentsModalVisible, setViewComponentsModalVisible] =
-    useState(false); // Modal hiển thị thành phần
+    useState(false);
   const [addComponentModalVisible, setAddComponentModalVisible] =
     useState(false);
-  const [componentsData, setComponentsData] = useState([]); // State để lưu các thành phần của kit hiện tại
+  const [componentsData, setComponentsData] = useState([]);
   const [descriptionModalVisible, setDescriptionModalVisible] = useState(false);
   const [currentDescription, setCurrentDescription] = useState("");
   const [selectedComponents, setSelectedComponents] = useState([]);
@@ -60,7 +60,6 @@ function ManagerContentKits() {
     total: 0,
   });
   const [componentSearchName, setComponentSearchName] = useState("");
-  // const [isFirstLoad, setIsFirstLoad] = useState(true); // Biến trạng thái để theo dõi lần tải đầu tiên
   const [isSubmitting, setIsSubmitting] = useState(false); // Trạng thái loading cho create và update
   const [filters, setFilters] = useState({
     kitName: "",
@@ -78,7 +77,6 @@ function ManagerContentKits() {
   ) => {
     try {
       setLoading(true);
-      // Chuẩn bị các tham số tìm kiếm theo điều kiện của fromPrice và toPrice
       const params = {
         page: page - 1,
         pageSize: pageSize,
@@ -118,7 +116,7 @@ function ManagerContentKits() {
       console.error("Error fetching kits:", error);
       setLoading(false);
     } finally {
-      setLoading(false); // Kết thúc loading sau khi API hoàn thành
+      setLoading(false);
     }
   };
 
@@ -133,14 +131,14 @@ function ManagerContentKits() {
 
   const createKit = async (newKit) => {
     try {
-      setIsSubmitting(true); // Bắt đầu loading
+      setIsSubmitting(true);
       const formData = new FormData();
       formData.append("CategoryId", newKit.categoryId);
       formData.append("Name", newKit.name);
       formData.append("Brief", newKit.brief);
-      formData.append("Description", newKit.description || ""); // Thêm Description
+      formData.append("Description", newKit.description || "");
       formData.append("PurchaseCost", newKit.purchaseCost || 0);
-      // Append the status as a boolean, assuming the backend expects true/false
+
       formData.append("Status", newKit.status ? true : false);
       // Kiểm tra lại các thành phần đã chọn
       newKit.components.forEach((component, index) => {
@@ -151,22 +149,14 @@ function ManagerContentKits() {
       // Thêm file ảnh vào FormData
       if (imageFiles && imageFiles.length > 0) {
         imageFiles.forEach((file) => {
-          formData.append("KitImagesList", file); // Sử dụng KitImagesList để thêm ảnh
+          formData.append("KitImagesList", file);
         });
       }
-
-      // Log toàn bộ nội dung của FormData để kiểm tra
-      for (const [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-
       const response = await api.post("kits", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      console.log("Created Kit:", response.data);
 
       // Gọi lại fetchKits để làm mới danh sách sau khi thêm mới
       await fetchKits(pagination.current, pagination.pageSize);
@@ -189,13 +179,13 @@ function ManagerContentKits() {
         error.response?.data?.details?.errors || error.message
       );
     } finally {
-      setIsSubmitting(false); // Kết thúc loading
+      setIsSubmitting(false);
     }
   };
 
   const updateKit = async (id, updatedKit) => {
     try {
-      setIsSubmitting(true); // Bắt đầu loading
+      setIsSubmitting(true);
       const formData = new FormData();
       formData.append("Id", id);
       formData.append("CategoryId", updatedKit.categoryId);
@@ -209,7 +199,6 @@ function ManagerContentKits() {
         formData.append(`ComponentQuantity[${index}]`, component.quantity);
       });
 
-      // Thêm trường Status (giả sử API cần)
       formData.append("Status", updatedKit.status ? true : false);
       // Nếu có ảnh mới thì thêm ảnh mới vào formData
       if (updatedKit.imageFiles && updatedKit.imageFiles.length > 0) {
@@ -222,18 +211,12 @@ function ManagerContentKits() {
           formData.append("existingImages[]", image.url);
         });
       }
-
-      // Log FormData for debugging
-      for (const [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-
       const response = await api.put(`kits`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-      console.log("Updated Kit:", response.data);
+
       await fetchKits();
       fetchCategories();
       notification.destroy();
@@ -251,22 +234,13 @@ function ManagerContentKits() {
         error.response?.data || error.message
       );
     } finally {
-      setIsSubmitting(false); // Kết thúc loading
+      setIsSubmitting(false);
     }
   };
 
   const deleteKit = async (id) => {
     try {
-      if (!id) {
-        console.error("ID không hợp lệ khi xóa kit:", id);
-        return;
-      }
-
-      console.log(`Attempting to delete kit with id: ${id}`);
-
-      // Sử dụng phương thức DELETE như bạn yêu cầu
       const response = await api.delete(`kits/${id}`);
-      console.log("Kit deleted:", response.data);
 
       await fetchKits(); // Làm mới danh sách kits sau khi xóa
       fetchCategories(); // Làm mới danh sách categories
@@ -290,7 +264,7 @@ function ManagerContentKits() {
   const restoreKit = async (id) => {
     try {
       const response = await api.put(`kits/restore/${id}`);
-      console.log("Kit restored:", response.data);
+
       await fetchKits();
       notification.destroy();
       notification.success({
@@ -309,32 +283,26 @@ function ManagerContentKits() {
             error.response.data.details?.message || "Lỗi không xác định"
           }`,
         });
-      } else {
-        console.error(`Error restoring kit with id ${id}:`, error.message);
-        notification.error({
-          message: "Lỗi",
-          description: `Có lỗi xảy ra khi khôi phục kit với id ${id}: ${error.message}`,
-        });
       }
     }
   };
 
   const showImagesModal = (images) => {
-    setCurrentImages(images); // Gán các ảnh vào state để hiển thị trong modal
-    setViewImagesModalVisible(true); // Hiển thị modal
+    setCurrentImages(images);
+    setViewImagesModalVisible(true);
   };
 
-  // Hàm xử lý khi submit filter (khi người dùng nhấn Search)
+  // Hàm xử lý khi submit filter
   const handleFilterSubmit = (values) => {
     const updatedFilters = {
       ...filters,
       ...values, // Chỉ update những trường mà người dùng đã điền
     };
-    setFilters(updatedFilters); // Cập nhật filters với các giá trị mới
-    fetchKits(1, pagination.pageSize, updatedFilters); // Gọi API với filter đã cập nhật
+    setFilters(updatedFilters);
+    fetchKits(1, pagination.pageSize, updatedFilters);
   };
 
-  // Hàm reset bộ lọc (Reset tất cả input và fetch lại tất cả dữ liệu)
+  // Hàm reset filter
   const resetFilters = () => {
     formFilter.resetFields(); // Reset các input
     setFilters({
@@ -346,7 +314,7 @@ function ManagerContentKits() {
       kitName: "",
       categoryName: "",
       status: "",
-    }); // Fetch lại mà không có filter
+    });
   };
 
   const handleViewDescription = (description) => {
@@ -354,30 +322,30 @@ function ManagerContentKits() {
     setDescriptionModalVisible(true);
   };
 
-  // Hàm để gọi API và hiển thị components trong modal
+  // hiển thị components trong modal
   const handleViewComponents = async (kitId) => {
     setIsFetchingComponents(true);
     try {
       const response = await api.get(`kits/${kitId}`);
 
       if (response?.data?.details?.data?.kit?.components) {
-        setComponentsData(response.data.details.data.kit.components); // Lưu các thành phần của kit vào state
+        setComponentsData(response.data.details.data.kit.components);
       } else {
-        setComponentsData([]); // Không có thành phần
+        setComponentsData([]);
       }
 
-      setViewComponentsModalVisible(true); // Mở modal
-      setIsFetchingComponents(false); // Dừng loading
+      setViewComponentsModalVisible(true);
+      setIsFetchingComponents(false);
     } catch (error) {
       console.error("Error fetching components:", error);
-      setIsFetchingComponents(false); // Dừng loading nếu có lỗi
+      setIsFetchingComponents(false);
     }
   };
 
   const fetchComponents = async (page = 1, pageSize = 20, name = "") => {
     try {
       const params = { page: page - 1, pageSize, name };
-      const response = await api.get("/components", { params }); // Đường dẫn tới API lấy components
+      const response = await api.get("/components", { params });
       if (response.data?.details?.data?.components) {
         const componentsData = response.data.details.data.components;
         const totalPages = response.data.details.data["total-pages"] || 0;
@@ -449,15 +417,12 @@ function ManagerContentKits() {
   };
 
   const handleComponentTableChange = (page, pageSize) => {
-    console.log("Changing to page:", page, "with pageSize:", pageSize); // Log kiểm tra
-    fetchComponents(page, pageSize); // Fetch dữ liệu với trang hiện tại và số phần tử trên trang
+    fetchComponents(page, pageSize);
     setComponentPagination({ ...componentPagination, current: page, pageSize });
   };
 
-  // Khi bấm "OK", lấy tất cả các lựa chọn từ selectedComponents
+  // lấy tất cả các lựa chọn từ selectedComponents
   const handleConfirmAddComponents = () => {
-    console.log("Selected Components:", selectedComponents);
-
     // Lấy danh sách các thành phần hiện tại trong form
     const existingComponents = form.getFieldValue("components") || [];
 
@@ -484,11 +449,7 @@ function ManagerContentKits() {
       ...updatedComponents,
     ];
 
-    // Cập nhật giá trị mới vào form
     form.setFieldsValue({ components: combinedComponents });
-
-    console.log("Updated Components in form:", combinedComponents);
-
     // Đặt lại selectedComponents sau khi form đã cập nhật
     setSelectedComponents([]);
     setAddComponentModalVisible(false);
@@ -539,8 +500,8 @@ function ManagerContentKits() {
   ];
 
   useEffect(() => {
-    fetchKits(); // Lần đầu tải trang
-    fetchCategories(); // Lấy danh mục
+    fetchKits();
+    fetchCategories();
     fetchComponents();
   }, []);
 
@@ -682,39 +643,34 @@ function ManagerContentKits() {
     try {
       if (!record || !record["category-id"]) {
         console.error("Invalid record or missing category-id:", record);
-        return; // Prevent further action if the record is invalid
+        return;
       }
-
       setEditingRecord(record);
 
-      // Fetch kit details, including components
       const response = await api.get(`/kits/${record.id}`);
       const kitData = response.data.details.data.kit;
-      console.log("Kit data: ", kitData);
-      // Map the existing components to set them in the form
+
       const components = kitData.components.map((component) => ({
         id: component["component-id"],
         name: component["component-name"],
         quantity: component["component-quantity"],
       }));
 
-      // If there are current images, show the old images
       if (kitData["kit-images"] && kitData["kit-images"].length > 0) {
-        setImagePreviews(kitData["kit-images"].map((img) => img.url)); // Show old images
+        setImagePreviews(kitData["kit-images"].map((img) => img.url));
       }
 
-      // Set form values including components and other fields
       form.setFieldsValue({
         name: kitData.name,
         brief: kitData.brief,
         description: kitData.description || "",
-        components: components, // Set existing components
+        components: components,
         purchaseCost: kitData["purchase-cost"] || 0,
-        categoryId: kitData["category-id"], // Use category-id
+        categoryId: kitData["category-id"],
         status: kitData.status,
       });
       setEditingRecord(record);
-      setOpen(true); // Open the form modal
+      setOpen(true);
     } catch (error) {
       console.error("Failed to fetch kit details:", error);
       notification.error({
@@ -759,18 +715,14 @@ function ManagerContentKits() {
       console.error("Failed to save or update kit:", error);
     }
   };
-  // Function to handle deletion of a component
+
   const handleDeleteComponent = (id) => {
-    // Get the current components from the form
     const currentComponents = form.getFieldValue("components") || [];
 
-    // Filter out the component to be deleted
     const updatedComponents = currentComponents.filter(
       (component) => component.id !== id
     );
-    console.log(updatedComponents);
 
-    // Update the form with the new components list
     form.setFieldsValue({ components: updatedComponents });
     setSelectedComponents(updatedComponents);
   };

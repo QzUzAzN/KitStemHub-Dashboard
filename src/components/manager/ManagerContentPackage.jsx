@@ -72,10 +72,9 @@ function ManagerContentPackage() {
     try {
       setLoading(true);
       const params = {
-        page: page - 1, // Backend counts from 0
+        page: page - 1,
         pageSize: pageSize,
         name: searchFilters.name,
-        // "level-id": searchFilters.levelId,
         "from-price": searchFilters.fromPrice,
         "to-price": searchFilters.toPrice,
         "kit-name": searchFilters.kitName,
@@ -87,18 +86,15 @@ function ManagerContentPackage() {
       if (searchFilters.levelId !== undefined) {
         params["level-id"] = searchFilters.levelId;
       }
-      console.log("params: ", params);
+
       const response = await api.get("packages", {
         params,
       });
-      console.log("respone: ", response.data);
+
       if (response?.data?.details?.data?.packages) {
         const packageData = response.data.details.data.packages;
         const totalPages = response.data.details.data["total-pages"] || 0;
         // const currentPage = response.data.details.data["current-page"] || 0;
-
-        // Đảm bảo dữ liệu thực sự được trả về từ API
-        console.log("Packages:", packageData);
 
         setDataSource(packageData);
         setPagination({
@@ -114,7 +110,6 @@ function ManagerContentPackage() {
           pageSize: pageSize,
         });
       }
-
       setLoading(false);
     } catch (error) {
       console.error("Error fetching packages:", error);
@@ -150,11 +145,10 @@ function ManagerContentPackage() {
   const fetchKitsAndLevels = async () => {
     try {
       const levelsResponse = await api.get("levels");
-      console.log("Levels:", levelsResponse.data.details.data.levels); // Kiểm tra dữ liệu levels
+
       setLevels(levelsResponse.data.details.data.levels);
 
       const kitsResponse = await api.get("kits");
-      console.log("Kits:", kitsResponse.data.details.data.kits); // Kiểm tra dữ liệu kits
       setKits(kitsResponse.data.details.data.kits);
     } catch (error) {
       console.error("Lỗi khi lấy levels hoặc kits:", error);
@@ -181,7 +175,6 @@ function ManagerContentPackage() {
           duration: 3,
         });
 
-        // Refetch all packages on the current page after creating a new one
         fetchPackages(pagination.current, pagination.pageSize);
       }
     } catch (error) {
@@ -200,11 +193,7 @@ function ManagerContentPackage() {
   const updatePackage = async (id, updatedPackage) => {
     try {
       setIsSubmitting(true);
-
-      // Sử dụng URL mà không có ID, và bao gồm ID trong phần thân của request
       await api.put(`packages`, { ...updatedPackage, id });
-
-      // Refetch all packages on the current page after updating
       fetchPackages(pagination.current, pagination.pageSize);
       notification.destroy();
       notification.success({
@@ -229,16 +218,8 @@ function ManagerContentPackage() {
 
   const deletePackage = async (id) => {
     try {
-      setIsSubmitting(true); // Start loading
-
-      console.log(`Attempting to hide package with id: ${id}`);
-
-      // Call the DELETE API to hide the package
+      setIsSubmitting(true);
       const response = await api.delete(`packages/${id}`);
-
-      console.log("Package deleted (hidden):", response.data);
-
-      // Update UI to make the package hidden
       setDataSource((prevData) =>
         prevData.map((pkg) => (pkg.id === id ? { ...pkg, status: false } : pkg))
       );
@@ -260,22 +241,14 @@ function ManagerContentPackage() {
         error.response?.data || error.message
       );
     } finally {
-      setIsSubmitting(false); // End loading
+      setIsSubmitting(false);
     }
   };
 
   const restorePackage = async (id) => {
     try {
-      setIsSubmitting(true); // Start loading
-
-      console.log(`Attempting to restore package with id: ${id}`);
-
-      // Call the PUT API to restore the package
+      setIsSubmitting(true);
       const response = await api.put(`packages/restore/${id}`);
-
-      console.log("Package restored:", response.data);
-
-      // Update UI to make the package visible again
       setDataSource((prevData) =>
         prevData.map((pkg) => (pkg.id === id ? { ...pkg, status: true } : pkg))
       );
@@ -295,26 +268,22 @@ function ManagerContentPackage() {
         error.response?.data || error.message
       );
     } finally {
-      setIsSubmitting(false); // End loading
+      setIsSubmitting(false);
     }
   };
 
   const handleKitChange = async (kitId) => {
-    setKitModalVisible(false); // Đóng modal chọn kit
-    form.setFieldsValue({ labIds: [] }); // Reset labs khi chọn kit mới
+    setKitModalVisible(false);
+    form.setFieldsValue({ labIds: [] });
 
     try {
       const selectedKit = kits.find((kit) => kit.id === kitId);
-      setSelectedKitPrice(selectedKit ? selectedKit.price : null); // Lưu giá Kit được chọn
-
-      // Gọi API để lấy danh sách Labs liên quan đến Kit đã chọn
+      setSelectedKitPrice(selectedKit ? selectedKit.price : null);
       const response = await api.get(`kits/${kitId}/lab`);
       let labs = response.data.details.data.labs || [];
 
-      // Lọc chỉ lấy labs có status = false
       labs = labs.filter((lab) => lab.status === true);
 
-      // Cập nhật danh sách Labs sau khi lọc
       setAvailableLabs(labs);
     } catch (error) {
       console.error("Error fetching labs:", error);
@@ -351,7 +320,6 @@ function ManagerContentPackage() {
       status: values.status,
     };
 
-    // Thêm kit và lab chỉ khi tạo mới
     if (!editingRecord) {
       payload["kit-id"] = values.kitId;
       payload["lab-ids"] = values.labIds;
@@ -360,7 +328,7 @@ function ManagerContentPackage() {
     if (editingRecord) {
       await updatePackage(editingRecord.id, payload);
     } else {
-      await createPackage(payload); // Call `createPackage`
+      await createPackage(payload);
     }
 
     setOpen(false);
@@ -424,11 +392,11 @@ function ManagerContentPackage() {
   };
 
   const handleCancel = () => {
-    form.resetFields(); // Reset lại tất cả các trường trong form
-    setEditingRecord(null); // Đặt editingRecord về null
-    setSelectedKit(null); // Đặt lại kit đã chọn nếu có
-    setAvailableLabs([]); // Đặt lại danh sách Labs nếu cần
-    setOpen(false); // Đóng modal
+    form.resetFields();
+    setEditingRecord(null);
+    setSelectedKit(null);
+    setAvailableLabs([]);
+    setOpen(false);
   };
 
   const columns = [
@@ -543,7 +511,7 @@ function ManagerContentPackage() {
           {/* Hàng 1 */}
           <div className="w-full flex gap-4 justify-end">
             <Input
-              style={{ width: "350px" }} // Giảm kích thước của "Search package name"
+              style={{ width: "350px" }}
               placeholder="Tìm kiếm tên gói"
               value={filters.name}
               onChange={(e) => setFilters({ ...filters, name: e.target.value })}
@@ -552,7 +520,7 @@ function ManagerContentPackage() {
               placeholder="Chọn Cấp độ"
               value={filters.levelId}
               onChange={(value) => setFilters({ ...filters, levelId: value })}
-              style={{ width: "200px" }} // Đặt kích thước cho Select Level
+              style={{ width: "200px" }}
             >
               <Option value={undefined}>Tất cả các cấp độ</Option>
               {levels.map((level) => (
@@ -565,13 +533,13 @@ function ManagerContentPackage() {
               placeholder="Giá từ"
               value={filters.fromPrice}
               onChange={(value) => setFilters({ ...filters, fromPrice: value })}
-              style={{ width: "200px" }} // Tăng kích thước "From Price"
+              style={{ width: "200px" }}
             />
             <InputNumber
               placeholder="Đến giá"
               value={filters.toPrice}
               onChange={(value) => setFilters({ ...filters, toPrice: value })}
-              style={{ width: "200px" }} // Tăng kích thước "To Price"
+              style={{ width: "200px" }}
             />
           </div>
 
@@ -583,7 +551,7 @@ function ManagerContentPackage() {
               onChange={(e) =>
                 setFilters({ ...filters, kitName: e.target.value })
               }
-              style={{ width: "300px" }} // Giảm kích thước của "Kit Name"
+              style={{ width: "300px" }}
             />
             <Input
               placeholder="Tên loại Kit"
@@ -591,13 +559,13 @@ function ManagerContentPackage() {
               onChange={(e) =>
                 setFilters({ ...filters, categoryName: e.target.value })
               }
-              style={{ width: "300px" }} // Giảm kích thước của "Category Name"
+              style={{ width: "300px" }}
             />
             <Select
               placeholder="Trạng thái"
               value={filters.status}
               onChange={(value) => setFilters({ ...filters, status: value })}
-              style={{ width: "200px" }} // Đặt kích thước cho "Status"
+              style={{ width: "200px" }}
             >
               <Option value={true}>
                 <Tag color="green" className="font-semibold">
@@ -632,7 +600,7 @@ function ManagerContentPackage() {
           onClick={() => {
             form.resetFields();
             setEditingRecord(null);
-            setSelectedKit(null); // Đặt lại kit đã chọn nếu có
+            setSelectedKit(null);
             setAvailableLabs([]);
             setOpen(true);
           }}
@@ -653,14 +621,14 @@ function ManagerContentPackage() {
         rowKey="id"
         rowClassName={(record) =>
           record.status ? "" : "bg-gray-200 opacity-50"
-        } // Change color when package is hidden
+        }
         pagination={{
           total: pagination.total,
           current: pagination.current,
           pageSize: pagination.pageSize,
           showSizeChanger: false,
           onChange: (page, pageSize) => {
-            fetchPackages(page, pageSize); // Refetch packages with new page
+            fetchPackages(page, pageSize);
           },
         }}
       />
@@ -752,7 +720,7 @@ function ManagerContentPackage() {
               name="status"
               label="Trạng thái"
               valuePropName="checked"
-              style={{ display: editingRecord ? "none" : "block" }} // Ẩn trường khi chỉnh sửa
+              style={{ display: editingRecord ? "none" : "block" }}
             >
               <Switch
                 checkedChildren="Có sẵn"

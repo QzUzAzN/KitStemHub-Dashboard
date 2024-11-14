@@ -13,7 +13,6 @@ import {
   Spin,
   Modal,
   Input,
-  InputNumber,
   Button,
   Tag,
   Typography,
@@ -83,9 +82,6 @@ function ManagerContentComponent() {
         console.error("ID không hợp lệ khi ẩn component:", id);
         return;
       }
-
-      console.log(`Attempting to hide component with id: ${id}`);
-
       // Gọi API DELETE để ẩn component
       const response = await api.delete(`components/${id}`);
       console.log("Component hidden:", response.data);
@@ -123,9 +119,6 @@ function ManagerContentComponent() {
         console.error("ID không hợp lệ khi phục hồi component:", id);
         return;
       }
-
-      console.log(`Attempting to restore component with id: ${id}`);
-
       // Gọi API PUT để phục hồi component
       const response = await api.put(`components/restore/${id}`);
       console.log("Component restored:", response.data);
@@ -165,7 +158,7 @@ function ManagerContentComponent() {
         "type-id": newComponent.typeId,
         name: newComponent.name,
       };
-      console.log("Gửi payload:", payload);
+
       const response = await api.post("/components", payload);
 
       await fetchComponents(
