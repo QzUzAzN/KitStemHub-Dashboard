@@ -62,18 +62,17 @@ function AdminLevels() {
       key: "id",
     },
     {
-      title: "Name",
+      title: "Tên",
       dataIndex: "name",
       key: "name",
     },
     {
-      title: "Status",
+      title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      // tùy chỉnh cách hiển thị giá trị của cột "status"
       render: (status) => (
         <span className={status ? "text-green-600" : "text-red-600"}>
-          {status ? "Available" : "Unavailable"}
+          {status ? "Hoạt động" : "Không hoạt động"}
         </span>
       ),
     },
@@ -122,7 +121,7 @@ function AdminLevels() {
   const handleToggleStatus = async (level) => {
     try {
       await api.delete(`levels/${level.id}`);
-      toast.success(`Level deactivated successfully!`);
+      toast.success(`Đã vô hiệu hóa cấp độ thành công!`);
       await fetchLevels();
       if (searchResult && searchResult.id === level.id) {
         const updateLevel = await api.get(`levels/${level.id}`);
@@ -130,13 +129,13 @@ function AdminLevels() {
       }
     } catch (error) {
       console.error("Failed to deactivate level:", error);
-      toast.error("Failed to deactivate level");
+      toast.error("Không thể vô hiệu hóa cấp độ");
     }
   };
   const handleRestore = async (level) => {
     try {
       await api.put(`levels/restore/${level.id}`);
-      toast.success(`Level activated successfully!`);
+      toast.success(`Đã kích hoạt cấp độ thành công!`);
       await fetchLevels();
       if (searchResult && searchResult.id === level.id) {
         const updateLevel = await api.get(`levels/${level.id}`);
@@ -144,7 +143,7 @@ function AdminLevels() {
       }
     } catch (error) {
       console.error("Failed to activate level:", error);
-      toast.error("Failed to activate level");
+      toast.error("Không thể kích hoạt cấp độ");
     }
   };
 
@@ -152,10 +151,10 @@ function AdminLevels() {
     try {
       if (editingLevel) {
         await api.put(`levels`, values);
-        toast.success("Level updated successfully");
+        toast.success("Cập nhật cấp độ thành công");
       } else {
         await api.post("levels", values);
-        toast.success("Level added successfully");
+        toast.success("Thêm cấp độ thành công");
       }
       setIsModalVisible(false);
       form.resetFields();
@@ -166,16 +165,16 @@ function AdminLevels() {
       }
     } catch (error) {
       console.error("Failed to submit level:", error);
-      toast.error("Failed to submit level!");
+      toast.error("Không thể lưu cấp độ!");
     }
   };
 
   const handleSearch = async (id) => {
     if (!id) {
-      toast.error("Please enter a level ID");
+      toast.error("Vui lòng nhập ID cấp độ");
       return;
     } else if (isNaN(id)) {
-      toast.error("ID is not a number!");
+      toast.error("ID phải là số!");
       setSearchResult(null);
       return;
     }
@@ -187,7 +186,7 @@ function AdminLevels() {
         response.data.details.data.level
       ) {
         setSearchResult(response.data.details.data.level);
-        toast.success("Level found");
+        toast.success("Đã tìm thấy cấp độ");
       } else {
         throw new Error("Level not found");
       }
@@ -208,11 +207,11 @@ function AdminLevels() {
         className="flex justify-between items-center mb-6"
       >
         <Title level={2} className="m-0">
-          Levels Management
+          Quản Lý Cấp Độ
         </Title>
         <Space size="middle">
           <Search
-            placeholder="Enter level ID"
+            placeholder="Nhập ID cấp độ"
             onSearch={handleSearch}
             style={{ width: 250 }}
             className="shadow-sm"
@@ -221,7 +220,7 @@ function AdminLevels() {
                 icon={<SearchOutlined />}
                 className="bg-blue-500 border-blue-500 hover:bg-blue-600 hover:border-blue-600"
               >
-                Search
+                Tìm kiếm
               </Button>
             }
           />
@@ -231,7 +230,7 @@ function AdminLevels() {
             onClick={showModal}
             className="bg-green-500 border-green-500 hover:bg-green-600 hover:border-green-600 shadow-sm"
           >
-            Add New Level
+            Thêm Cấp Độ Mới
           </Button>
         </Space>
       </motion.div>
@@ -255,7 +254,7 @@ function AdminLevels() {
             className="mb-4 p-6 border rounded-lg shadow-md bg-gray-50"
           >
             <Title level={4} className="mb-4">
-              Search Result:
+              Kết quả tìm kiếm:
             </Title>
             <Table
               columns={columns}
@@ -269,7 +268,7 @@ function AdminLevels() {
                 onClick={() => setSearchResult(null)}
                 className="hover:bg-white"
               >
-                Clear Search
+                Xóa tìm kiếm
               </Button>
             </Space>
           </motion.div>
@@ -295,7 +294,7 @@ function AdminLevels() {
       <Modal
         title={
           <Title level={3}>
-            {editingLevel ? "Edit Level" : "Add New Level"}
+            {editingLevel ? "Sửa Cấp Độ" : "Thêm Cấp Độ Mới"}
           </Title>
         }
         visible={isModalVisible}
@@ -311,11 +310,11 @@ function AdminLevels() {
           )}
           <Form.Item
             name="name"
-            label="Name"
+            label="Tên"
             rules={[
               {
                 required: true,
-                message: "Please input the type name!",
+                message: "Vui lòng nhập tên cấp độ!",
               },
             ]}
           >
@@ -328,7 +327,7 @@ function AdminLevels() {
               htmlType="submit"
               className="bg-blue-500 hover:bg-blue-600 w-full"
             >
-              {editingLevel ? "Update" : "Add"}
+              {editingLevel ? "Cập nhật" : "Thêm"}
             </Button>
           </Form.Item>
         </Form>

@@ -56,14 +56,6 @@ function StaffProfile() {
             <Title level={2} className="mb-0">
               Hồ Sơ Nhân Viên
             </Title>
-            <Text type="secondary" className="text-sm">
-              {new Date().toLocaleString("vi-VN", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })}
-            </Text>
           </div>
         </header>
 

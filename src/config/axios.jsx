@@ -25,6 +25,10 @@ api.interceptors.response.use(
 
     //Cờ _retry để đảm bảo rằng không thực hiện lại việc gọi API quá nhiều lần nếu lỗi 401
     if (error.response.status === 401 && !originalRequest._retry) {
+      if (error.response?.data?.details?.errors?.["invalid-credentials"]) {
+        localStorage.removeItem("tokenDashboard");
+        localStorage.removeItem("refreshTokenDashboard");
+      }
       originalRequest._retry = true;
       try {
         const currentRefreshToken = localStorage.getItem(
@@ -38,7 +42,7 @@ api.interceptors.response.use(
         localStorage.setItem("tokenDashboard", accessToken);
         localStorage.setItem("refreshTokenDashboard", refreshToken);
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        return axios(originalRequest);
+        return api(originalRequest);
       } catch (refreshError) {
         return Promise.reject(error);
       }

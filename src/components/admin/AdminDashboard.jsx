@@ -71,7 +71,7 @@ const AdminDashboard = () => {
       ),
     },
     {
-      title: "Name",
+      title: "Tên Danh Mục",
       dataIndex: "name",
       key: "name",
       render: (text, record) => (
@@ -79,7 +79,7 @@ const AdminDashboard = () => {
       ),
     },
     {
-      title: "Description",
+      title: "Mô Tả",
       dataIndex: "description",
       key: "description",
       render: (text, record) => (
@@ -87,12 +87,12 @@ const AdminDashboard = () => {
       ),
     },
     {
-      title: "Status",
+      title: "Trạng Thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
         <span className={status ? "text-green-600" : "text-red-600"}>
-          {status ? "Available" : "Unavailable"}
+          {status ? "Khả Dụng" : "Không Khả Dụng"}
         </span>
       ),
     },
@@ -148,11 +148,11 @@ const AdminDashboard = () => {
   const handleHide = async (id) => {
     try {
       Modal.confirm({
-        title: "Are you sure you want to hide this category?",
-        content: "This action will make the category unavailable.",
-        okText: "Yes, Hide",
+        title: "Bạn có chắc chắn muốn ẩn danh mục này?",
+        content: "Hành động này sẽ làm cho danh mục không khả dụng.",
+        okText: "Đồng Ý",
         okType: "danger",
-        cancelText: "No",
+        cancelText: "Hủy",
         onOk: async () => {
           try {
             await api.delete(`categories/${id}`);
@@ -172,7 +172,7 @@ const AdminDashboard = () => {
       });
     } catch (error) {
       console.error("Error in hide confirmation:", error);
-      toast.error("An error occurred while trying to hide the category");
+      toast.error("Đã xảy ra lỗi khi cố gắng ẩn danh mục");
     }
   };
 
@@ -267,11 +267,11 @@ const AdminDashboard = () => {
         className="flex justify-between items-center mb-6"
       >
         <Title level={2} className="m-0">
-          Categories Management
+          Quản Lý Danh Mục
         </Title>
         <Space size="middle">
           <Search
-            placeholder="Enter category ID"
+            placeholder="Nhập ID danh mục"
             onSearch={handleSearch}
             style={{ width: 250 }}
             className="shadow-sm"
@@ -280,7 +280,7 @@ const AdminDashboard = () => {
                 icon={<SearchOutlined />}
                 className="bg-blue-500 border-blue-500 hover:bg-blue-600 hover:border-blue-600"
               >
-                Search
+                Tìm Kiếm
               </Button>
             }
           />
@@ -290,7 +290,7 @@ const AdminDashboard = () => {
             onClick={showModal}
             className="bg-green-500 border-green-500 hover:bg-green-600 hover:border-green-600 shadow-sm"
           >
-            Add New Category
+            Thêm Danh Mục Mới
           </Button>
         </Space>
       </motion.div>
@@ -354,7 +354,7 @@ const AdminDashboard = () => {
       <Modal
         title={
           <Title level={3}>
-            {editingCategory ? "Edit Category" : "Add New Category"}
+            {editingCategory ? "Chỉnh Sửa Danh Mục" : "Thêm Danh Mục Mới"}
           </Title>
         }
         visible={isModalVisible}
@@ -364,25 +364,23 @@ const AdminDashboard = () => {
       >
         <Form form={form} onFinish={handleSubmit} layout="vertical">
           {editingCategory && (
-            <>
-              <Form.Item name="id" label="Id">
-                <Input disabled={true} />
-              </Form.Item>
-            </>
+            <Form.Item name="id" label="Id">
+              <Input disabled={true} />
+            </Form.Item>
           )}
           <Form.Item
             name="name"
-            label="Name"
+            label="Tên"
             rules={[
               {
                 required: true,
-                message: "Please input the category name!",
+                message: "Vui lòng nhập tên danh mục!",
               },
             ]}
           >
             <Input />
           </Form.Item>
-          <Form.Item name="description" label="Description">
+          <Form.Item name="description" label="Mô Tả">
             <Input.TextArea />
           </Form.Item>
           <Form.Item>
@@ -391,7 +389,7 @@ const AdminDashboard = () => {
               htmlType="submit"
               className="bg-blue-500 hover:bg-blue-600 w-full"
             >
-              {editingCategory ? "Update" : "Add"}
+              {editingCategory ? "Cập Nhật" : "Thêm"}
             </Button>
           </Form.Item>
         </Form>

@@ -31,7 +31,7 @@ const HeaderNavbar = () => {
   const menuItems = (
     <Menu className="bg-white rounded-md shadow-lg ">
       <Menu.Item key="2" icon={<LogoutOutlined />} onClick={handleLogout}>
-        <span className="text-gray-700 hover:text-blue-600">Logout</span>
+        <span className="text-gray-700 hover:text-blue-600">Đăng xuất</span>
       </Menu.Item>
     </Menu>
   );

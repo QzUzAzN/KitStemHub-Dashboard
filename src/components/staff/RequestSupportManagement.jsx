@@ -151,8 +151,8 @@ function RequestSupportManagement() {
         record.staff && record.staff.email ? (
           <Space direction="vertical" size="small">
             <Text className="font-medium text-blue-600 ">
-              {`${record.staff["first-name"] ?? "Chưa có tên"} ${
-                record.staff["last-name"] ?? ""
+              {` ${record.staff["last-name"] ?? ""} ${
+                record.staff["first-name"] ?? "Chưa có tên"
               }`}
             </Text>
 
@@ -209,7 +209,7 @@ function RequestSupportManagement() {
           </Text>
           <Text className="text-gray-600">
             <PhoneOutlined className="mr-1" />
-            {record.user.phone}
+            {record["order-phone-number"] || "Chưa cập nhật"}
           </Text>
           <Text className="text-gray-500 text-xs">
             <MailOutlined className="mr-1" />

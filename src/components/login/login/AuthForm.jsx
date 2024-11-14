@@ -39,25 +39,18 @@ function LoginInput() {
         login(accessToken);
         toast.success("Đăng nhập thành công!");
 
-        // Điều hướng dựa trên vai trò
+        // Chuyển hướng dựa trên vai trò
+        const dashboardPaths = {
+          admin: "/admin",
+          manager: "/manager",
+          staff: "/staff",
+        };
+
+        const dashboardPath = dashboardPaths[role] || "/";
+
         setTimeout(() => {
-          switch (role) {
-            case "admin":
-              navigate("/admin");
-              break;
-            case "manager":
-              navigate("/manager");
-              break;
-            case "staff":
-              navigate("/staff");
-              break;
-            default:
-              navigate("/");
-              break;
-          }
+          navigate(dashboardPath);
         }, 1500);
-      } else {
-        throw new Error("Invalid response format");
       }
     } catch (error) {
       // console.log("Error message:", error.message);

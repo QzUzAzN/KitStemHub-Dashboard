@@ -46,9 +46,8 @@ const AdminTypes = () => {
       } else {
         setTypes([]);
       }
-    } catch (error) {
-      // console.error("Error fetching types:", error);
-      toast.error("Failed to fetch types");
+    } catch (err) {
+      toast.error("Không thể tải danh sách loại thiết bị");
       setTypes([]);
     } finally {
       setLoading(false);
@@ -62,22 +61,22 @@ const AdminTypes = () => {
       key: "id",
     },
     {
-      title: "Name",
+      title: "Tên",
       dataIndex: "name",
       key: "name",
     },
     {
-      title: "Status",
+      title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => (
         <span className={status ? "text-green-600" : "text-red-600"}>
-          {status ? "Available" : "Unavailable"}
+          {status ? "Khả dụng" : "Không khả dụng"}
         </span>
       ),
     },
     {
-      title: "Action",
+      title: "Thao tác",
       key: "action",
       render: (_, record) => (
         <Space>
@@ -126,29 +125,28 @@ const AdminTypes = () => {
   const handleToggleStatus = async (type) => {
     try {
       await api.delete(`types/${type.id}`);
-      toast.success(`Type deactivated successfully`);
+      toast.success(`Đã vô hiệu hóa loại thiết bị thành công`);
       await fetchTypes();
       if (searchResult && searchResult.id === type.id) {
         const updatedType = await api.get(`types/${type.id}`);
         setSearchResult(updatedType.data.details.data.type);
       }
-    } catch (error) {
-      // console.error("Error deactivating type:", error);
-      toast.error("Failed to deactivate type");
+    } catch (err) {
+      toast.error("Không thể vô hiệu hóa loại thiết bị");
     }
   };
 
   const handleRestore = async (type) => {
     try {
       await api.put(`types/restore/${type.id}`);
-      toast.success(`Type activated successfully`);
+      toast.success(`Đã kích hoạt loại thiết bị thành công`);
       await fetchTypes();
       if (searchResult && searchResult.id === type.id) {
         const updatedType = await api.get(`types/${type.id}`);
         setSearchResult(updatedType.data.details.data.type);
       }
-    } catch (error) {
-      toast.error("Failed to activate type");
+    } catch (err) {
+      toast.error("Không thể kích hoạt loại thiết bị");
     }
   };
 
@@ -156,10 +154,10 @@ const AdminTypes = () => {
     try {
       if (editingType) {
         await api.put(`types`, values);
-        toast.success("Type updated successfully");
+        toast.success("Cập nhật loại thiết bị thành công");
       } else {
         await api.post("types", values);
-        toast.success("Type added successfully");
+        toast.success("Thêm loại thiết bị mới thành công");
       }
       setIsModalVisible(false);
       form.resetFields();
@@ -168,9 +166,8 @@ const AdminTypes = () => {
         const updatedType = await api.get(`types/${values.id}`);
         setSearchResult(updatedType.data.details.data.type);
       }
-    } catch (error) {
-      // console.error("Error submitting type:", error);
-      toast.error("Failed to submit type");
+    } catch (err) {
+      toast.error("Không thể lưu loại thiết bị");
     }
   };
 
@@ -213,11 +210,11 @@ const AdminTypes = () => {
         className="flex justify-between items-center mb-6"
       >
         <Title level={2} className="m-0">
-          Types Management
+          Quản lý Loại Thiết bị
         </Title>
         <Space size="middle">
           <Search
-            placeholder="Enter type ID"
+            placeholder="Nhập ID loại thiết bị"
             onSearch={handleSearch}
             style={{ width: 250 }}
             className="shadow-sm"
@@ -226,7 +223,7 @@ const AdminTypes = () => {
                 icon={<SearchOutlined />}
                 className="bg-blue-500 border-blue-500 hover:bg-blue-600 hover:border-blue-600"
               >
-                Search
+                Tìm kiếm
               </Button>
             }
           />
@@ -236,7 +233,7 @@ const AdminTypes = () => {
             onClick={showModal}
             className="bg-green-500 border-green-500 hover:bg-green-600 hover:border-green-600 shadow-sm"
           >
-            Add New Type
+            Thêm Loại Mới
           </Button>
         </Space>
       </motion.div>
@@ -299,7 +296,9 @@ const AdminTypes = () => {
       </AnimatePresence>
       <Modal
         title={
-          <Title level={3}>{editingType ? "Edit Type" : "Add New Type"}</Title>
+          <Title level={3}>
+            {editingType ? "Chỉnh sửa Loại Thiết bị" : "Thêm Loại Thiết bị Mới"}
+          </Title>
         }
         visible={isModalVisible}
         onCancel={handleCancel}
@@ -314,11 +313,11 @@ const AdminTypes = () => {
           )}
           <Form.Item
             name="name"
-            label="Name"
+            label="Tên"
             rules={[
               {
                 required: true,
-                message: "Please input the type name!",
+                message: "Vui lòng nhập tên loại thiết bị!",
               },
             ]}
           >
@@ -331,7 +330,7 @@ const AdminTypes = () => {
               htmlType="submit"
               className="bg-blue-500 hover:bg-blue-600 w-full"
             >
-              {editingType ? "Update" : "Add"}
+              {editingType ? "Cập nhật" : "Thêm"}
             </Button>
           </Form.Item>
         </Form>
